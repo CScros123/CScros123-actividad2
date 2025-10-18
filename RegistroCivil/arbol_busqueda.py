@@ -1,6 +1,6 @@
 class Nodo:
-    def __init__(self, Cedula, apellido, nombre, estado):
-        self.dni = Cedula
+    def __init__(self, dni, apellido, nombre, estado):
+        self.dni = dni
         self.apellido = apellido
         self.nombre = nombre
         self.estado = estado
@@ -26,14 +26,14 @@ class ArbolBinarioBusqueda:
     def buscar(self, dni):
         return self._buscar_rec(self.raiz, dni)
 
-    def _buscar_rec(self, actual, Ced):
+    def _buscar_rec(self, actual, dni):
         if actual is None:
             return None
-        if Ced == actual.dni:
+        if dni == actual.dni:
             return actual
-        if Ced < actual.dni:
-            return self._buscar_rec(actual.izq, Ced)
-        return self._buscar_rec(actual.der, Ced)
+        if dni < actual.dni:
+            return self._buscar_rec(actual.izq, dni)
+        return self._buscar_rec(actual.der, dni)
 
     def actualizar_estado_civil(self, lista_matrimonios):
         for dni_femenino, dni_masculino, fecha in lista_matrimonios:
@@ -42,7 +42,7 @@ class ArbolBinarioBusqueda:
                 nodo.estado = "Casado"
 
 def PrintTXT(abb):
-    print("Cedula     | Nombre   | Estado")
+    print("DNI        | Nombre   | Estado")
     print("------------------------------")
     def recorrer(nodo):
         if nodo:
@@ -53,10 +53,11 @@ def PrintTXT(abb):
 
 if __name__ == "__main__":
     abb = ArbolBinarioBusqueda()
+
     registros = [
         (21476443, 'Viauche', 'Fabian', 'Soltero'),
-        (14242368, 'Belo', 'Gonzalo', 'Soltero'),
-        (27104856, 'Aguirre', 'Andrés', 'Casado')
+        (14242368, 'Belo',   'Gonzalo','Soltero'),
+        (27104856, 'Aguirre','Andrés', 'Casado')
     ]
     for dni, ape, nom, est in registros:
         abb.insertar(Nodo(dni, ape, nom, est))
