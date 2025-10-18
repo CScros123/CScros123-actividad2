@@ -53,21 +53,29 @@ def PrintTXT(abb):
 
 if __name__ == "__main__":
     abb = ArbolBinarioBusqueda()
-    registros = [
-        (21476443, 'Viauche', 'Fabian', 'Soltero'),
-        (14242368, 'Belo', 'Gonzalo', 'Soltero'),
-        (27104856, 'Aguirre', 'Andrés', 'Casado')
-    ]
+  registros = [
+    (24876443, 'Viauche',  'Fabián',  'Soltero'),
+    (14242368, 'Belo',     'Gonzalo', 'Casado'),
+    (27104856, 'Aguirre',  'Andrés',  'Casado'),
+    (21789423, 'Álvarez',  'Pablo',   'Soltero'),
+    (17678294, 'Bazán',    'Rodrigo', 'Soltero'),
+    (13637531, 'Casano',   'Germán',  'Casado'),
+    (14619239, 'Pinto',    'Lucas',   'Casado'),
+    (30987323, 'Taguada',  'Carlos',  'Soltero'),
+    (12578434, 'Borges',   'Juan',    'Soltero')
+]
     for dni, ape, nom, est in registros:
         abb.insertar(Nodo(dni, ape, nom, est))
 
     print("┊ANTES:")
     PrintTXT(abb)
 
-    matrimonios = [
-        (12985093, 14242368, '14/12/1984'),
-        (26178051, 27104856, '15/01/1974')
-    ]
+  matrimonios = [
+    (12985093, 14242368, '14/12/1984'),
+    (26178051, 27104856, '15/01/1974'),
+    (18768418, 13637531, '05/08/1960'),
+    (17455294, 14619239, '21/12/1974')
+]
     abb.actualizar_estado_civil(matrimonios)
 
     print("\n┊DESPUÉS:")
