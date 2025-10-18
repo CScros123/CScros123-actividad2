@@ -53,7 +53,7 @@ def PrintTXT(abb):
 
 if __name__ == "__main__":
     abb = ArbolBinarioBusqueda()
-  registros = [
+    registros = [
     (24876443, 'Viauche',  'Fabián',  'Soltero'),
     (14242368, 'Belo',     'Gonzalo', 'Casado'),
     (27104856, 'Aguirre',  'Andrés',  'Casado'),
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     print("┊ANTES:")
     PrintTXT(abb)
 
-  matrimonios = [
+    matrimonios = [
     (12985093, 14242368, '14/12/1984'),
     (26178051, 27104856, '15/01/1974'),
     (18768418, 13637531, '05/08/1960'),
