@@ -1,4 +1,4 @@
-diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/app/src/main/java/es/foco/next/log/InspectorLog.java Foco-Lab/app/src/main/java/es/foco/next/log/InspectorLog.java
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab-orig/app/src/main/java/es/foco/next/log/InspectorLog.java Foco-Lab/app/src/main/java/es/foco/next/log/InspectorLog.java
 --- Foco-Lab-orig/app/src/main/java/es/foco/next/log/InspectorLog.java	2026-11-18 02:03:50.530580897 +0000
 +++ Foco-Lab/app/src/main/java/es/foco/next/log/InspectorLog.java	2026-11-18 02:21:09.308119240 +0000
 @@ -134,10 +134,10 @@
@@ -14,9 +14,9 @@ diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/app/src/main/j
      // Bloqueos e intentos: salen del registro de bloqueos (cada evento es una vez; nunca suman segundos).
      Map<String,LogDatabase.InspectorRow> blocks=new LinkedHashMap<>();
      List<BlockEvent> events=db.events(fromDay);
-diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/docs/ORBITAS-2.md Foco-Lab/docs/ORBITAS-2.md
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab-orig/docs/ORBITAS-2.md Foco-Lab/docs/ORBITAS-2.md
 --- Foco-Lab-orig/docs/ORBITAS-2.md	1970-01-01 00:00:00.000000000 +0000
-+++ Foco-Lab/docs/ORBITAS-2.md	2026-11-18 02:15:16.349985575 +0000
++++ Foco-Lab/docs/ORBITAS-2.md	2026-11-18 02:49:07.860527419 +0000
 @@ -0,0 +1,74 @@
 +# Órbitas 2
 +
@@ -39,7 +39,7 @@ diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/docs/ORBITAS-2
 +
 +Reglas en `lab-core/.../core/Orbit.kt`.
 +
-+- **Rondas 1–4, calibración espacial.** Caminos de 3 a 5 luces, cada ronda más rápida (900 → 640 ms por luz; el nivel resta 15 ms por punto y añade hasta 3 luces).
++- **Rondas 1–4, calibración espacial.** Caminos de 3 a 5 luces, cada ronda un poco más rápida, con ritmo tranquilo (1150 → 1000 ms por luz; cada fase resta 25 ms y cada nivel 10 ms, nunca por debajo de 850 ms; el nivel añade hasta 3 luces).
 +- **Rondas 5–8, polaridad y doble pulso.** Sin texto nuevo sobre los nodos:
 +  - **doble anillo**: doble toque (el segundo en menos de 500 ms);
 +  - **magenta**: se toca el nodo diametralmente opuesto.
@@ -92,7 +92,7 @@ diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/docs/ORBITAS-2
 +
 +- `lab-core`: `OrbitTest` (11 pruebas: fases, velocidad, caminos sin repeticiones seguidas y reproducibles, magenta y Espejo, 6→8→10 nodos, señuelos fuera del anillo, juez de toques simples y dobles, bono de enfoque, cuadrantes tras el giro, registro, fantasma y mapa, Expansiva sin cambio de nivel). `VisualGamesTest` se actualiza al nuevo tipo de ronda.
 +- `lab`: `VisualScenesTest` comprueba que los 8 nodos son accesibles por su posición de reloj y que el tablero no expone números como texto; guarda la captura `build/screenshots/orbitas-tablero.png`.
-diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/BrainViewModel.kt Foco-Lab/lab/src/main/java/personal/qqq/braintraining/BrainViewModel.kt
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/BrainViewModel.kt Foco-Lab/lab/src/main/java/personal/qqq/braintraining/BrainViewModel.kt
 --- Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/BrainViewModel.kt	2026-11-18 02:03:56.003959262 +0000
 +++ Foco-Lab/lab/src/main/java/personal/qqq/braintraining/BrainViewModel.kt	2026-11-18 02:06:29.927961113 +0000
 @@ -28,11 +28,12 @@
@@ -164,7 +164,7 @@ diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab/src/main/j
    // Chained formats (paso 2): the board already gave its own signal and summary, so the next unit starts at once, with no panel.
    if(r.format.chained){next();return}
    feedbackEvents.tryEmit(if(ok)FeedbackCue.CORRECT else FeedbackCue.RETRY);persist()
-diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/Experience.kt Foco-Lab/lab/src/main/java/personal/qqq/braintraining/Experience.kt
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/Experience.kt Foco-Lab/lab/src/main/java/personal/qqq/braintraining/Experience.kt
 --- Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/Experience.kt	2026-11-18 02:03:56.004053709 +0000
 +++ Foco-Lab/lab/src/main/java/personal/qqq/braintraining/Experience.kt	2026-11-18 02:07:35.063890783 +0000
 @@ -91,12 +91,25 @@
@@ -210,7 +210,7 @@ diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab/src/main/j
  }
  
  /** One source drives ripple, press scale and click. */
-diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/HostSound.kt Foco-Lab/lab/src/main/java/personal/qqq/braintraining/HostSound.kt
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/HostSound.kt Foco-Lab/lab/src/main/java/personal/qqq/braintraining/HostSound.kt
 --- Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/HostSound.kt	2026-11-18 02:03:56.004083326 +0000
 +++ Foco-Lab/lab/src/main/java/personal/qqq/braintraining/HostSound.kt	2026-11-18 02:07:24.241724330 +0000
 @@ -32,6 +32,10 @@
@@ -224,7 +224,7 @@ diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab/src/main/j
   fun semitones(n: Int): Float = 2.0.pow(n / 12.0).toFloat().coerceIn(0.5f, 2.0f)
   /** Mezcla baja: base de cada efecto antes del volumen de Foco. Toque, acierto, error y cierre. */
   fun baseVolume(cue: FeedbackCue): Float = when (cue) {
-diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/OrbitBoard.kt Foco-Lab/lab/src/main/java/personal/qqq/braintraining/OrbitBoard.kt
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/OrbitBoard.kt Foco-Lab/lab/src/main/java/personal/qqq/braintraining/OrbitBoard.kt
 --- Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/OrbitBoard.kt	1970-01-01 00:00:00.000000000 +0000
 +++ Foco-Lab/lab/src/main/java/personal/qqq/braintraining/OrbitBoard.kt	2026-11-18 02:15:46.707543003 +0000
 @@ -0,0 +1,442 @@
@@ -670,7 +670,7 @@ diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab/src/main/j
 +   else "Ningún fallo por cuadrante: tu atención se reparte bien por toda la órbita.", style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
 + }
 +}
-diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/Player.kt Foco-Lab/lab/src/main/java/personal/qqq/braintraining/Player.kt
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/Player.kt Foco-Lab/lab/src/main/java/personal/qqq/braintraining/Player.kt
 --- Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/Player.kt	2026-11-18 02:03:56.004284242 +0000
 +++ Foco-Lab/lab/src/main/java/personal/qqq/braintraining/Player.kt	2026-11-18 02:10:28.477229029 +0000
 @@ -51,13 +51,16 @@
@@ -719,7 +719,7 @@ diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab/src/main/j
  /** Record (longest suitcase chain ever, this run included) and the per-round logs of the record run (the ghost). */
  internal class BoardHistory(val record:Int,val ghost:List<String>)
  @Composable internal fun rememberBoardHistory(vm:BrainViewModel,run:Run):BoardHistory{
-diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/Visuals.kt Foco-Lab/lab/src/main/java/personal/qqq/braintraining/Visuals.kt
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/Visuals.kt Foco-Lab/lab/src/main/java/personal/qqq/braintraining/Visuals.kt
 --- Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/Visuals.kt	2026-11-18 02:03:56.004455674 +0000
 +++ Foco-Lab/lab/src/main/java/personal/qqq/braintraining/Visuals.kt	2026-11-18 02:10:33.291166075 +0000
 @@ -134,17 +134,6 @@
@@ -740,7 +740,7 @@ diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab/src/main/j
  @Composable fun CompassBoard(c:Challenge){
   val opposite=c.board[1].toBoolean();val base=if(opposite)Color(0xFFB7274F)else Color(0xFF2E5BDE);val direction=c.board[0].toInt()
   Canvas(Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(28.dp)).background(base).semantics{contentDescription="Flecha hacia ${listOf("arriba","derecha","abajo","izquierda")[direction]}"}){drawCircle(Color.White.copy(alpha=.12f),size.height*.37f,center);arrow(center,size.height*.48f,direction,Color.White);ornaments(Color.White)}
-diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab/src/test/java/personal/qqq/braintraining/VisualScenesTest.kt Foco-Lab/lab/src/test/java/personal/qqq/braintraining/VisualScenesTest.kt
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab-orig/lab/src/test/java/personal/qqq/braintraining/VisualScenesTest.kt Foco-Lab/lab/src/test/java/personal/qqq/braintraining/VisualScenesTest.kt
 --- Foco-Lab-orig/lab/src/test/java/personal/qqq/braintraining/VisualScenesTest.kt	2026-11-18 02:03:56.004871561 +0000
 +++ Foco-Lab/lab/src/test/java/personal/qqq/braintraining/VisualScenesTest.kt	2026-11-18 02:13:14.175629705 +0000
 @@ -28,15 +28,16 @@
@@ -763,7 +763,7 @@ diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab/src/test/j
    capture("orbitas-tablero.png")
    compose.runOnIdle{page=1}
    compose.onNodeWithText(compass.prompt).assertIsDisplayed()
-diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Games.kt Foco-Lab/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Games.kt
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab-orig/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Games.kt Foco-Lab/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Games.kt
 --- Foco-Lab-orig/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Games.kt	2026-11-18 02:03:54.858334830 +0000
 +++ Foco-Lab/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Games.kt	2026-11-18 02:06:10.769371980 +0000
 @@ -13,7 +13,7 @@
@@ -821,10 +821,10 @@ diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab-core/src/m
    // Vigía: attacks detected over the partida, on 100, minus 5 points per false alarm.
    if(game==Vigil.ID&&details.size==Vigil.TRAMOS){
     val logs=details.mapNotNull{VigilLog.decode(it)};val targets=logs.sumOf{it.targets}
-diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Orbit.kt Foco-Lab/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Orbit.kt
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab-orig/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Orbit.kt Foco-Lab/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Orbit.kt
 --- Foco-Lab-orig/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Orbit.kt	1970-01-01 00:00:00.000000000 +0000
-+++ Foco-Lab/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Orbit.kt	2026-11-18 02:12:25.101389958 +0000
-@@ -0,0 +1,171 @@
++++ Foco-Lab/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Orbit.kt	2026-11-18 02:49:07.859713464 +0000
+@@ -0,0 +1,175 @@
 +package personal.qqq.braintraining.core
 +
 +import kotlin.random.Random
@@ -928,6 +928,8 @@ diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab-core/src/m
 + const val DOUBLE_WINDOW_MS=500L
 + const val DEBOUNCE_MS=70L
 + const val TRAIL_MS=600L
++ /** Fastest light of the demonstration: slow enough to follow and learn the path. */
++ const val MIN_STEP_MS=850L
 + const val FOCUS_BONUS=25
 + const val ROUNDS=12
 + val quadrantNames=listOf("superior derecho","inferior derecho","inferior izquierdo","superior izquierdo")
@@ -955,7 +957,9 @@ diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab-core/src/m
 +  // Path length: the phase sets the base and the level adds up to three more lights.
 +  val base=when(stage){0->listOf(3,4,4,5)[local];1->listOf(4,5,5,6)[local];else->listOf(4,5,5,6)[local]}
 +  val length=(base+(level-1)/3+(if(mode==OrbitMode.EXPAND&&round>=ROUNDS)(round/ROUNDS).coerceAtMost(3) else 0)).coerceAtMost(10)
-+  val stepMs=(listOf(900L,800L,720L,640L)[local]-stage*40L-level*15L).coerceAtLeast(420L)
++  // Calm pace (user feedback: faster paths made learning impossible): 1150 → 1000 ms per light inside a phase, each phase
++  // and level only shave a little, and it never goes below [MIN_STEP_MS].
++  val stepMs=(listOf(1150L,1100L,1050L,1000L)[local]-stage*25L-level*10L).coerceAtLeast(MIN_STEP_MS)
 +  val nodesSeq=ArrayList<Int>(length);var prev=-1
 +  repeat(length){var k:Int;do{k=r.nextInt(n)}while(k==prev);nodesSeq+=k;prev=k}
 +  val kinds=IntArray(length){SINGLE}
@@ -996,10 +1000,10 @@ diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab-core/src/m
 +  return (0..3).map{q->val ms=logs.flatMap{l->l.times.filter{it.first==q}.map{it.second}};OrbitQuadrant(ms.size,if(ms.isEmpty())null else ms.sum()/ms.size,logs.count{it.missQ==q})}
 + }
 +}
-diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab-core/src/test/kotlin/personal/qqq/braintraining/core/OrbitTest.kt Foco-Lab/lab-core/src/test/kotlin/personal/qqq/braintraining/core/OrbitTest.kt
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab-orig/lab-core/src/test/kotlin/personal/qqq/braintraining/core/OrbitTest.kt Foco-Lab/lab-core/src/test/kotlin/personal/qqq/braintraining/core/OrbitTest.kt
 --- Foco-Lab-orig/lab-core/src/test/kotlin/personal/qqq/braintraining/core/OrbitTest.kt	1970-01-01 00:00:00.000000000 +0000
-+++ Foco-Lab/lab-core/src/test/kotlin/personal/qqq/braintraining/core/OrbitTest.kt	2026-11-18 02:13:41.677979947 +0000
-@@ -0,0 +1,113 @@
++++ Foco-Lab/lab-core/src/test/kotlin/personal/qqq/braintraining/core/OrbitTest.kt	2026-11-18 02:49:07.860124554 +0000
+@@ -0,0 +1,115 @@
 +package personal.qqq.braintraining.core
 +
 +import org.junit.Assert.*
@@ -1021,7 +1025,9 @@ diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab-core/src/t
 + }
 +
 + @Test fun calibrationSpeedsUpRoundByRound(){
-+  for(level in 1..10){val ms=(0..3).map{Orbit.make(level,7,it).stepMs};assertEquals(ms.sortedDescending(),ms);assertTrue(ms.all{it>=420})}
++  for(level in 1..10){val ms=(0..3).map{Orbit.make(level,7,it).stepMs};assertEquals(ms.sortedDescending(),ms);assertTrue(ms.all{it>=Orbit.MIN_STEP_MS})}
++  assertEquals(1140L,Orbit.make(1,0,0).stepMs)
++  assertEquals(Orbit.MIN_STEP_MS,Orbit.make(10,0,11).stepMs)
 +  assertEquals(3,Orbit.make(1,0,0).steps.size)
 +  assertEquals(5,Orbit.make(1,0,3).steps.size)
 + }
@@ -1113,7 +1119,7 @@ diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab-core/src/t
 +  assertTrue(Formats.of(Orbit.ID).chained)
 + }
 +}
-diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab-core/src/test/kotlin/personal/qqq/braintraining/core/VisualGamesTest.kt Foco-Lab/lab-core/src/test/kotlin/personal/qqq/braintraining/core/VisualGamesTest.kt
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab-orig/lab-core/src/test/kotlin/personal/qqq/braintraining/core/VisualGamesTest.kt Foco-Lab/lab-core/src/test/kotlin/personal/qqq/braintraining/core/VisualGamesTest.kt
 --- Foco-Lab-orig/lab-core/src/test/kotlin/personal/qqq/braintraining/core/VisualGamesTest.kt	2026-11-18 02:03:54.858786834 +0000
 +++ Foco-Lab/lab-core/src/test/kotlin/personal/qqq/braintraining/core/VisualGamesTest.kt	2026-11-18 02:13:14.175256409 +0000
 @@ -34,16 +34,17 @@
