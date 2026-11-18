@@ -1,0 +1,1130 @@
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/docs/ORBITAS-2.md Foco-Lab/docs/ORBITAS-2.md
+--- Foco-Lab-orig/docs/ORBITAS-2.md	1970-01-01 00:00:00.000000000 +0000
++++ Foco-Lab/docs/ORBITAS-2.md	2026-11-18 02:15:16.349985575 +0000
+@@ -0,0 +1,74 @@
++# Órbitas 2
++
++Rediseño de Órbitas (🧠 Mente, id `orbit`). El juego sigue retirado de menús, planes y misiones (Fase 3: `route` lo sustituye y hereda su nivel), pero todavía se abre desde «Algo nuevo por descubrir» en el Inicio de Lab. Este cambio mejora ese juego sin tocar la migración.
++
++## Qué cambia en pantalla
++
++| Antes | Ahora |
++|---|---|
++| Nodos numerados del 1 al 8 | Nodos geométricos sin números (núcleo oscuro y anillo). Se recuerdan lugares, no cifras |
++| Progreso repetido tres veces: «RONDA 1 / 12», 12 círculos bajo el tablero y «0 aciertos de 0» | Una sola barra de 12 bloques arriba: esmeralda si aciertas, coral si fallas, el bloque actual late |
++| «Observa» arriba a la derecha y en el centro | Solo en el núcleo, dentro de un anillo de tiempo: cian→ámbar al observar, «GIRA» en ámbar, verde con «TU TURNO · 2 de 5» y coral cuando queda poco |
++| El nodo se enciende aislado | Un cometa viaja por la órbita desde el nodo anterior y deja una estela que se apaga en 0,6 s |
++| Barra «Fantasma del récord» abajo, donde descansan los pulgares | Línea fina de puntos con una marca dorada (el fantasma) dentro del bloque de progreso; el texto «Fantasma: +25» va a la derecha de la ronda |
++| Panel «Solución paso a paso» y botón «Siguiente ronda» entre rondas | El núcleo da el veredicto («BIEN +125 · enfoque» o «FALLO · era doble toque») y marca con un anillo discontinuo el nodo que tocaba. La ronda siguiente empieza sola (formato encadenado) |
++
++La mitad inferior de la pantalla queda libre.
++
++## Mecánica: 12 rondas en tres fases
++
++Reglas en `lab-core/.../core/Orbit.kt`.
++
++- **Rondas 1–4, calibración espacial.** Caminos de 3 a 5 luces, cada ronda más rápida (900 → 640 ms por luz; el nivel resta 15 ms por punto y añade hasta 3 luces).
++- **Rondas 5–8, polaridad y doble pulso.** Sin texto nuevo sobre los nodos:
++  - **doble anillo**: doble toque (el segundo en menos de 500 ms);
++  - **magenta**: se toca el nodo diametralmente opuesto.
++- **Rondas 9–12, rotación orbital.** Terminado el camino, la órbita gira 1 o 2 posiciones (45° o 90° con 8 nodos) en un sentido al azar. Los nodos conservan su identidad, así que el patrón hay que rotarlo mentalmente.
++- **Destellos señuelo.** Desde la ronda 7 (dos desde la 10) aparece un destello ámbar fuera de la órbita durante la demostración. Si no lo tocas y aciertas, la ronda vale un 25 % más (bono de enfoque).
++
++Puntos por ronda acertada: 100 en la fase 1, 125 en la 2 y 150 en la 3, más el bono. El nivel se sigue calculando con aciertos, como antes; los puntos alimentan el fantasma y el resumen.
++
++## Modos
++
++Se eligen en la pantalla de inicio de la partida y se recuerdan (preferencia `orbit:mode`).
++
++- **Clásico**: las 12 rondas de arriba.
++- **Espejo**: el mismo camino, pero se repite del último nodo al primero.
++- **Órbita expansiva**: supervivencia; el tablero tiene 6 nodos en las rondas 1–4, 8 en las 5–8 y 10 en las 9–12. El primer fallo termina la partida (las rondas no jugadas se guardan como `survival`) y **no cambia el nivel** (`Formats.measure` devuelve 0 de 0).
++
++El fantasma compara solo con partidas del mismo modo.
++
++## Sonido
++
++Cada posición de la órbita tiene su nota de una pentatónica mayor (do, re, mi, sol, la en dos octavas, `GameTones.note`). Suena al encenderse el nodo y al tocarlo; al completar el camino sin errores suenan juntas como acorde (tres voces como máximo, el límite de `SoundPool`). Respeta «sin sonido», el volumen de efectos de Foco, No molestar y el modo silencio.
++
++## Resumen final: mapa de atención
++
++En el resultado aparece la órbita dividida en cuatro cuadrantes (superior derecho, inferior derecho, inferior izquierdo y superior izquierdo, ya girados), cada uno con su tiempo medio de reacción y sus fallos, coloreados de cian (rápido y preciso) a coral (lento o con fallos). Debajo hay una frase con el cuadrante más lento, el más rápido y el que acumula más fallos.
++
++## Accesibilidad y animaciones
++
++- Sin números en pantalla, pero cada nodo tiene un objetivo invisible para TalkBack con su posición de reloj («Nodo a las 3»), que también se puede activar.
++- Con las animaciones desactivadas no hay cometa ni estela y el giro es instantáneo; las luces y el giro siguen ocurriendo porque son el juego.
++- El reloj del tablero solo avanza mientras hay fotogramas (máximo 50 ms por fotograma), así que salir de la app no consume tiempo de respuesta.
++
++## Registro por ronda (`OrbitLog`)
++
++`ok=…;mode=classic|mirror|expand;stage=…;nodes=…;len=…;error=0|1|2|3;focus=…;points=…;rt=q:ms,…;miss=q`
++
++`error`: 0 ninguno, 1 nodo equivocado, 2 faltó el doble toque, 3 sin tiempo. Las partidas guardadas antes de este cambio no tienen registro: siguen en el historial, pero no sirven de fantasma ni de mapa.
++
++## Archivos
++
++- `lab-core/.../core/Orbit.kt`: reglas, fases, modos, juez de toques (`OrbitInput`), registro, puntos y mapa de atención.
++- `lab-core/.../core/Games.kt`: `Kind.ORBIT`, `Challenge.orbit`, formato encadenado y `measure` para Expansiva.
++- `lab/.../OrbitBoard.kt`: tablero (Canvas), barra única, selector de modo y mapa de atención.
++- `lab/.../Player.kt`: usa la barra única, el selector y el mapa solo para Órbitas.
++- `lab/.../BrainViewModel.kt`: `Run.variant` (modo, guardado en el borrador), `chooseOrbitMode` y fin anticipado de Expansiva.
++- `lab/.../Experience.kt`, `HostSound.kt`: notas por posición (`LocalNote`).
++- `lab/.../Visuals.kt`: se elimina el tablero numerado.
++
++## Pruebas
++
++- `lab-core`: `OrbitTest` (11 pruebas: fases, velocidad, caminos sin repeticiones seguidas y reproducibles, magenta y Espejo, 6→8→10 nodos, señuelos fuera del anillo, juez de toques simples y dobles, bono de enfoque, cuadrantes tras el giro, registro, fantasma y mapa, Expansiva sin cambio de nivel). `VisualGamesTest` se actualiza al nuevo tipo de ronda.
++- `lab`: `VisualScenesTest` comprueba que los 8 nodos son accesibles por su posición de reloj y que el tablero no expone números como texto; guarda la captura `build/screenshots/orbitas-tablero.png`.
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/BrainViewModel.kt Foco-Lab/lab/src/main/java/personal/qqq/braintraining/BrainViewModel.kt
+--- Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/BrainViewModel.kt	2026-11-18 02:03:56.003959262 +0000
++++ Foco-Lab/lab/src/main/java/personal/qqq/braintraining/BrainViewModel.kt	2026-11-18 02:06:29.927961113 +0000
+@@ -28,11 +28,12 @@
+  fun mark()=item?.let{RoundMark(it,format,correct)}
+ }
+ /** [history] holds the rounds played before this one (pilot games only), fixed when the round starts so the challenge does not change during feedback. */
+-data class Run(val id:String,val game:String,val level:Int,val seed:Long,val index:Int=0,val nonce:Int=0,val phase:Phase=Phase.INTRO,val outcomes:List<Outcome> = emptyList(),val picked:List<Int> = emptyList(),val remaining:List<String> = emptyList(),val history:List<RoundMark> = emptyList()){
+- val challenge by lazy { Rounds.make(game,level,seed+index*10007L+nonce*999983L,history,index) }
++data class Run(val id:String,val game:String,val level:Int,val seed:Long,val index:Int=0,val nonce:Int=0,val phase:Phase=Phase.INTRO,val outcomes:List<Outcome> = emptyList(),val picked:List<Int> = emptyList(),val remaining:List<String> = emptyList(),val history:List<RoundMark> = emptyList(),val variant:String=""){
++ /** [variant]: the mode chosen on the intro screen (Órbitas 2: "" clásico, "mirror" Espejo, "expand" Órbita expansiva). */
++ val challenge by lazy { if(game==Orbit.ID)Orbit.challenge(level,seed+index*10007L+nonce*999983L,index,OrbitMode.of(variant)) else Rounds.make(game,level,seed+index*10007L+nonce*999983L,history,index) }
+  /** Paso 2: how many units this partida has and whether they are chained (see [GameFormat]). */
+  val format get()=Formats.of(game)
+- fun json()=JSONObject().put("id",id).put("game",game).put("level",level).put("seed",seed).put("index",index).put("nonce",nonce).put("outcomes",JSONArray().apply{outcomes.forEach{put(it.json())}}).put("remaining",JSONArray(remaining)).toString()
++ fun json()=JSONObject().put("id",id).put("game",game).put("level",level).put("seed",seed).put("index",index).put("nonce",nonce).put("outcomes",JSONArray().apply{outcomes.forEach{put(it.json())}}).put("remaining",JSONArray(remaining)).apply{if(variant.isNotEmpty())put("variant",variant)}.toString()
+ }
+ const val ARCADE_HISTORY=30
+ class BrainViewModel(app:Application):AndroidViewModel(app){
+@@ -77,7 +78,7 @@
+    // A partida paused before its game changed format (12 waves, now 5) can be neither continued nor saved: it is dropped.
+    if(outcomes.size>units){writes.withLock{store.dao.deleteDraft()};return@let}
+    val phase=if(outcomes.size>=units)Phase.SAVING else Phase.PAUSED
+-   run=Run(o.getString("id"),o.getString("game"),o.getInt("level"),o.getLong("seed"),outcomes.size,o.optInt("nonce")+1,phase,outcomes,remaining=(0 until rem.length()).map{rem.getString(it)},history=outcomes.mapNotNull{it.mark()})
++   run=Run(o.getString("id"),o.getString("game"),o.getInt("level"),o.getLong("seed"),outcomes.size,o.optInt("nonce")+1,phase,outcomes,remaining=(0 until rem.length()).map{rem.getString(it)},history=outcomes.mapNotNull{it.mark()},variant=o.optString("variant",""))
+    if(phase==Phase.SAVING)finish()
+   }
+   syncChest()
+@@ -88,8 +89,12 @@
+   if(!ready||run!=null)return
+   result=null;answerStart=null;activeStart=null;saveFailed=false;endless=endlessMode;endlessRound=0;mistakes=emptyList();clearNews();againInRow=0
+   if(planSize==0)planSize=remaining.size+1
+-  run=Run(UUID.randomUUID().toString(),game,level(game),System.nanoTime(),remaining=remaining)
++  run=Run(UUID.randomUUID().toString(),game,level(game),System.nanoTime(),remaining=remaining,variant=if(game==Orbit.ID)orbitMode.key else "")
+  }
++ /** Órbitas 2: the last mode chosen (pref "orbit:mode"); a guided plan or a mission always plays it in that mode. */
++ val orbitMode get()=OrbitMode.of(preferences.value.firstOrNull{it.key=="orbit:mode"}?.value)
++ /** Mode picked on the intro screen of Órbitas, before "Empezar". */
++ fun chooseOrbitMode(mode:OrbitMode){val r=run?:return;if(r.game!=Orbit.ID||r.phase!=Phase.INTRO)return;run=r.copy(variant=mode.key);pref("orbit:mode",mode.key)}
+  /** Size of the current guided plan (1 for a single exercise). */
+  var planSize by mutableIntStateOf(0);private set
+  /** The previous result of the game just finished, for "better than last time". */
+@@ -212,8 +217,8 @@
+   * Fase 2 boards (La maleta, Vigía): the board plays the whole round itself (its own clock, observe and recall phases)
+   * and reports the verdict computed by the core rules plus its [detail] log.
+   */
+- fun boardDone(ok:Boolean,detail:String){val r=run?:return;if(r.phase!=Phase.ANSWER||answerStart==null)return
+-  run=r.copy(picked=emptyList());score(ok,if(ok)"ok" else "wrong",detail=detail)
++ fun boardDone(ok:Boolean,detail:String,stop:Boolean=false){val r=run?:return;if(r.phase!=Phase.ANSWER||answerStart==null)return
++  run=r.copy(picked=emptyList());score(ok,if(ok)"ok" else "wrong",detail=detail,stop=stop)
+  }
+  /** Logs of the board rounds already played in this run (for the announced in-game tuning and the record). */
+  fun boardLogs(r:Run=run!!)=r.outcomes.map{it.detail}
+@@ -227,14 +232,16 @@
+  }
+  fun checkGrid(){val r=run?:return;if(r.phase!=Phase.ANSWER||answerStart==null)return;if(!untimed(r.game)&&SystemClock.elapsedRealtime()-answerStart!!>=r.challenge.deadlineMs){timeout();return};val ok=r.picked.toSet()==r.challenge.targets.toSet();score(ok,if(ok)"ok" else "wrong")}
+  fun timeout(){if(run?.phase==Phase.ANSWER&&answerStart!=null&&!untimed(run!!.game))score(false,"timeout",null)}
+- private fun score(ok:Boolean,reason:String,time:Long?=answerStart?.let{SystemClock.elapsedRealtime()-it},detail:String=""){
++ /** [stop] (Órbita expansiva): the partida ends here; the rounds not played are saved as "survival" so it can be finished. */
++ private fun score(ok:Boolean,reason:String,time:Long?=answerStart?.let{SystemClock.elapsedRealtime()-it},detail:String="",stop:Boolean=false){
+   val r=run?:return;if(r.phase !in listOf(Phase.ANSWER,Phase.WAIT))return
+   val c=r.challenge;val pilot=r.game in Pilot.ids
+   val now=SystemClock.elapsedRealtime();val o=Outcome(ok,if(ok&&!untimed(r.game))time else null,(now-(activeStart?:now)).coerceIn(0,MAX_ROUND_ACTIVE_MS),System.currentTimeMillis(),reason,time?.coerceIn(0,MAX_ROUND_ACTIVE_MS),if(untimed(r.game))"untimed" else "timed",if(pilot)c.item else null,if(pilot)c.format else -1,detail)
+   if(!ok&&!endless&&Games.get(r.game).area==Area.NETSEC&&c.explanation !in mistakes)mistakes=mistakes+c.explanation
+   if(ok&&Games.get(r.game).area==Area.NETSEC)unlockCard(r.game,c.explanation)
+   if(detail.isNotEmpty())unlockBoardCards(r.game,detail)
+-  answerStart=null;activeStart=null;run=r.copy(phase=Phase.FEEDBACK,outcomes=r.outcomes+o)
++  val rest=if(stop&&!endless)List((r.format.units-r.outcomes.size-1).coerceAtLeast(0)){Outcome(false,null,0,o.ended,"survival",null,o.mode)} else emptyList()
++  answerStart=null;activeStart=null;run=r.copy(phase=Phase.FEEDBACK,outcomes=r.outcomes+o+rest)
+   // Chained formats (paso 2): the board already gave its own signal and summary, so the next unit starts at once, with no panel.
+   if(r.format.chained){next();return}
+   feedbackEvents.tryEmit(if(ok)FeedbackCue.CORRECT else FeedbackCue.RETRY);persist()
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/Experience.kt Foco-Lab/lab/src/main/java/personal/qqq/braintraining/Experience.kt
+--- Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/Experience.kt	2026-11-18 02:03:56.004053709 +0000
++++ Foco-Lab/lab/src/main/java/personal/qqq/braintraining/Experience.kt	2026-11-18 02:07:35.063890783 +0000
+@@ -91,12 +91,25 @@
+    if (cue == FeedbackCue.ALARM) view.postDelayed({ pool?.play(id, volume, volume, 1, 0, GameTones.ALARM_LOW) }, 150)
+   }
+  }
++ /** Órbitas 2: the note of orbit position [position] (pentatonic, see [GameTones.note]); no haptics, same silence rules as [play]. */
++ fun note(position: Int, sound: Boolean, soft: Boolean = false) {
++  if (!sound || !view.isShown || !view.hasWindowFocus() || HostSound.silent(host)) return
++  val quiet = notifications?.currentInterruptionFilter?.let {
++   it != NotificationManager.INTERRUPTION_FILTER_ALL && it != NotificationManager.INTERRUPTION_FILTER_UNKNOWN
++  } ?: false
++  val id = samples[FeedbackCue.CORRECT] ?: return // the short chime: a clean pitch to transpose
++  val volume = GameTones.NOTE_VOLUME * (if (soft) .7f else 1f) * HostSound.effects(host)
++  if (quiet || volume <= 0f || audio?.ringerMode != AudioManager.RINGER_MODE_NORMAL || id !in loaded) return
++  pool?.play(id, volume, volume, 1, 0, GameTones.note(position))?.let { streams.add(it); if (streams.size > 8) streams.removeAt(0) }
++ }
+  fun stop() { streams.forEach { pool?.stop(it) }; streams.clear() }
+  fun release() { stop(); pool?.release(); loaded.clear() }
+ }
+ 
+ val LocalMotionEnabled = staticCompositionLocalOf { true }
+ val LocalFeedback = staticCompositionLocalOf<(FeedbackCue) -> Unit> { {} }
++/** Órbitas 2: plays the note of an orbit position (index, soft). */
++val LocalNote = staticCompositionLocalOf<(Int, Boolean) -> Unit> { { _, _ -> } }
+ 
+ @Composable fun ExperienceHost(vm: BrainViewModel, content: @Composable () -> Unit) {
+  val prefs by vm.preferences.collectAsStateWithLifecycle()
+@@ -107,6 +120,7 @@
+  val context = LocalContext.current; val view = LocalView.current; val owner = LocalLifecycleOwner.current
+  val feedback = remember(context, view) { ExperienceFeedback(context, view) }
+  val play by rememberUpdatedState<(FeedbackCue) -> Unit>({ feedback.play(it, sound, haptics) })
++ val note by rememberUpdatedState<(Int, Boolean) -> Unit>({ position, soft -> feedback.note(position, sound, soft) })
+  DisposableEffect(feedback, owner) {
+   val observer = LifecycleEventObserver { _, event ->
+    if (event == Lifecycle.Event.ON_STOP) feedback.stop()
+@@ -118,7 +132,7 @@
+  LaunchedEffect(vm, owner) {
+   owner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { vm.feedback.collect { play(it) } }
+  }
+- CompositionLocalProvider(LocalMotionEnabled provides motion, LocalFeedback provides { play(it) }, content = content)
++ CompositionLocalProvider(LocalMotionEnabled provides motion, LocalFeedback provides { play(it) }, LocalNote provides { p, soft -> note(p, soft) }, content = content)
+ }
+ 
+ /** One source drives ripple, press scale and click. */
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/HostSound.kt Foco-Lab/lab/src/main/java/personal/qqq/braintraining/HostSound.kt
+--- Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/HostSound.kt	2026-11-18 02:03:56.004083326 +0000
++++ Foco-Lab/lab/src/main/java/personal/qqq/braintraining/HostSound.kt	2026-11-18 02:07:24.241724330 +0000
+@@ -32,6 +32,10 @@
+  fun correctRate(streak: Int): Float = semitones(STEPS[(streak.coerceAtLeast(1) - 1).coerceAtMost(STEPS.size - 1)])
+  /** Error: un tono entero por debajo, sin brusquedad. */
+  const val RETRY_RATE = 0.89f
++ /** Órbitas 2: one note per orbit position, pentatónica mayor (do, re, mi, sol, la) en dos octavas, dentro de 0,5–2,0. */
++ private val NOTES = intArrayOf(-9, -7, -5, -3, 0, 2, 4, 7, 9, 12)
++ fun note(position: Int): Float = semitones(NOTES[((position % NOTES.size) + NOTES.size) % NOTES.size])
++ const val NOTE_VOLUME = .30f
+  fun semitones(n: Int): Float = 2.0.pow(n / 12.0).toFloat().coerceIn(0.5f, 2.0f)
+  /** Mezcla baja: base de cada efecto antes del volumen de Foco. Toque, acierto, error y cierre. */
+  fun baseVolume(cue: FeedbackCue): Float = when (cue) {
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/OrbitBoard.kt Foco-Lab/lab/src/main/java/personal/qqq/braintraining/OrbitBoard.kt
+--- Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/OrbitBoard.kt	1970-01-01 00:00:00.000000000 +0000
++++ Foco-Lab/lab/src/main/java/personal/qqq/braintraining/OrbitBoard.kt	2026-11-18 02:15:46.707543003 +0000
+@@ -0,0 +1,442 @@
++package personal.qqq.braintraining
++
++import androidx.compose.animation.core.*
++import androidx.compose.foundation.Canvas
++import androidx.compose.foundation.background
++import androidx.compose.foundation.border
++import androidx.compose.foundation.gestures.awaitEachGesture
++import androidx.compose.foundation.gestures.awaitFirstDown
++import androidx.compose.foundation.layout.*
++import androidx.compose.foundation.selection.selectable
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.material3.*
++import androidx.compose.runtime.*
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.draw.clip
++import androidx.compose.ui.geometry.Offset
++import androidx.compose.ui.geometry.Size
++import androidx.compose.ui.graphics.*
++import androidx.compose.ui.graphics.drawscope.DrawScope
++import androidx.compose.ui.graphics.drawscope.Stroke
++import androidx.compose.ui.input.pointer.pointerInput
++import androidx.compose.ui.semantics.Role
++import androidx.compose.ui.semantics.contentDescription
++import androidx.compose.ui.semantics.onClick
++import androidx.compose.ui.semantics.role
++import androidx.compose.ui.semantics.semantics
++import androidx.compose.ui.text.TextStyle
++import androidx.compose.ui.text.drawText
++import androidx.compose.ui.text.font.FontWeight
++import androidx.compose.ui.text.rememberTextMeasurer
++import androidx.compose.ui.text.style.TextAlign
++import androidx.compose.ui.unit.dp
++import kotlinx.coroutines.isActive
++import personal.qqq.braintraining.core.*
++import personal.qqq.braintraining.data.ResultRow
++import java.util.Locale
++import kotlin.math.*
++
++/* Órbitas 2 (docs/ORBITAS-2.md). One Canvas draws the orbit; the board plays the whole round (demonstration, turn, answer and
++ * verdict) on its own clock, which only advances while frames arrive, and reports the verdict and its log like the other
++ * board games. Nodes carry no numbers: the player remembers places. With animations off the comet, its trail and the smooth
++ * turn are skipped (the lights and the turn still happen, they are the game). Rules: lab-core/Orbit.kt. */
++
++private val Deck = Color(0xFF0E1329)
++private val DeckGlow = Color(0xFF151B3D)
++private val DeckEdge = Color(0xFF283066)
++private val NodeFill = Color(0xFF161A36)
++private val NodeRing = Color(0xFF4A4B88)
++private val CoreFill = Color(0xFF0A0D1F)
++private val OrbitInk = Color(0xFFEEF0FF)
++private val OrbitMute = Color(0xFF8B91C0)
++internal val OrbitCyan = Color(0xFF5CF0E6)
++internal val OrbitAmber = Color(0xFFFFB547)
++internal val OrbitEmerald = Color(0xFF2FCB7E)
++internal val OrbitCoral = Color(0xFFFF6B6B)
++private val OrbitMagenta = Color(0xFFFF4FD2)
++
++private const val INTRO_MS = 700L
++private const val TURN_MS = 1350L
++private const val VERDICT_OK_MS = 1150L
++private const val VERDICT_FAIL_MS = 1500L
++private const val DECOY_LIFE_MS = 420L
++
++private object OrbitPhase { const val INTRO = 0; const val SHOW = 1; const val TURN = 2; const val ANSWER = 3; const val VERDICT = 4; const val REPORTED = 5 }
++
++@Stable private class OrbitWorld(val task: OrbitTask) {
++ val n = task.nodes
++ val input = OrbitInput(task)
++ val travel = task.stepMs * 42 / 100
++ val lightDur = task.stepMs * 52 / 100
++ /** Board clock in ms: advances by the frame delta (at most 50 ms), so it stops while the screen is not drawn. */
++ var clock = 0L
++ var phase by mutableIntStateOf(OrbitPhase.INTRO)
++ var phaseAt = 0L
++ /** Positions turned so far (0 → [OrbitTask.turn] during the turn). */
++ var rot = 0f
++ val trailA = FloatArray(TRAIL); val trailT = LongArray(TRAIL); var trailHead = 0; var trailSize = 0
++ var lastA = Float.NaN
++ val flashAt = LongArray(n) { -10_000L }; val flashColor = Array(n) { OrbitEmerald }; val flashDur = LongArray(n) { 450L }
++ val fired = BooleanArray(task.steps.size * 2)
++ var decoyHit = false; var decoyHitAt = -10_000L; var decoyX = 0f; var decoyY = 0f
++ var lastTapAt = 0L; var halfRt = 0L
++ val times = ArrayList<Pair<Int, Long>>()
++ var ok = false; var focus = false; var points = 0; var reveal = -1
++ var step by mutableIntStateOf(0)
++ var frame by mutableLongStateOf(0L)
++ val stars = List(60) { i -> val r = kotlin.random.Random(task.seed + i); floatArrayOf(r.nextFloat(), r.nextFloat(), .6f + r.nextFloat() * 1.4f, r.nextFloat() * 6.28f) }
++ fun elapsed() = clock - phaseAt
++ fun go(p: Int) { phase = p; phaseAt = clock }
++ fun flash(k: Int, color: Color, ms: Long = 450L) { flashAt[k] = clock; flashColor[k] = color; flashDur[k] = ms }
++ /** Screen angle (radians) of node [k] after turning [rot] positions; 0 is the top. */
++ fun angle(k: Int) = (-PI / 2 + (k + rot) * 2 * PI / n).toFloat()
++ /** Comet angle during the demonstration, or NaN between paths. */
++ fun comet(e: Long): Float {
++  val i = (e / task.stepMs).toInt(); if (i < 0 || i >= task.steps.size) return Float.NaN
++  val local = e - i * task.stepMs
++  val to = angle(task.steps[i].node)
++  val from = if (i == 0) to - 1.6f * (2 * PI / n).toFloat() else angle(task.steps[i - 1].node)
++  var d = (to - from) % (2 * PI).toFloat(); if (d > PI) d -= (2 * PI).toFloat(); if (d < -PI) d += (2 * PI).toFloat()
++  return from + d * ease((local.toFloat() / travel).coerceIn(0f, 1f))
++ }
++ fun pushTrail(a: Float) {
++  if (a.isNaN()) { lastA = Float.NaN; return }
++  if (!lastA.isNaN()) {
++   var d = (a - lastA) % (2 * PI).toFloat(); if (d > PI) d -= (2 * PI).toFloat(); if (d < -PI) d += (2 * PI).toFloat()
++   val parts = min(60, ceil(abs(d) / .012f).toInt())
++   for (s in 1 until parts) add(lastA + d * s / parts)
++  }
++  add(a); lastA = a
++ }
++ private fun add(a: Float) { trailA[trailHead] = a; trailT[trailHead] = clock; trailHead = (trailHead + 1) % TRAIL; trailSize = min(TRAIL, trailSize + 1) }
++ /** Light (0..1) of node [k] during the demonstration, its colour and whether it shows the double ring. */
++ fun light(k: Int, e: Long): Triple<Float, Color, Boolean> {
++  var best = 0f; var color = OrbitEmerald; var double = false
++  task.steps.forEachIndexed { i, s ->
++   if (s.node != k) return@forEachIndexed
++   val on = i * task.stepMs + travel
++   val l = if (s.kind == Orbit.DOUBLE) max(bump(e, on, lightDur * 45 / 100), bump(e, on + lightDur * 55 / 100, lightDur * 45 / 100)) else bump(e, on, lightDur)
++   if (l > best) { best = l; color = if (s.kind == Orbit.INVERSE) OrbitMagenta else OrbitEmerald; double = s.kind == Orbit.DOUBLE }
++  }
++  return Triple(best, color, double)
++ }
++ companion object { const val TRAIL = 256 }
++}
++private fun ease(t: Float) = if (t < .5f) 4 * t * t * t else 1 - (-2 * t + 2).pow(3) / 2
++private fun bump(t: Long, start: Long, dur: Long): Float { val u = (t - start).toFloat() / dur; return if (u < 0f || u > 1f) 0f else sin(PI.toFloat() * u) }
++
++/**
++ * Plays one round of Órbitas 2. [done] gets the verdict, the encoded [OrbitLog] and whether the partida stops here
++ * (Órbita expansiva after a miss).
++ */
++@Composable internal fun OrbitBoard(task: OrbitTask, answering: Boolean, done: (Boolean, String, Boolean) -> Unit) {
++ val motion = LocalMotionEnabled.current; val cue = LocalFeedback.current; val note = LocalNote.current
++ val world = remember(task) { OrbitWorld(task) }
++ val report by rememberUpdatedState(done)
++ val measurer = rememberTextMeasurer()
++
++ fun startAnswer() { world.go(OrbitPhase.ANSWER); world.lastTapAt = world.clock }
++ fun succeed() {
++  world.ok = true; world.focus = task.decoys.isNotEmpty() && !world.decoyHit
++  world.points = Orbit.points(task, true, world.focus)
++  // The whole path sounds together as a chord (three voices at most: the sound pool has three streams).
++  task.expected.distinct().sorted().take(3).forEach { note(it, true) }
++  world.go(OrbitPhase.VERDICT)
++ }
++ fun fail(tapped: Int) {
++  world.ok = false; world.reveal = world.input.missed
++  if (tapped >= 0 && tapped != world.reveal) world.flash(tapped, OrbitCoral, 600L)
++  cue(FeedbackCue.RETRY); world.go(OrbitPhase.VERDICT)
++ }
++ fun update() {
++  val e = world.elapsed()
++  when (world.phase) {
++   OrbitPhase.INTRO -> if (e >= INTRO_MS) world.go(OrbitPhase.SHOW)
++   OrbitPhase.SHOW -> {
++    task.steps.forEachIndexed { i, s ->
++     val on = i * task.stepMs + world.travel
++     if (e >= on && !world.fired[2 * i]) { world.fired[2 * i] = true; note(s.node, false) }
++     if (s.kind == Orbit.DOUBLE && e >= on + world.lightDur * 55 / 100 && !world.fired[2 * i + 1]) { world.fired[2 * i + 1] = true; note(s.node, true) }
++    }
++    if (motion) world.pushTrail(world.comet(e))
++    if (e >= task.showMs) { world.pushTrail(Float.NaN); if (task.turn != 0) { world.go(OrbitPhase.TURN); cue(FeedbackCue.WHOOSH) } else startAnswer() }
++   }
++   OrbitPhase.TURN -> {
++    val p = ((e - 200f) / (TURN_MS - 400f)).coerceIn(0f, 1f)
++    world.rot = task.turn * if (motion) ease(p) else if (e >= 200) 1f else 0f
++    if (e >= TURN_MS) { world.rot = task.turn.toFloat(); startAnswer() }
++   }
++   OrbitPhase.ANSWER -> if (world.input.tick(world.clock, world.phaseAt) != null) fail(-1)
++   OrbitPhase.VERDICT -> if (e >= if (world.ok) VERDICT_OK_MS else VERDICT_FAIL_MS) {
++    world.go(OrbitPhase.REPORTED)
++    val missQ = if (world.ok || world.reveal < 0) -1 else Orbit.quadrant(world.reveal, task.nodes, task.turn)
++    val log = OrbitLog(world.ok, task.mode.key, task.stage, task.nodes, task.steps.size, world.input.error, world.focus, world.points, world.times.toList(), missQ)
++    report(world.ok, log.encode(), !world.ok && task.mode == OrbitMode.EXPAND)
++   }
++  }
++ }
++ fun tapNode(best: Int) {
++  if (world.phase != OrbitPhase.ANSWER) return
++    val wasPending = world.input.pending >= 0
++    when (world.input.tap(best, world.clock)) {
++     OrbitTap.HALF -> { world.halfRt = world.clock - world.lastTapAt; world.lastTapAt = world.clock; note(best, false); world.flash(best, OrbitCyan, 300L) }
++     OrbitTap.STEP, OrbitTap.DONE -> {
++      val rt = if (wasPending) world.halfRt else world.clock - world.lastTapAt
++      world.lastTapAt = world.clock
++      world.times += Orbit.quadrant(best, task.nodes, task.turn) to rt
++      note(best, wasPending); world.flash(best, OrbitEmerald); world.step = world.input.index
++      if (world.input.finished) succeed()
++     }
++     OrbitTap.WRONG -> fail(best)
++     OrbitTap.IGNORED -> Unit
++    }
++ }
++
++ fun tap(x: Float, y: Float, w: Float, h: Float) {
++  val s = min(w, h); val cx = w / 2; val cy = h / 2
++  when (world.phase) {
++   OrbitPhase.SHOW -> {
++    val e = world.elapsed()
++    for (d in task.decoys) {
++     val age = e - d.atMs
++     if (age in -50L..DECOY_LIFE_MS + 350L && hypot(x - (cx - s / 2 + d.x * s), y - (cy - s / 2 + d.y * s)) < s * .09f) {
++      world.decoyHit = true; world.decoyHitAt = world.clock; world.decoyX = d.x; world.decoyY = d.y; cue(FeedbackCue.TAP)
++     }
++    }
++   }
++   OrbitPhase.ANSWER -> {
++    val r = s * .36f; val nr = s * if (task.nodes >= 10) .066f else .074f
++    var best = -1; var bd = Float.MAX_VALUE
++    for (k in 0 until task.nodes) { val a = world.angle(k); val d = hypot(x - (cx + cos(a) * r), y - (cy + sin(a) * r)); if (d < bd) { bd = d; best = k } }
++    if (best >= 0 && bd <= nr * 1.45f) tapNode(best)
++   }
++  }
++ }
++ LaunchedEffect(world, answering) {
++  if (!answering) return@LaunchedEffect
++  var last = -1L
++  while (isActive && world.phase != OrbitPhase.REPORTED) {
++   withFrameNanos { t ->
++    world.clock += if (last < 0) 0L else ((t - last) / 1_000_000L).coerceIn(0L, 50L); last = t
++    update(); world.frame = t
++   }
++  }
++ }
++
++ val mirror = task.mode == OrbitMode.MIRROR
++ Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
++  Label("Fase ${task.stage + 1} · ${Orbit.stageNames[task.stage]}" + if (task.mode == OrbitMode.EXPAND) " · ${task.nodes} nodos" else "", MaterialTheme.colorScheme.primary)
++  Text(if (mirror && task.stage == 0) "Recuerda el camino y repítelo al revés" else Orbit.stageTitles[task.stage], style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).wrapContentHeight(Alignment.CenterVertically))
++ }
++ val description = when (world.phase) {
++  OrbitPhase.INTRO, OrbitPhase.SHOW -> "Órbita de ${task.nodes} nodos. Observa el camino de luz."
++  OrbitPhase.TURN -> "La órbita está girando."
++  OrbitPhase.ANSWER -> "Tu turno: paso ${world.step + 1} de ${task.expected.size}."
++  else -> if (world.ok) "Bien: más ${world.points} puntos." else "Fallo: ${Orbit.errorText(world.input.error)}."
++ }
++ BoxWithConstraints(Modifier.fillMaxWidth().aspectRatio(1f)) {
++ Canvas(Modifier.fillMaxSize().clip(RoundedCornerShape(28.dp)).border(1.dp, DeckEdge, RoundedCornerShape(28.dp))
++  .semantics { contentDescription = description }
++  .pointerInput(world) { awaitEachGesture { val down = awaitFirstDown(requireUnconsumed = false); tap(down.position.x, down.position.y, size.width.toFloat(), size.height.toFloat()) } }) {
++  world.frame // redraw on every frame of the board clock
++  drawOrbit(world, motion) { text, color, px, at, bold ->
++   val layout = measurer.measure(text, TextStyle(color = color, fontSize = px.toSp(), fontWeight = if (bold) FontWeight.Bold else FontWeight.SemiBold, letterSpacing = if (bold) (px * .04f).toSp() else 0f.toSp()))
++   drawText(layout, topLeft = Offset(at.x - layout.size.width / 2f, at.y - layout.size.height / 2f))
++  }
++ }
++ // Screen readers: one invisible target per node, named by its clock position (no numbers on screen, none read aloud).
++ val side = min(maxWidth.value, maxHeight.value).dp; val node = side * (if (task.nodes >= 10) .132f else .148f)
++ val turned = if (world.phase >= OrbitPhase.ANSWER) task.turn else 0
++ for (k in 0 until task.nodes) {
++  val deg = Orbit.angle(k, task.nodes, turned); val a = Math.toRadians(deg - 90.0)
++  Box(Modifier.offset(side / 2 + side * .36f * cos(a).toFloat() - node / 2, side / 2 + side * .36f * sin(a).toFloat() - node / 2).size(node)
++   .semantics { contentDescription = "Nodo a las ${Orbit.clock(deg)}"; role = Role.Button; onClick { tapNode(k); true } })
++ }
++ }
++}
++
++private fun DrawScope.drawOrbit(w: OrbitWorld, motion: Boolean, text: DrawScope.(String, Color, Float, Offset, Boolean) -> Unit) {
++ val t = w.task; val s = size.minDimension; val c = center; val r = s * .36f; val nr = s * if (t.nodes >= 10) .066f else .074f
++ val e = w.elapsed()
++ drawRect(Brush.radialGradient(listOf(DeckGlow, Deck), c, s * .75f))
++ val ox = c.x - s / 2; val oy = c.y - s / 2
++ for (st in w.stars) drawCircle(Color(0xFFC8D2FF).copy(alpha = if (motion) .22f + .2f * sin(w.clock / 1250f + st[3]) else .3f), st[2] * density * .7f, Offset(ox + st[0] * s, oy + st[1] * s))
++ drawCircle(NodeRing.copy(alpha = .55f), r, c, style = Stroke(2.dp.toPx()))
++ if (w.phase == OrbitPhase.TURN) drawCircle(OrbitAmber.copy(alpha = .35f * sin(PI.toFloat() * (e.toFloat() / TURN_MS).coerceIn(0f, 1f))), r + nr + 10.dp.toPx(), c, style = Stroke(3.dp.toPx()))
++ // Trail: fades in 600 ms.
++ if (motion) for (i in 0 until w.trailSize) {
++  val idx = (w.trailHead - 1 - i + OrbitWorld.TRAIL) % OrbitWorld.TRAIL
++  val life = 1f - (w.clock - w.trailT[idx]).toFloat() / Orbit.TRAIL_MS; if (life <= 0f) continue
++  val a = w.trailA[idx]
++  drawCircle(OrbitCyan.copy(alpha = .16f * life), (2f + 7f * life) * density, Offset(c.x + cos(a) * r, c.y + sin(a) * r), blendMode = BlendMode.Plus)
++ }
++ for (k in 0 until t.nodes) {
++  val a = w.angle(k); val p = Offset(c.x + cos(a) * r, c.y + sin(a) * r)
++  var light = 0f; var color = OrbitEmerald; var double = false
++  if (w.phase == OrbitPhase.SHOW) { val (l, col, d) = w.light(k, e); light = l; color = col; double = d }
++  val f = 1f - (w.clock - w.flashAt[k]).toFloat() / w.flashDur[k]
++  if (f > light) { light = f; color = w.flashColor[k]; double = false }
++  drawNode(p, nr, light.coerceIn(0f, 1f), color, double, w.phase == OrbitPhase.ANSWER)
++  if (w.input.pending == k && w.phase == OrbitPhase.ANSWER) drawArc(OrbitCyan, -90f, 360f * (1f - (w.clock - w.lastTapAt).toFloat() / Orbit.DOUBLE_WINDOW_MS).coerceIn(0f, 1f), false, Offset(p.x - nr - 7.dp.toPx(), p.y - nr - 7.dp.toPx()), Size((nr + 7.dp.toPx()) * 2, (nr + 7.dp.toPx()) * 2), style = Stroke(2.dp.toPx()))
++  if (w.phase >= OrbitPhase.VERDICT && !w.ok && w.reveal == k) drawCircle(OrbitEmerald.copy(alpha = .6f + .4f * sin(w.clock / 120f)), nr + 7.dp.toPx(), p, style = Stroke(2.5f.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 5.dp.toPx()), if (motion) -w.clock * .02f * density else 0f)))
++ }
++ if (w.phase == OrbitPhase.SHOW) {
++  if (motion) { val a = w.comet(e); if (!a.isNaN()) { val h = Offset(c.x + cos(a) * r, c.y + sin(a) * r); val rr = 18.dp.toPx(); drawCircle(Brush.radialGradient(listOf(Color.White.copy(alpha = .95f), OrbitCyan.copy(alpha = .7f), OrbitCyan.copy(alpha = 0f)), h, rr), rr, h) } }
++  for (d in t.decoys) {
++   val age = e - d.atMs; if (age < 0 || age > DECOY_LIFE_MS) continue
++   val v = sin(PI.toFloat() * age / DECOY_LIFE_MS); val at = Offset(ox + d.x * s, oy + d.y * s); val rr = (6f + 14f * v) * density
++   val path = Path(); for (i in 0 until 8) { val rad = if (i % 2 == 1) rr * .22f else rr; val ang = i * PI.toFloat() / 4 + (if (motion) age / 330f else 0f); if (i == 0) path.moveTo(at.x + cos(ang) * rad, at.y + sin(ang) * rad) else path.lineTo(at.x + cos(ang) * rad, at.y + sin(ang) * rad) }
++   path.close(); drawPath(path, OrbitAmber.copy(alpha = .85f * v), blendMode = BlendMode.Plus)
++  }
++ }
++ val hit = (w.clock - w.decoyHitAt).toFloat() / 400f
++ if (hit in 0f..1f) drawCircle(OrbitCoral.copy(alpha = 1f - hit), (8f + 20f * hit) * density, Offset(ox + w.decoyX * s, oy + w.decoyY * s), style = Stroke(2.dp.toPx()))
++ // Core: the only "Observa" on screen, wrapped in its time ring.
++ val cr = r * .36f; val ring = cr - 6.dp.toPx(); val stroke = 5.dp.toPx()
++ drawCircle(CoreFill, cr, c)
++ drawCircle(Color.White.copy(alpha = .06f), ring, c, style = Stroke(stroke))
++ val box = Offset(c.x - ring, c.y - ring); val boxSize = Size(ring * 2, ring * 2)
++ var label = "OBSERVA"; var sub = ""; var labelColor = OrbitInk
++ when (w.phase) {
++  OrbitPhase.INTRO -> if (t.mode == OrbitMode.MIRROR) sub = "luego, al revés"
++  OrbitPhase.SHOW -> { val frac = (e.toFloat() / t.showMs).coerceIn(0f, 1f); val parts = 48; for (i in 0 until (parts * frac).toInt().coerceAtLeast(1)) drawArc(lerp(OrbitCyan, OrbitAmber, i / parts.toFloat()), -90f + i * 360f / parts, 360f / parts + .6f, false, box, boxSize, style = Stroke(stroke)) }
++  OrbitPhase.TURN -> { label = "GIRA"; labelColor = OrbitAmber; drawArc(OrbitAmber, -90f + (if (motion) e * .3f * sign(t.turn.toFloat()) else 0f), 70f, false, box, boxSize, style = Stroke(stroke, cap = StrokeCap.Round)) }
++  OrbitPhase.ANSWER -> { label = "TU TURNO"; labelColor = OrbitEmerald; sub = "${w.input.index} de ${t.expected.size}"; val left = (1f - e.toFloat() / t.answerMs).coerceIn(0f, 1f); drawArc(if (left < .25f) OrbitCoral else OrbitEmerald, -90f, 360f * left, false, box, boxSize, style = Stroke(stroke, cap = StrokeCap.Round)) }
++  else -> { label = if (w.ok) "BIEN" else "FALLO"; labelColor = if (w.ok) OrbitEmerald else OrbitCoral; sub = if (w.ok) "+${w.points}" + (if (w.focus) " · enfoque" else "") else Orbit.errorText(w.input.error); drawCircle(labelColor, ring, c, style = Stroke(stroke)) }
++ }
++ val fs = max(12.dp.toPx(), cr * .26f)
++ text(label, labelColor, fs, Offset(c.x, c.y - if (sub.isEmpty()) 0f else fs * .4f), true)
++ if (sub.isNotEmpty()) text(sub, OrbitMute, fs * .62f, Offset(c.x, c.y + fs * .72f), false)
++}
++
++private fun DrawScope.drawNode(p: Offset, r: Float, light: Float, color: Color, double: Boolean, armed: Boolean) {
++ if (light > .01f) drawCircle(Brush.radialGradient(listOf(color.copy(alpha = .45f * light), color.copy(alpha = 0f)), p, r * 2.4f), r * 2.4f, p, blendMode = BlendMode.Plus)
++ drawCircle(NodeFill, r, p)
++ drawCircle(if (light > .01f) color.copy(alpha = .35f + .65f * light) else NodeRing.copy(alpha = if (armed) 1f else .75f), r, p, style = Stroke((2f + 1.5f * light) * density))
++ drawCircle(if (light > .01f) color.copy(alpha = .15f + .85f * light) else Color(0xFF060814).copy(alpha = .55f), r * .42f, p)
++ if (double && light > .01f) drawCircle(color.copy(alpha = light), r + 7.dp.toPx(), p, style = Stroke(1.8f * density))
++}
++
++// ---------- Unified progress bar (rounds, points and the record ghost in one place) ----------
++
++/** Running points of the best earlier partida in the same mode, round by round; null when there is none yet. */
++@Composable internal fun rememberOrbitGhost(vm: BrainViewModel, run: Run): List<Int>? = remember(run.id, run.variant) {
++ val mode = OrbitMode.of(run.variant)
++ vm.results.value.asSequence().filter { it.game == Orbit.ID && it.id != run.id }.map(::boardLogs)
++  .filter { logs -> logs.any { OrbitLog.decode(it) != null } && Orbit.modeOf(logs) == mode }
++  .map(Orbit::cumulative).maxByOrNull { it.lastOrNull() ?: 0 }?.takeIf { (it.lastOrNull() ?: 0) > 0 }
++}
++
++/** One segmented bar of 12 blocks (emerald right, coral wrong), the points line and the gold ghost tick inside it. */
++@Composable internal fun OrbitHeader(run: Run, logs: List<String>, ghost: List<Int>?, endlessRound: Int?) {
++ val motion = LocalMotionEnabled.current; val colors = MaterialTheme.colorScheme
++ val points = Orbit.cumulative(logs).lastOrNull() ?: 0
++ val played = logs.size
++ val ghostNow = ghost?.let { if (played == 0) 0 else it[min(played, it.size) - 1] }
++ val pulse = if (motion) rememberInfiniteTransition(label = "Ronda actual").animateFloat(1f, .45f, infiniteRepeatable(tween(800), RepeatMode.Reverse), label = "Pulso").value else 1f
++ val current = areaColor(Area.MEMORY)
++ Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
++  Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
++   Label((if (endlessRound != null) "Ronda ${endlessRound + 1}" else "Ronda ${run.index + 1} / ${Orbit.ROUNDS}") + " · $points pts")
++   Spacer(Modifier.weight(1f))
++   if (ghost != null && ghostNow != null) {
++    val diff = points - ghostNow
++    Text(when { played == 0 -> "Fantasma · récord ${ghost.last()}"; diff > 0 -> "Fantasma: +$diff"; diff == 0 -> "Fantasma: empatado"; else -> "Fantasma: −${-diff}" },
++     style = MaterialTheme.typography.labelMedium, color = if (played > 0 && diff > 0) OrbitEmerald else ChestGold)
++   }
++  }
++  Row(Modifier.fillMaxWidth().height(8.dp).semantics { contentDescription = "Ronda ${run.index + 1} de ${Orbit.ROUNDS}: ${run.outcomes.count { it.correct }} aciertos" }, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
++   for (i in 0 until Orbit.ROUNDS) {
++    val o = run.outcomes.getOrNull(i)
++    val fill = when {
++     o == null -> if (i == run.index) current.copy(alpha = pulse) else colors.surfaceVariant
++     o.reason == "survival" -> colors.surfaceVariant.copy(alpha = .4f)
++     o.correct -> OrbitEmerald
++     else -> OrbitCoral
++    }
++    Box(Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(4.dp)).background(fill))
++   }
++  }
++  if (ghost != null && ghostNow != null) {
++   val scale = max(max(ghost.last(), points), 1).toFloat()
++   val me by animateFloatAsState(points / scale, if (motion) tween(400) else snap(), label = "Puntos")
++   val gx by animateFloatAsState(ghostNow / scale, if (motion) tween(400) else snap(), label = "Fantasma")
++   Canvas(Modifier.fillMaxWidth().height(9.dp).semantics { contentDescription = "Llevas $points puntos; tu récord iba por $ghostNow" }) {
++    val y = size.height / 2; val h = 3.dp.toPx()
++    drawRoundRect(colors.surfaceVariant, Offset(0f, y - h / 2), Size(size.width, h), androidx.compose.ui.geometry.CornerRadius(h))
++    drawRoundRect(current.copy(alpha = .75f), Offset(0f, y - h / 2), Size(size.width * me, h), androidx.compose.ui.geometry.CornerRadius(h))
++    drawLine(ChestGold, Offset(size.width * gx, 0f), Offset(size.width * gx, size.height), 2.dp.toPx())
++   }
++  }
++ }
++}
++
++// ---------- Intro: mode picker ----------
++
++@Composable internal fun OrbitModePicker(selected: OrbitMode, choose: (OrbitMode) -> Unit) {
++ val colors = MaterialTheme.colorScheme
++ Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
++  Label("Modo")
++  OrbitMode.values().forEach { m ->
++   val on = m == selected
++   Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(if (on) colors.primary.copy(alpha = .10f).compositeOver(colors.surface) else colors.surface)
++    .border(if (on) 2.dp else 1.dp, if (on) colors.primary else colors.outlineVariant, RoundedCornerShape(18.dp))
++    .selectable(on, role = Role.RadioButton) { choose(m) }.padding(horizontal = 12.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
++    RadioButton(on, null)
++    Spacer(Modifier.width(8.dp))
++    Column(Modifier.weight(1f)) { Text(m.title, style = MaterialTheme.typography.titleMedium); Text(m.about, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant) }
++   }
++  }
++ }
++}
++
++// ---------- Result: attention map by quadrant ----------
++
++@Composable internal fun OrbitAttention(r: ResultRow) {
++ val logs = remember(r.id) { boardLogs(r) }
++ val parsed = remember(r.id) { logs.mapNotNull(OrbitLog::decode) }
++ if (parsed.isEmpty()) return
++ val quadrants = remember(r.id) { Orbit.attention(logs) }
++ val colors = MaterialTheme.colorScheme; val measurer = rememberTextMeasurer()
++ val es = Locale("es")
++ fun seconds(ms: Long) = String.format(es, "%.2f s", ms / 1000.0)
++ val heat = quadrants.map { q -> if (q.touches == 0 && q.misses == 0) null else (q.meanMs ?: 1500L) / 1000f + q.misses * .6f }
++ val lo = heat.filterNotNull().minOrNull() ?: 0f; val hi = heat.filterNotNull().maxOrNull() ?: 0f
++ Panel {
++  Label("Mapa de atención espacial", colors.primary)
++  Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
++   listOf("${parsed.sumOf { it.points }}" to "puntos", "${parsed.count { it.focus }}" to "bonos de enfoque", OrbitMode.of(parsed.first().mode).title to "modo").forEach { (v, l) ->
++    Column(Modifier.weight(1f)) { Text(v, style = MaterialTheme.typography.titleMedium); Text(l, style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant) }
++   }
++  }
++  val ink = colors.onSurface; val mute = colors.onSurfaceVariant; val empty = colors.surfaceVariant; val missColor = colors.error
++  Canvas(Modifier.fillMaxWidth().height(230.dp).semantics { contentDescription = "Mapa de la órbita por cuadrantes con tiempo medio y fallos" }) {
++   val s = size.minDimension; val rr = s * .36f; val wdt = s * .09f
++   drawCircle(empty, rr, center, style = Stroke(1.dp.toPx()))
++   quadrants.forEachIndexed { i, q ->
++    val v = heat[i]
++    val color = if (v == null) empty else { val x = if (hi > lo) (v - lo) / (hi - lo) else 0f; if (x < .5f) lerp(OrbitCyan, OrbitAmber, x * 2) else lerp(OrbitAmber, OrbitCoral, (x - .5f) * 2) }
++    drawArc(color, -90f + i * 90f + 4f, 82f, false, Offset(center.x - rr, center.y - rr), Size(rr * 2, rr * 2), style = Stroke(wdt, cap = StrokeCap.Round))
++    val am = Math.toRadians(-90.0 + i * 90 + 45).toFloat(); val at = Offset(center.x + cos(am) * rr * .55f, center.y + sin(am) * rr * .55f)
++    val top = measurer.measure(q.meanMs?.let(::seconds) ?: "—", TextStyle(color = ink, fontSize = (s * .05f).toSp(), fontWeight = FontWeight.Bold))
++    drawText(top, topLeft = Offset(at.x - top.size.width / 2f, at.y - top.size.height))
++    val bottom = measurer.measure(if (q.misses == 1) "1 fallo" else "${q.misses} fallos", TextStyle(color = if (q.misses > 0) missColor else mute, fontSize = (s * .04f).toSp()))
++    drawText(bottom, topLeft = Offset(at.x - bottom.size.width / 2f, at.y + 2f))
++   }
++  }
++  Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
++   Text("Rápido y preciso", style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant)
++   Box(Modifier.width(80.dp).height(6.dp).clip(RoundedCornerShape(3.dp)).background(Brush.horizontalGradient(listOf(OrbitCyan, OrbitAmber, OrbitCoral))))
++   Text("Lento o con fallos", style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant)
++  }
++  val timed = quadrants.withIndex().filter { it.value.meanMs != null }
++  if (timed.size >= 2) {
++   val slow = timed.maxBy { it.value.meanMs!! }; val fast = timed.minBy { it.value.meanMs!! }
++   Text("Reaccionas más despacio en el cuadrante ${Orbit.quadrantNames[slow.index]} (${seconds(slow.value.meanMs!!)} de media) y más rápido en el ${Orbit.quadrantNames[fast.index]} (${seconds(fast.value.meanMs!!)}).", style = MaterialTheme.typography.bodyMedium)
++  }
++  val worst = quadrants.withIndex().filter { it.value.misses > 0 }.maxByOrNull { it.value.misses }
++  Text(if (worst != null) "La mayoría de tus fallos están en el cuadrante ${Orbit.quadrantNames[worst.index]}. En la próxima sesión, fija la mirada en el núcleo y sigue esa zona con la visión periférica."
++   else "Ningún fallo por cuadrante: tu atención se reparte bien por toda la órbita.", style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
++ }
++}
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/Player.kt Foco-Lab/lab/src/main/java/personal/qqq/braintraining/Player.kt
+--- Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/Player.kt	2026-11-18 02:03:56.004284242 +0000
++++ Foco-Lab/lab/src/main/java/personal/qqq/braintraining/Player.kt	2026-11-18 02:10:28.477229029 +0000
+@@ -51,13 +51,16 @@
+   AnimatedContent(stage,transitionSpec={if(!motion)fadeIn(snap()) togetherWith fadeOut(snap()) else (fadeIn(tween(260,delayMillis=80))+slideInVertically(tween(300)){it/14}) togetherWith fadeOut(tween(160))},label="Fase"){shown->
+   Column(verticalArrangement=Arrangement.spacedBy(20.dp)){
+   when(shown){
+-   0->{GameArt(g,Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(26.dp)));Text("Tu siguiente desafío",style=MaterialTheme.typography.headlineLarge);Panel{Text(g.instructions);Text(if(vm.endless)(if(format.chained)"Modo infinito: las ${format.plural} siguen hasta que decidas salir." else "Modo infinito sin cronómetro. Aprende de cada solución.") else format.about,color=MaterialTheme.colorScheme.primary)};Primary("Empezar",{vm.begin()})}
++   0->{GameArt(g,Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(26.dp)));Text("Tu siguiente desafío",style=MaterialTheme.typography.headlineLarge);Panel{Text(g.instructions);Text(if(vm.endless)(if(format.chained)"Modo infinito: las ${format.plural} siguen hasta que decidas salir." else "Modo infinito sin cronómetro. Aprende de cada solución.") else format.about,color=MaterialTheme.colorScheme.primary)};if(g.id==Orbit.ID)OrbitModePicker(OrbitMode.of(run.variant)){vm.chooseOrbitMode(it)};Primary("Empezar",{vm.begin()})}
+    1->{Spacer(Modifier.height(30.dp));Text("Toma un respiro.",style=MaterialTheme.typography.displaySmall);Text("La ronda interrumpida empezará con un reto nuevo.",color=MaterialTheme.colorScheme.onSurfaceVariant);Primary("Continuar",{vm.begin()});TextButton({exit=true}){Text("Terminar sin guardar este bloque")}}
+    2->{Text("Guardando tu progreso…",style=MaterialTheme.typography.headlineMedium);CircularProgressIndicator();if(vm.saveFailed)Primary("Reintentar",{vm.finish()})}
+-   3->{vm.result?.let{res->val all=vm.results.collectAsState().value;val best=remember(res.id){recordFor(res,all)};ResultScreen(res,vm.previous,vm.planSize-run.remaining.size,vm.planSize,run.remaining.isNotEmpty(),{vm.continuePlan()},{vm.closeResult()},all,vm.mistakes,best,vm.againInRow,if(run.remaining.isEmpty()){{vm.again()}}else null){PracticeRewards(vm)}}}
++   3->{vm.result?.let{res->val all=vm.results.collectAsState().value;val best=remember(res.id){recordFor(res,all)};ResultScreen(res,vm.previous,vm.planSize-run.remaining.size,vm.planSize,run.remaining.isNotEmpty(),{vm.continuePlan()},{vm.closeResult()},all,vm.mistakes,best,vm.againInRow,if(run.remaining.isEmpty()){{vm.again()}}else null){if(res.game==Orbit.ID)OrbitAttention(res);PracticeRewards(vm)}}}
+    else->{
++    // Órbitas 2: one segmented bar holds rounds, points and the record ghost; the board core is the only "Observa".
++    if(c.kind==Kind.ORBIT)OrbitHeader(run,vm.boardLogs(run),if(vm.endless)null else rememberOrbitGhost(vm,run),if(vm.endless)vm.endlessRound else null) else {
+     Row(Modifier.fillMaxWidth()){Label(if(vm.endless)"${format.unit.uppercase()} ${vm.endlessRound+1}" else "${format.unit.uppercase()} ${run.index+1} / ${format.units}");if(c.review){Spacer(Modifier.width(8.dp));Label("· Repaso",MaterialTheme.colorScheme.primary)};Spacer(Modifier.weight(1f));Label(when(run.phase){Phase.OBSERVE->"Observa";Phase.WAIT->"Espera";Phase.FEEDBACK->"Resultado";else->"Tu turno"},MaterialTheme.colorScheme.primary)}
+-    RoundProgress(vm,run,areaColor(g.area))
++     RoundProgress(vm,run,areaColor(g.area))
++    }
+     val enter=remember(run.id,run.index,run.nonce){Animatable(if(motion)0f else 1f)}
+     LaunchedEffect(run.id,run.index,run.nonce){if(motion)enter.animateTo(1f,tween(340,easing=FastOutSlowInEasing))}
+     Column(Modifier.graphicsLayer{alpha=enter.value;translationX=(1f-enter.value)*48.dp.toPx()},verticalArrangement=Arrangement.spacedBy(20.dp)){
+@@ -68,7 +71,7 @@
+     if(c.kind !in BOARD_KINDS)GlyphText(if(run.phase==Phase.OBSERVE&&c.kind==Kind.WORKING)"Recuerda los últimos números" else c.prompt,style=when{g.id=="flanker"->MaterialTheme.typography.headlineLarge;c.prompt.length>65||g.area==Area.NETSEC&&c.prompt.length>40->MaterialTheme.typography.bodyLarge;else->MaterialTheme.typography.headlineMedium},modifier=Modifier.fillMaxWidth().padding(vertical=12.dp))
+     when(c.kind){
+      Kind.GRID,Kind.SEQUENCE->{val observe=run.phase==Phase.OBSERVE;val feedback=run.phase==Phase.FEEDBACK
+-      if(g.id=="orbit")OrbitBoard(run,c,flash){vm.choose(it)}else BoardGrid(c.columns,c.columns*c.columns){i->val lit=if(feedback)i in c.targets else if(observe){if(c.kind==Kind.GRID)i in c.targets else i==flash}else i in run.picked
++      BoardGrid(c.columns,c.columns*c.columns){i->val lit=if(feedback)i in c.targets else if(observe){if(c.kind==Kind.GRID)i in c.targets else i==flash}else i in run.picked
+        // Cells light up with a color tween and a short pop (Destellos, Ecos); feedback marks missed and wrong cells.
+        val missed=feedback&&c.kind==Kind.GRID&&i in c.targets&&i !in run.picked;val extra=feedback&&c.kind==Kind.GRID&&i in run.picked&&i !in c.targets
+        val cellColor by animateColorAsState(when{extra->MaterialTheme.colorScheme.error;lit->MaterialTheme.colorScheme.primary;else->MaterialTheme.colorScheme.surfaceVariant},if(motion)tween(if(observe)90 else 180) else snap(),label="Casilla")
+@@ -109,6 +112,7 @@
+      Kind.ROUTE->{val h=rememberBoardHistory(vm,run);RouteBoard(c,run.phase==Phase.ANSWER,run.phase==Phase.FEEDBACK,vm.boardLogs(run).take(run.index),run.index,h.ghost.getOrNull(run.index)?.let{RouteLog.decode(it)?.ok}){ok,d->vm.boardDone(ok,d)}}
+      Kind.PAIRS->{val h=rememberBoardHistory(vm,run);PairsBoard(c,run.phase==Phase.ANSWER,run.phase==Phase.FEEDBACK,vm.boardLogs(run).take(run.index),run.index,h.ghost.getOrNull(run.index)?.let{PairsLog.decode(it)?.attempts},vm.wallet.theme){ok,d->vm.boardDone(ok,d)}}
+      Kind.VIGIL->{val h=rememberBoardHistory(vm,run);VigilBoard(c,run.phase==Phase.ANSWER,run.phase==Phase.FEEDBACK,vm.boardLogs(run).take(run.index),run.index,h.ghost.getOrNull(run.index)?.let{VigilLog.decode(it)?.detected}){ok,d->vm.boardDone(ok,d)}}
++     Kind.ORBIT->OrbitBoard(c.orbit!!,run.phase==Phase.ANSWER){ok,d,stop->vm.boardDone(ok,d,stop)}
+      else->Choices(c,run,vm)
+     }
+     }
+@@ -215,7 +219,7 @@
+ }
+ 
+ /** Kinds whose board plays the whole round (Fase 2 and 3). */
+-internal val BOARD_KINDS=setOf(Kind.SUITCASE,Kind.VIGIL,Kind.DDOS,Kind.ROUTE,Kind.PAIRS)
++internal val BOARD_KINDS=setOf(Kind.SUITCASE,Kind.VIGIL,Kind.DDOS,Kind.ROUTE,Kind.PAIRS,Kind.ORBIT)
+ /** Record (longest suitcase chain ever, this run included) and the per-round logs of the record run (the ghost). */
+ internal class BoardHistory(val record:Int,val ghost:List<String>)
+ @Composable internal fun rememberBoardHistory(vm:BrainViewModel,run:Run):BoardHistory{
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/Visuals.kt Foco-Lab/lab/src/main/java/personal/qqq/braintraining/Visuals.kt
+--- Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/Visuals.kt	2026-11-18 02:03:56.004455674 +0000
++++ Foco-Lab/lab/src/main/java/personal/qqq/braintraining/Visuals.kt	2026-11-18 02:10:33.291166075 +0000
+@@ -134,17 +134,6 @@
+   }
+  }
+ }
+-@Composable fun OrbitBoard(run:Run,c:Challenge,flash:Int,choose:(Int)->Unit){
+- val feedback=run.phase==Phase.FEEDBACK
+- BoxWithConstraints(Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(30.dp)).background(Color(0xFF19162F))){
+-  val side=maxWidth;val node=(side*.17f).coerceAtLeast(48.dp);val radius=side*.33f
+-  Canvas(Modifier.fillMaxSize()){drawCircle(Color(0xFFB3A1FF).copy(alpha=.23f),size.width*.33f,center,style=Stroke(2.dp.toPx()));if(feedback){c.targets.zipWithNext().forEach{(a,b)->fun at(i:Int):Offset{val angle=i*PI/4-PI/2;return center+Offset(cos(angle).toFloat(),sin(angle).toFloat())*(size.width*.33f)};drawLine(Color(0xFFB3A1FF).copy(alpha=.38f),at(a),at(b),3.dp.toPx())}}}
+-  Text(if(run.phase==Phase.OBSERVE)"Observa" else if(feedback)"El camino" else "Tu turno",Modifier.align(Alignment.Center),color=Color(0xFFE0D9FF),style=MaterialTheme.typography.titleMedium)
+-  for(i in 0..7){val angle=i*PI/4-PI/2;val lit=if(run.phase==Phase.OBSERVE)i==flash else if(feedback)i in c.targets else i in run.picked;val orders=c.targets.mapIndexedNotNull{n,v->if(v==i)(n+1).toString()else null}
+-   Box(Modifier.offset(side/2+radius*cos(angle).toFloat()-node/2,side/2+radius*sin(angle).toFloat()-node/2).size(node).clip(CircleShape).background(if(lit)Color(0xFF87FFC3) else Color(0xFF393151)).pressClick(enabled=run.phase==Phase.ANSWER,feedbackOnClick=false){choose(i)}.semantics{contentDescription="Nodo ${i+1}${if(lit)", iluminado" else ""}"},contentAlignment=Alignment.Center){Text(if(feedback)orders.joinToString("·")else if(i in run.picked&&run.phase==Phase.ANSWER)"✓" else (i+1).toString(),color=if(lit)Color(0xFF173F36)else Color(0xFFE2DEEF),fontSize=if(orders.size>2&&feedback)12.sp else 20.sp,fontWeight=FontWeight.Bold)}
+-  }
+- }
+-}
+ @Composable fun CompassBoard(c:Challenge){
+  val opposite=c.board[1].toBoolean();val base=if(opposite)Color(0xFFB7274F)else Color(0xFF2E5BDE);val direction=c.board[0].toInt()
+  Canvas(Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(28.dp)).background(base).semantics{contentDescription="Flecha hacia ${listOf("arriba","derecha","abajo","izquierda")[direction]}"}){drawCircle(Color.White.copy(alpha=.12f),size.height*.37f,center);arrow(center,size.height*.48f,direction,Color.White);ornaments(Color.White)}
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab/src/test/java/personal/qqq/braintraining/VisualScenesTest.kt Foco-Lab/lab/src/test/java/personal/qqq/braintraining/VisualScenesTest.kt
+--- Foco-Lab-orig/lab/src/test/java/personal/qqq/braintraining/VisualScenesTest.kt	2026-11-18 02:03:56.004871561 +0000
++++ Foco-Lab/lab/src/test/java/personal/qqq/braintraining/VisualScenesTest.kt	2026-11-18 02:13:14.175629705 +0000
+@@ -28,15 +28,16 @@
+  @get:Rule val compose=createAndroidComposeRule<ComponentActivity>()
+  private fun capture(name:String){compose.runOnIdle{val view=compose.activity.window.decorView;val bitmap=Bitmap.createBitmap(view.width,view.height,Bitmap.Config.ARGB_8888);view.draw(Canvas(bitmap));val f=File("build/screenshots/$name");f.parentFile?.mkdirs();f.outputStream().use{bitmap.compress(Bitmap.CompressFormat.PNG,100,it)};bitmap.recycle()}}
+  @Test fun ringNodesRemainIndividuallyAccessibleAndTapInPlace(){
+-  var selected=-1
+   var page by mutableIntStateOf(0)
+   val orbit=Generator.make("orbit",3,44)
+   val compass=Generator.make("compass",7,13)
+   compose.setContent{BrainTheme{Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(20.dp),verticalArrangement=Arrangement.spacedBy(20.dp)){
+    Text(if(page==0)"Órbitas" else "Rumbo inverso",style=MaterialTheme.typography.headlineLarge)
+-   if(page==0){Text("Recuerda y repite el camino de luz.");OrbitBoard(Run("preview","orbit",3,44,phase=Phase.ANSWER),orbit,-1){selected=it}}else{CompassBoard(compass);Text(compass.prompt,style=MaterialTheme.typography.headlineMedium);BoardGrid(2,4){i->OutlinedButton({},Modifier.fillMaxWidth().heightIn(min=60.dp)){Text(compass.choices[i])}}}
++   if(page==0){OrbitBoard(orbit.orbit!!,false){_,_,_->}}else{CompassBoard(compass);Text(compass.prompt,style=MaterialTheme.typography.headlineMedium);BoardGrid(2,4){i->OutlinedButton({},Modifier.fillMaxWidth().heightIn(min=60.dp)){Text(compass.choices[i])}}}
+   }}}
+-  for(i in 0..7){compose.onNodeWithContentDescription("Nodo ${i+1}").assertIsDisplayed().performClick();assertEquals(i,selected)}
++  // Órbitas 2: no numbers on screen; screen readers still reach every node, named by its clock position.
++  for(h in listOf(12,2,3,5,6,8,9,11))compose.onNodeWithContentDescription("Nodo a las $h").assertIsDisplayed()
++  compose.onAllNodesWithText("1").assertCountEquals(0)
+   capture("orbitas-tablero.png")
+   compose.runOnIdle{page=1}
+   compose.onNodeWithText(compass.prompt).assertIsDisplayed()
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Games.kt Foco-Lab/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Games.kt
+--- Foco-Lab-orig/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Games.kt	2026-11-18 02:03:54.858334830 +0000
++++ Foco-Lab/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Games.kt	2026-11-18 02:06:10.769371980 +0000
+@@ -13,7 +13,7 @@
+   Game("route","Ruta de paquetes",Area.MEMORY,"Eres el protocolo de enrutamiento","Mira el paquete viajar de A a B por los routers. Después dibuja su camino: toca los routers en orden o arrastra el dedo por ellos; tocar el último lo deshace. Hay enlaces caídos, rutas alternativas y, al final, TTL: si se agota, marca dónde muere el paquete.","⇢"),
+   Game("ddos","Turno anti-DDoS",Area.ARCADE,"Eres el filtro frente al servidor","Los paquetes suben por la cinta al ritmo del turno. Toca los maliciosos para bloquearlos y deja pasar los legítimos. Una partida son 5 oleadas seguidas: en la tercera el jefe de turno sella una regla nueva (puerto 23, SYN sin ACK, más de 3 por IP…) y la quinta es el pico, más rápida. Cada acierto seguido sube el combo, hasta ×4, y un fallo lo rompe. Desliza hacia arriba una tarjeta para mandar su IP a la lista negra.","⛨"),
+   Game("pairs","Parejas de incidentes",Area.ARCADE,"Ataque ↔ defensa, alerta ↔ causa","Voltea dos cartas: si son pareja (puerto y servicio, ataque y defensa, alerta y causa) se quedan; si no, se vuelven. Desde el nivel 7 hay tríos: ataque, alerta y defensa. Toca dos veces una pareja hecha para leer su lección.","⧉"),
+-  Game("orbit","Órbitas",Area.MEMORY,"Recuerda un camino de luz","Observa los nodos que se iluminan alrededor del círculo. Después toca los mismos nodos en el mismo orden. Un nodo puede repetirse.","◌"),
++  Game("orbit","Órbitas",Area.MEMORY,"Recuerda un camino de luz","Un cometa recorre la órbita y enciende nodos sin números: recuerda los lugares y tócalos en el mismo orden. Rondas 5–8: el doble anillo pide doble toque y el magenta, el nodo opuesto. Rondas 9–12: la órbita gira antes de tu turno. Ignora los destellos de fuera para ganar el bono de enfoque.","◌"),
+   Game("compass","Rumbo inverso",Area.ATTENTION,"Cambia de regla sin perder el rumbo","Lee la regla de cada ronda. Si pide dirección opuesta, responde al contrario de la flecha; si pide la misma, sigue la flecha. La regla siempre está escrita, además del color.","➜"),
+   Game("balance","Balanza",Area.MATH,"Descubre el peso que falta","Los dos lados pesan lo mismo. Todas las cajas pesan igual. Resta el peso conocido y divide lo que queda entre las cajas. Comprueba tu respuesta en la balanza.","⚖"),
+   Game("grid","Destellos",Area.MEMORY,"Tu memoria, celda a celda","Observa las casillas iluminadas. Cuando se oculten, selecciona exactamente las mismas y pulsa Comprobar.","▦"),
+@@ -53,12 +53,12 @@
+ }
+ /** SUBNET, INBOX, FIREWALL and BITS (Lote B) are the pilot mechanics (see Pilot.kt); their data travels in the matching task field. */
+ /** SUITCASE and VIGIL (Fase 2) are self-contained boards: the board plays the whole round and reports its log. */
+-/** DDOS, ROUTE and PAIRS (Fase 3) are board kinds too. */
+-enum class Kind { GRID,SEQUENCE,WORKING,CHOICE,REACTION,MATRIX,SUBNET,INBOX,FIREWALL,BITS,SUITCASE,VIGIL,DDOS,ROUTE,PAIRS }
++/** DDOS, ROUTE and PAIRS (Fase 3) are board kinds too; so is ORBIT (Órbitas 2, see Orbit.kt). */
++enum class Kind { GRID,SEQUENCE,WORKING,CHOICE,REACTION,MATRIX,SUBNET,INBOX,FIREWALL,BITS,SUITCASE,VIGIL,DDOS,ROUTE,PAIRS,ORBIT }
+ /** [format] is the question type inside a game (variety rule), [item] the seed that rebuilds this exact challenge and [review] marks a spaced-repetition round. */
+ data class Challenge(val kind:Kind,val prompt:String,val choices:List<String> = emptyList(),val answer:Int=0,val targets:List<Int> = emptyList(),val stream:List<String> = emptyList(),val columns:Int=3,val exposureMs:Long=1500,val deadlineMs:Long=15000,val explanation:String="",val board:List<String> = emptyList(),val mono:Boolean=false,
+  val format:Int=0,val item:Long=0L,val review:Boolean=false,val subnet:SubnetTask?=null,val inbox:InboxTask?=null,val firewall:FirewallTask?=null,val source:String="",val bits:BitsTask?=null,val suitcase:SuitcaseTask?=null,val vigil:VigilTask?=null,
+- val ddos:DdosTask?=null,val route:RouteTask?=null,val pairs:IncidentBoard?=null)
++ val ddos:DdosTask?=null,val route:RouteTask?=null,val pairs:IncidentBoard?=null,val orbit:OrbitTask?=null)
+ object Generator {
+  /** [unit] is the position inside the partida (the wave, for games whose [GameFormat] plans it); −1 when it does not matter. */
+  fun make(id:String,level:Int,seed:Long,unit:Int=-1):Challenge {
+@@ -66,7 +66,8 @@
+   fun options(answer:Int):Pair<List<String>,Int>{val nums=linkedSetOf(answer);while(nums.size<4)nums+=answer+r.nextInt(-12-l,13+l);val list=nums.shuffled(r).map(Int::toString);return list to list.indexOf(answer.toString())}
+   fun numeric(prompt:String,answer:Int,explanation:String):Challenge{val(o,a)=options(answer);return Challenge(Kind.CHOICE,prompt,o,a,deadlineMs=120000,explanation="Respuesta: $answer\n\n$explanation")}
+   return when(id){
+-   "orbit"->{val n=3+(l-1)*5/9;Challenge(Kind.SEQUENCE,"Recuerda el camino de luz",targets=List(n){r.nextInt(8)},board=List(8){"nodo"},exposureMs=(900-l*35).toLong(),deadlineMs=30000,explanation="Toca los nodos en este orden. Los números indican cada paso; un nodo puede aparecer varias veces.")}
++   // Órbitas 2: the round inside the partida ([unit]) picks the phase; the mode (Espejo, Expansiva) comes from the run.
++   Orbit.ID->Orbit.challenge(l,r.nextLong(),unit.coerceAtLeast(0))
+    "compass"->{val dir=r.nextInt(4);val opposite=l<4||r.nextBoolean();val a=(dir+if(opposite)2 else 0)%4;val names=listOf("arriba","derecha","abajo","izquierda");Challenge(Kind.CHOICE,if(opposite)"DIRECCIÓN OPUESTA" else "MISMA DIRECCIÓN",listOf("↑ Arriba","→ Derecha","↓ Abajo","← Izquierda"),a,board=listOf(dir.toString(),opposite.toString()),deadlineMs=(14000-l*600).toLong(),explanation="La flecha apunta hacia ${names[dir]}.\nLa regla pide ${if(opposite)"la dirección contraria" else "seguir esa dirección"}: ${names[a]}.\nPrimero identifica la regla y después decide.")}
+    "balance"->{val x=r.nextInt(1,8+l*2);val copies=if(l<4)1 else r.nextInt(2,4);val extra=r.nextInt(1,4+l);val total=copies*x+extra;numeric("Ambos lados pesan lo mismo. $copies ${if(copies==1)"caja" else "cajas"} + $extra kg = $total kg.\n¿Cuántos kg pesa una caja?",x,"1. Quita el peso conocido: $total − $extra = ${total-extra} kg.\n2. Reparte entre $copies ${if(copies==1)"caja" else "cajas"}: ${total-extra} ÷ $copies = $x kg.\n3. Comprueba: $copies × $x + $extra = $total kg.").copy(board=listOf(copies.toString(),extra.toString(),total.toString()))}
+    "grid"->{val cols=if(l<5)3 else if(l<9)4 else 5;val n=2+(l-1)*7/9;Challenge(Kind.GRID,"Recuerda las casillas",targets=(0 until cols*cols).shuffled(r).take(n),columns=cols,exposureMs=2600,deadlineMs=25000,explanation="Había $n casillas iluminadas.")}
+@@ -134,7 +135,9 @@
+  val DEFAULT=GameFormat()
+  private val ddos=GameFormat(Ddos.WAVES,"oleada","oleadas",chained=true,packets=true,about="${Ddos.WAVES} oleadas seguidas, unos 3 minutos. Subes de nivel con el 85 % de los paquetes bien en dos partidas seguidas.")
+  private val vigil=GameFormat(Vigil.TRAMOS,"tramo","tramos",chained=true,packets=true,about="${Vigil.TRAMOS} tramos seguidos, unos 2 minutos y medio. Subes de nivel detectando el 85 % de los ataques en dos partidas seguidas.")
+- fun of(game:String)=when(game){Ddos.ID->ddos;Vigil.ID->vigil;else->DEFAULT}
++ /** Órbitas 2: the board shows its own verdict and the single segmented bar, so rounds follow one another without the panel. */
++ private val orbit=GameFormat(Orbit.ROUNDS,"ronda","rondas",chained=true,about="12 rondas en tres fases: calibración, polaridad y rotación. Sin números: recuerda lugares.")
++ fun of(game:String)=when(game){Ddos.ID->ddos;Vigil.ID->vigil;Orbit.ID->orbit;else->DEFAULT}
+  /** How many trials a saved result of [game] may hold: its format, or the 12 rounds every game had before. */
+  fun valid(game:String,trials:Int)=trials==12||trials==of(game).units
+  /**
+@@ -143,6 +146,8 @@
+   */
+  fun measure(game:String,correct:Int,total:Int,details:List<String>):Pair<Int,Int>{
+   if(of(game).packets&&game==Ddos.ID)Ddos.run(details)?.let{return it.correct to it.total}
++  // Órbita expansiva is survival: it ends at the first miss, so it never moves the level.
++  if(game==Orbit.ID&&Orbit.modeOf(details)==OrbitMode.EXPAND)return 0 to 0
+   // Vigía: attacks detected over the partida, on 100, minus 5 points per false alarm.
+   if(game==Vigil.ID&&details.size==Vigil.TRAMOS){
+    val logs=details.mapNotNull{VigilLog.decode(it)};val targets=logs.sumOf{it.targets}
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Orbit.kt Foco-Lab/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Orbit.kt
+--- Foco-Lab-orig/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Orbit.kt	1970-01-01 00:00:00.000000000 +0000
++++ Foco-Lab/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Orbit.kt	2026-11-18 02:12:25.101389958 +0000
+@@ -0,0 +1,171 @@
++package personal.qqq.braintraining.core
++
++import kotlin.random.Random
++
++/**
++ * Órbitas 2 (docs/ORBITAS-2.md): memoria visoespacial pura. Los nodos no llevan números; un cometa recorre la órbita de un
++ * nodo al siguiente y el jugador repite el camino tocando lugares, no cifras.
++ *
++ * Las 12 rondas se reparten en tres fases:
++ *  - rondas 1–4, calibración: caminos de 3 a 5 nodos cada vez más rápidos;
++ *  - rondas 5–8, polaridad: nodos de doble anillo (doble toque) y nodos magenta (se toca el diametralmente opuesto);
++ *  - rondas 9–12, rotación: antes del turno la órbita gira 1 o 2 posiciones (45° o 90° con 8 nodos).
++ * Desde la ronda 7 aparecen destellos fuera de la órbita; no tocarlos da el bono de enfoque (+25 % de puntos).
++ *
++ * Los nodos conservan su identidad al girar: [OrbitTask.expected] siempre habla de identidades y el tablero traduce cada
++ * toque a la identidad que hay en ese punto después del giro.
++ */
++enum class OrbitMode(val key:String,val title:String,val about:String){
++ CLASSIC("","Clásico","12 rondas en tres fases de dificultad."),
++ MIRROR("mirror","Espejo","Repite el camino al revés: del último nodo al primero."),
++ EXPAND("expand","Órbita expansiva","Supervivencia: 6, luego 8 y 10 nodos. El primer fallo termina la partida y no cambia tu nivel.");
++ companion object{fun of(key:String?)=values().firstOrNull{it.key==key}?:CLASSIC}
++}
++/** One light of the path. [kind]: [Orbit.SINGLE], [Orbit.DOUBLE] or [Orbit.INVERSE]. */
++data class OrbitStep(val node:Int,val kind:Int=Orbit.SINGLE)
++/** A flash outside the orbit, [atMs] after the demonstration starts; [x] and [y] are normalized board coordinates (0..1). */
++data class OrbitDecoy(val atMs:Long,val x:Float,val y:Float)
++data class OrbitTask(val level:Int,val seed:Long,val round:Int,val mode:OrbitMode,val nodes:Int,val steps:List<OrbitStep>,val stepMs:Long,val turn:Int,val decoys:List<OrbitDecoy>){
++ val stage get()=Orbit.stage(round)
++ private val order get()=if(mode==OrbitMode.MIRROR)steps.reversed() else steps
++ /** Node identities to touch, in order (the opposite node for a magenta light, the path reversed in Espejo). */
++ val expected:List<Int> get()=order.map{if(it.kind==Orbit.INVERSE)Orbit.opposite(it.node,nodes) else it.node}
++ /** Whether each expected touch is a double tap. */
++ val doubles:List<Boolean> get()=order.map{it.kind==Orbit.DOUBLE}
++ /** Demonstration length: one step per light plus a short tail for the last one. */
++ val showMs get()=steps.size*stepMs+stepMs*35/100
++ val specials get()=steps.count{it.kind!=Orbit.SINGLE}
++ /** Time to answer: generous, it measures memory, not speed. */
++ val answerMs get()=2400L+steps.size*1050L+specials*400L+(if(mode==OrbitMode.MIRROR)steps.size*250L else 0L)
++ /** Base points of the round (later phases are worth more). */
++ val points get()=100+stage*25
++}
++/** What the input of one round leads to. */
++enum class OrbitTap{STEP,HALF,DONE,WRONG,IGNORED}
++/**
++ * Judges the touches of one round (pure, so it is tested without a screen). Times are milliseconds of the board clock.
++ * A double node needs its second touch within [Orbit.DOUBLE_WINDOW_MS]; call [tick] every frame so a missing second touch fails.
++ */
++class OrbitInput(val task:OrbitTask){
++ var index=0;private set
++ var error=Orbit.OK;private set
++ /** Node waiting for its second touch (−1 none) and when the first one landed. */
++ var pending=-1;private set
++ private var pendingAt=0L
++ private var lastNode=-1;private var lastAt=-1000L
++ val finished get()=error!=Orbit.OK||index>=task.expected.size
++ fun tap(node:Int,at:Long):OrbitTap{
++  if(finished)return OrbitTap.IGNORED
++  // A finger that bounces on the glass is one touch, not two.
++  if(node==lastNode&&at-lastAt<Orbit.DEBOUNCE_MS)return OrbitTap.IGNORED
++  lastNode=node;lastAt=at
++  if(pending>=0){
++   if(node==pending&&at-pendingAt<=Orbit.DOUBLE_WINDOW_MS){pending=-1;return advance()}
++   error=Orbit.DOUBLE_MISSED;return OrbitTap.WRONG
++  }
++  if(node!=task.expected[index]){error=Orbit.WRONG;return OrbitTap.WRONG}
++  if(task.doubles[index]){pending=node;pendingAt=at;return OrbitTap.HALF}
++  return advance()
++ }
++ fun tick(now:Long,answerStart:Long):OrbitTap?{
++  if(finished)return null
++  if(pending>=0&&now-pendingAt>Orbit.DOUBLE_WINDOW_MS){error=Orbit.DOUBLE_MISSED;return OrbitTap.WRONG}
++  if(now-answerStart>task.answerMs){error=Orbit.TIME;return OrbitTap.WRONG}
++  return null
++ }
++ /** The identity the player had to touch when the round failed (or the next one). */
++ val missed get()=task.expected.getOrElse(index){-1}
++ private fun advance():OrbitTap{index++;return if(index>=task.expected.size)OrbitTap.DONE else OrbitTap.STEP}
++}
++/**
++ * What one round leaves in its detail: verdict, phase, board, length, error, focus bonus, points and the reaction time of
++ * every right touch by screen quadrant ("q:ms") plus the quadrant of the node that was missed (−1 none).
++ */
++data class OrbitLog(val ok:Boolean,val mode:String,val stage:Int,val nodes:Int,val length:Int,val error:Int,val focus:Boolean,val points:Int,val times:List<Pair<Int,Long>> = emptyList(),val missQ:Int=-1){
++ fun encode()="ok=$ok;mode=${mode.ifEmpty{"classic"}};stage=$stage;nodes=$nodes;len=$length;error=$error;focus=$focus;points=$points;rt=${times.joinToString(","){"${it.first}:${it.second}"}};miss=$missQ"
++ companion object{
++  fun decode(text:String?):OrbitLog?=runCatching{
++   val m=text!!.split(';').associate{val i=it.indexOf('=');it.substring(0,i) to it.substring(i+1)}
++   OrbitLog(m.getValue("ok").toBooleanStrict(),m.getValue("mode").let{if(it=="classic")"" else it},m.getValue("stage").toInt(),m.getValue("nodes").toInt(),m.getValue("len").toInt(),m.getValue("error").toInt(),
++    m.getValue("focus").toBooleanStrict(),m.getValue("points").toInt(),
++    m["rt"].orEmpty().split(',').filter{it.isNotBlank()}.map{val p=it.split(':');p[0].toInt() to p[1].toLong()},m["miss"]?.toInt()?:-1)
++  }.getOrNull()
++ }
++}
++/** Attention map of a partida: per screen quadrant (0 upper right, 1 lower right, 2 lower left, 3 upper left). */
++data class OrbitQuadrant(val touches:Int,val meanMs:Long?,val misses:Int)
++object Orbit {
++ const val ID="orbit"
++ const val SINGLE=0;const val DOUBLE=1;const val INVERSE=2
++ const val OK=0;const val WRONG=1;const val DOUBLE_MISSED=2;const val TIME=3
++ const val DOUBLE_WINDOW_MS=500L
++ const val DEBOUNCE_MS=70L
++ const val TRAIL_MS=600L
++ const val FOCUS_BONUS=25
++ const val ROUNDS=12
++ val quadrantNames=listOf("superior derecho","inferior derecho","inferior izquierdo","superior izquierdo")
++ val stageNames=listOf("Calibración espacial","Polaridad y doble pulso","Rotación orbital")
++ val stageTitles=listOf("Recuerda el camino de luz","Doble anillo: dos toques · Magenta: el opuesto","La órbita girará antes de tu turno")
++ /** 0-based [round] → phase 0, 1 or 2 (endless play keeps cycling through the 12 rounds). */
++ fun stage(round:Int)=(round.coerceAtLeast(0)%ROUNDS).let{if(it<4)0 else if(it<8)1 else 2}
++ fun nodes(mode:OrbitMode,round:Int)=if(mode==OrbitMode.EXPAND)listOf(6,8,10)[stage(round)] else 8
++ fun opposite(node:Int,nodes:Int)=(node+nodes/2)%nodes
++ /** Screen angle of [node] after the orbit turned [turn] positions, in degrees clockwise from the top. */
++ fun angle(node:Int,nodes:Int,turn:Int)=(((node+turn)%nodes+nodes)%nodes)*360.0/nodes
++ /** Quadrant of a screen angle (clockwise from the top): 0 upper right … 3 upper left. */
++ fun quadrant(degrees:Double)=((((degrees%360.0)+360.0)%360.0+.5)%360.0/90.0).toInt().coerceIn(0,3)
++ fun quadrant(node:Int,nodes:Int,turn:Int)=quadrant(angle(node,nodes,turn))
++ /** Clock hour (1..12) of a screen angle, to name a node for screen readers without numbering it. */
++ fun clock(degrees:Double)=Math.round((((degrees%360.0)+360.0)%360.0)/30.0).toInt().let{if(it%12==0)12 else it%12}
++
++ /** Error code names for the summary. */
++ fun errorText(error:Int)=when(error){WRONG->"era este nodo";DOUBLE_MISSED->"era doble toque";TIME->"sin tiempo";else->""}
++
++ fun make(level:Int,seed:Long,round:Int,mode:OrbitMode=OrbitMode.CLASSIC):OrbitTask{
++  require(level in 1..10)
++  val r=Random(seed);val unit=round.coerceAtLeast(0)%ROUNDS;val stage=stage(unit);val local=unit%4
++  val n=nodes(mode,unit)
++  // Path length: the phase sets the base and the level adds up to three more lights.
++  val base=when(stage){0->listOf(3,4,4,5)[local];1->listOf(4,5,5,6)[local];else->listOf(4,5,5,6)[local]}
++  val length=(base+(level-1)/3+(if(mode==OrbitMode.EXPAND&&round>=ROUNDS)(round/ROUNDS).coerceAtMost(3) else 0)).coerceAtMost(10)
++  val stepMs=(listOf(900L,800L,720L,640L)[local]-stage*40L-level*15L).coerceAtLeast(420L)
++  val nodesSeq=ArrayList<Int>(length);var prev=-1
++  repeat(length){var k:Int;do{k=r.nextInt(n)}while(k==prev);nodesSeq+=k;prev=k}
++  val kinds=IntArray(length){SINGLE}
++  val specials=when(stage){1->when(local){0->listOf(DOUBLE);1->listOf(INVERSE);else->listOf(DOUBLE,INVERSE).shuffled(r)};2->if(local>=2)listOf(if(r.nextBoolean())DOUBLE else INVERSE) else emptyList();else->emptyList()}
++  val slots=(0 until length).shuffled(r)
++  specials.forEachIndexed{i,k->kinds[slots[i]]=k}
++  val steps=nodesSeq.mapIndexed{i,k->OrbitStep(k,kinds[i])}
++  val turn=if(stage==2)(if(n>=8&&r.nextBoolean())2 else 1)*(if(r.nextBoolean())1 else -1) else 0
++  val showMs=length*stepMs+stepMs*35/100
++  val decoyCount=if(unit>=9)2 else if(unit>=6)1 else 0
++  val decoys=List(decoyCount){OrbitDecoy(350L+r.nextLong((showMs-800L).coerceAtLeast(1L)),0f,0f).let{d->val(x,y)=outside(r);d.copy(x=x,y=y)}}.sortedBy{it.atMs}
++  return OrbitTask(level,seed,round,mode,n,steps,stepMs,turn,decoys)
++ }
++ /** A point of the board outside the ring of nodes (the ring reaches 0.36 + 0.075 from the centre). */
++ private fun outside(r:Random):Pair<Float,Float>{
++  repeat(80){val x=.07f+r.nextFloat()*.86f;val y=.07f+r.nextFloat()*.86f;val dx=x-.5f;val dy=y-.5f;if(dx*dx+dy*dy>.475f*.475f)return x to y}
++  return .08f to .08f
++ }
++ fun challenge(level:Int,seed:Long,round:Int,mode:OrbitMode=OrbitMode.CLASSIC):Challenge{
++  val t=make(level,seed,round,mode)
++  return Challenge(Kind.ORBIT,stageTitles[t.stage],targets=t.expected,deadlineMs=600000,orbit=t,explanation=explanation(t))
++ }
++ fun explanation(t:OrbitTask)=buildString{
++  append("El camino tenía ${t.steps.size} luces")
++  if(t.specials>0)append(", ${t.specials} especiales")
++  append(".")
++  if(t.mode==OrbitMode.MIRROR)append(" En Espejo se repite del último al primero.")
++  if(t.turn!=0)append(" La órbita giró ${kotlin.math.abs(t.turn)*360/t.nodes}°.")
++ }
++ /** Points of a round: base points, plus 25 % when it was right and every flash was ignored. */
++ fun points(t:OrbitTask,ok:Boolean,focus:Boolean)=if(!ok)0 else t.points+(if(focus)t.points*FOCUS_BONUS/100 else 0)
++ /** Running points of a partida, round by round (for the record ghost). */
++ fun cumulative(details:List<String>):List<Int>{var s=0;return details.map{s+=OrbitLog.decode(it)?.points?:0;s}}
++ /** Mode of a saved partida (from its first round log). */
++ fun modeOf(details:List<String>)=OrbitMode.of(details.firstNotNullOfOrNull{OrbitLog.decode(it)}?.mode)
++ fun attention(details:List<String>):List<OrbitQuadrant>{
++  val logs=details.mapNotNull{OrbitLog.decode(it)}
++  return (0..3).map{q->val ms=logs.flatMap{l->l.times.filter{it.first==q}.map{it.second}};OrbitQuadrant(ms.size,if(ms.isEmpty())null else ms.sum()/ms.size,logs.count{it.missQ==q})}
++ }
++}
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab-core/src/test/kotlin/personal/qqq/braintraining/core/OrbitTest.kt Foco-Lab/lab-core/src/test/kotlin/personal/qqq/braintraining/core/OrbitTest.kt
+--- Foco-Lab-orig/lab-core/src/test/kotlin/personal/qqq/braintraining/core/OrbitTest.kt	1970-01-01 00:00:00.000000000 +0000
++++ Foco-Lab/lab-core/src/test/kotlin/personal/qqq/braintraining/core/OrbitTest.kt	2026-11-18 02:13:41.677979947 +0000
+@@ -0,0 +1,113 @@
++package personal.qqq.braintraining.core
++
++import org.junit.Assert.*
++import org.junit.Test
++
++class OrbitTest {
++ private fun all(mode:OrbitMode=OrbitMode.CLASSIC)=sequence{for(level in 1..10)for(seed in 0L..99L)for(round in 0 until Orbit.ROUNDS)yield(Orbit.make(level,seed,round,mode))}
++
++ @Test fun threePhasesOfFourRounds(){
++  assertEquals(listOf(0,0,0,0,1,1,1,1,2,2,2,2),(0 until 12).map(Orbit::stage))
++  for(t in all()){
++   val specials=t.steps.count{it.kind!=Orbit.SINGLE}
++   when(t.stage){
++    0->{assertEquals(0,specials);assertEquals(0,t.turn);assertTrue(t.steps.size in 3..8)}
++    1->{assertTrue(specials in 1..2);assertEquals(0,t.turn)}
++    else->{assertTrue(specials<=1);assertTrue(kotlin.math.abs(t.turn) in 1..2)}
++   }
++  }
++ }
++
++ @Test fun calibrationSpeedsUpRoundByRound(){
++  for(level in 1..10){val ms=(0..3).map{Orbit.make(level,7,it).stepMs};assertEquals(ms.sortedDescending(),ms);assertTrue(ms.all{it>=420})}
++  assertEquals(3,Orbit.make(1,0,0).steps.size)
++  assertEquals(5,Orbit.make(1,0,3).steps.size)
++ }
++
++ @Test fun pathsNeverRepeatANodeTwiceInARowAndAreReproducible(){
++  for(t in all()){
++   assertTrue(t.steps.zipWithNext().none{(a,b)->a.node==b.node})
++   assertTrue(t.steps.all{it.node in 0 until t.nodes})
++   assertEquals(t,Orbit.make(t.level,t.seed,t.round,t.mode))
++  }
++ }
++
++ @Test fun magentaAsksForTheOppositeNodeAndMirrorReversesThePath(){
++  val t=all().first{t->t.steps.any{it.kind==Orbit.INVERSE}}
++  t.steps.forEachIndexed{i,s->assertEquals(if(s.kind==Orbit.INVERSE)(s.node+4)%8 else s.node,t.expected[i])}
++  val m=t.copy(mode=OrbitMode.MIRROR)
++  assertEquals(t.expected.reversed(),m.expected)
++  assertEquals(t.doubles.reversed(),m.doubles)
++  assertEquals(4,Orbit.opposite(0,8));assertEquals(3,Orbit.opposite(0,6));assertEquals(5,Orbit.opposite(0,10))
++ }
++
++ @Test fun expandingOrbitGrowsFromSixToTenNodes(){
++  assertEquals(listOf(6,6,6,6,8,8,8,8,10,10,10,10),(0 until 12).map{Orbit.make(5,3,it,OrbitMode.EXPAND).nodes})
++  assertTrue(all(OrbitMode.EXPAND).all{t->t.expected.all{it in 0 until t.nodes}})
++ }
++
++ @Test fun decoysAppearFromRoundSevenOutsideTheRing(){
++  for(t in all()){
++   assertEquals(if(t.round>=9)2 else if(t.round>=6)1 else 0,t.decoys.size)
++   t.decoys.forEach{d->val dx=d.x-.5f;val dy=d.y-.5f;assertTrue(dx*dx+dy*dy>.43f*.43f);assertTrue(d.atMs in 0 until t.showMs)}
++  }
++ }
++
++ @Test fun singleAndDoubleTouches(){
++  val t=OrbitTask(1,0,4,OrbitMode.CLASSIC,8,listOf(OrbitStep(1),OrbitStep(3,Orbit.DOUBLE),OrbitStep(6,Orbit.INVERSE)),800,0,emptyList())
++  val ok=OrbitInput(t)
++  assertEquals(OrbitTap.STEP,ok.tap(1,100))
++  assertEquals(OrbitTap.HALF,ok.tap(3,500))
++  assertEquals(OrbitTap.STEP,ok.tap(3,800))
++  assertEquals(OrbitTap.DONE,ok.tap(2,1500)) // magenta 6 → opposite 2
++  assertTrue(ok.finished);assertEquals(Orbit.OK,ok.error)
++
++  val slow=OrbitInput(t);slow.tap(1,0);slow.tap(3,100)
++  assertNull(slow.tick(500,0))
++  assertEquals(OrbitTap.WRONG,slow.tick(700,0));assertEquals(Orbit.DOUBLE_MISSED,slow.error);assertEquals(3,slow.missed)
++
++  val wrong=OrbitInput(t);assertEquals(OrbitTap.WRONG,wrong.tap(2,0));assertEquals(Orbit.WRONG,wrong.error);assertEquals(1,wrong.missed)
++  assertEquals(OrbitTap.IGNORED,wrong.tap(1,10))
++
++  val bounce=OrbitInput(t);bounce.tap(1,0);assertEquals(OrbitTap.IGNORED,bounce.tap(1,30));assertEquals(1,bounce.index)
++
++  val late=OrbitInput(t);assertEquals(OrbitTap.WRONG,late.tick(t.answerMs+1,0));assertEquals(Orbit.TIME,late.error)
++ }
++
++ @Test fun focusBonusAddsAQuarterAndOnlyWhenRight(){
++  val t=Orbit.make(3,1,9)
++  assertEquals(150,t.points)
++  assertEquals(187,Orbit.points(t,true,true))
++  assertEquals(150,Orbit.points(t,true,false))
++  assertEquals(0,Orbit.points(t,false,true))
++ }
++
++ @Test fun quadrantsFollowTheTurnedOrbit(){
++  assertEquals(listOf(0,0,1,1,2,2,3,3),(0 until 8).map{Orbit.quadrant(it,8,0)})
++  assertEquals(listOf(0,1,1,2,2,3,3,0),(0 until 8).map{Orbit.quadrant(it,8,1)})
++  assertEquals(listOf(3,0,0,1,1,2,2,3),(0 until 8).map{Orbit.quadrant(it,8,-1)})
++  assertEquals(listOf(12,2,3,5,6,8,9,11),(0 until 8).map{Orbit.clock(Orbit.angle(it,8,0))})
++  assertEquals(10,(0 until 10).map{Orbit.clock(Orbit.angle(it,10,0))}.toSet().size)
++ }
++
++ @Test fun logRoundTripsAndFeedsGhostAndAttentionMap(){
++  val a=OrbitLog(true,"mirror",1,8,5,Orbit.OK,true,156,listOf(0 to 640L,2 to 910L,2 to 1110L))
++  val b=OrbitLog(false,"mirror",1,8,5,Orbit.WRONG,false,0,listOf(1 to 700L),missQ=3)
++  assertEquals(a,OrbitLog.decode(a.encode()));assertEquals(b,OrbitLog.decode(b.encode()))
++  assertEquals(OrbitLog(true,"",0,8,3,0,false,100),OrbitLog.decode(OrbitLog(true,"",0,8,3,0,false,100).encode()))
++  assertNull(OrbitLog.decode("ok=true"));assertNull(OrbitLog.decode(null))
++  val details=listOf(a.encode(),b.encode(),a.encode())
++  assertEquals(listOf(156,156,312),Orbit.cumulative(details))
++  assertEquals(OrbitMode.MIRROR,Orbit.modeOf(details))
++  val q=Orbit.attention(details)
++  assertEquals(OrbitQuadrant(2,640,0),q[0]);assertEquals(OrbitQuadrant(1,700,0),q[1]);assertEquals(OrbitQuadrant(4,1010,0),q[2]);assertEquals(OrbitQuadrant(0,null,1),q[3])
++ }
++
++ @Test fun expandingRunsNeverMoveTheLevel(){
++  val log=OrbitLog(true,"expand",0,6,3,Orbit.OK,false,100).encode()
++  assertEquals(0 to 0,Formats.measure(Orbit.ID,3,12,List(3){log}+List(9){""}))
++  val classic=OrbitLog(true,"",0,8,3,Orbit.OK,false,100).encode()
++  assertEquals(10 to 12,Formats.measure(Orbit.ID,10,12,List(12){classic}))
++  assertTrue(Formats.of(Orbit.ID).chained)
++ }
++}
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/lab-core/src/test/kotlin/personal/qqq/braintraining/core/VisualGamesTest.kt Foco-Lab/lab-core/src/test/kotlin/personal/qqq/braintraining/core/VisualGamesTest.kt
+--- Foco-Lab-orig/lab-core/src/test/kotlin/personal/qqq/braintraining/core/VisualGamesTest.kt	2026-11-18 02:03:54.858786834 +0000
++++ Foco-Lab/lab-core/src/test/kotlin/personal/qqq/braintraining/core/VisualGamesTest.kt	2026-11-18 02:13:14.175256409 +0000
+@@ -34,16 +34,17 @@
+   assertEquals(0,Adaptive.next(Progress(),"compass",12,12,13000).up)
+   assertEquals(1,Adaptive.next(Progress(),"compass",12,12,3000).up)
+  }
+- @Test fun orbitUsesTheEightVisibleNodesAndGrowsGradually() {
+-  for(level in 1..10)for(seed in 0L..199L){
+-   val c=Generator.make("orbit",level,seed)
+-   assertEquals(Kind.SEQUENCE,c.kind)
+-   assertEquals(8,c.board.size)
+-   assertTrue(c.targets.all{it in c.board.indices})
+-   assertTrue(c.targets.size in 3..8)
+-   assertEquals(c,Generator.make("orbit",level,seed))
++ @Test fun orbitIsABoardRoundWithoutNumbersThatGrowsGradually() {
++  for(level in 1..10)for(seed in 0L..199L)for(round in listOf(0,5,10)){
++   val c=Generator.make("orbit",level,seed,round)
++   assertEquals(Kind.ORBIT,c.kind)
++   val t=c.orbit!!
++   assertEquals(8,t.nodes)
++   assertTrue(c.targets.all{it in 0 until t.nodes})
++   assertTrue(t.steps.size in 3..9)
++   assertEquals(c,Generator.make("orbit",level,seed,round))
+   }
+-  assertEquals(3,Generator.make("orbit",1,0).targets.size)
+-  assertEquals(8,Generator.make("orbit",10,0).targets.size)
++  assertEquals(3,Generator.make("orbit",1,0,0).orbit!!.steps.size)
++  assertEquals(9,Generator.make("orbit",10,0,11).orbit!!.steps.size)
+  }
+ }
