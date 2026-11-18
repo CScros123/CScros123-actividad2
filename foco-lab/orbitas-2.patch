@@ -14,9 +14,109 @@ diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab
      // Bloqueos e intentos: salen del registro de bloqueos (cada evento es una vez; nunca suman segundos).
      Map<String,LogDatabase.InspectorRow> blocks=new LinkedHashMap<>();
      List<BlockEvent> events=db.events(fromDay);
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab-orig/app/src/main/java/es/foco/next/runtime/FocusAccessibilityService.java Foco-Lab/app/src/main/java/es/foco/next/runtime/FocusAccessibilityService.java
+--- Foco-Lab-orig/app/src/main/java/es/foco/next/runtime/FocusAccessibilityService.java	2026-11-18 02:03:50.530704065 +0000
++++ Foco-Lab/app/src/main/java/es/foco/next/runtime/FocusAccessibilityService.java	2026-11-18 03:09:33.098335883 +0000
+@@ -340,7 +340,7 @@
+       String verified=hint!=null?hint:ForegroundWindows.current(this,overlay.visible());
+       // A timer can never extend a stale foreground observation onto another app.
+       if(!verified.equals(foreground)&&!bank.hide(c,foreground))foreground=verified;
+-      long wall=System.currentTimeMillis();ZonedDateTime local=Instant.ofEpochMilli(wall).atZone(ZoneId.systemDefault());
++      long wall=WallClock.now();ZonedDateTime local=Instant.ofEpochMilli(wall).atZone(ZoneId.systemDefault());
+       if(Categories.totalBlock(foreground)&&DeviceState.awake(this))totalBlocked(foreground,"app"); // Foco 1.0, etapa 2: siempre, con el plan activado o no
+       FocusEngine.Input in=new FocusEngine.Input();in.pkg=foreground;in.wall=wall;in.elapsed=SystemClock.elapsedRealtime();in.boot=Repository.boot(this);
+       in.day=local.toLocalDate().toString();in.millisToday=wall-local.toLocalDate().atStartOfDay(local.getZone()).toInstant().toEpochMilli();
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab-orig/app/src/main/java/es/foco/next/runtime/WallClock.java Foco-Lab/app/src/main/java/es/foco/next/runtime/WallClock.java
+--- Foco-Lab-orig/app/src/main/java/es/foco/next/runtime/WallClock.java	1970-01-01 00:00:00.000000000 +0000
++++ Foco-Lab/app/src/main/java/es/foco/next/runtime/WallClock.java	2026-11-18 03:09:33.083260815 +0000
+@@ -0,0 +1,16 @@
++package es.foco.next.runtime;
++
++import android.os.SystemClock;
++
++/**
++ * Hora civil que leen el servicio y el Weekend Lock. En la app es siempre {@link System#currentTimeMillis()}. Las pruebas
++ * la fijan con {@link #fixForTests} (Regla 2: de 21:00 a 07:00 el ocio se cierra, así que sin esto el resultado de las
++ * pruebas dependía de la hora a la que se ejecutaban); a partir de ahí avanza con el reloj monotónico simulado.
++ */
++public final class WallClock {
++  private WallClock(){}
++  private static volatile long fixedWall=-1,fixedElapsed=0;
++  public static long now(){long f=fixedWall;return f<0?System.currentTimeMillis():f+(SystemClock.elapsedRealtime()-fixedElapsed);}
++  static void fixForTests(long wall){fixedElapsed=SystemClock.elapsedRealtime();fixedWall=wall;}
++  static void resetForTests(){fixedWall=-1;}
++}
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab-orig/app/src/main/java/es/foco/next/runtime/Weekend.java Foco-Lab/app/src/main/java/es/foco/next/runtime/Weekend.java
+--- Foco-Lab-orig/app/src/main/java/es/foco/next/runtime/Weekend.java	2026-11-18 02:03:50.530889180 +0000
++++ Foco-Lab/app/src/main/java/es/foco/next/runtime/Weekend.java	2026-11-18 03:09:33.098624708 +0000
+@@ -30,7 +30,7 @@
+   }
+   /** true durante el Weekend Lock. Nunca lanza: ante un fallo, decide el reloj. */
+   public static boolean active(Context context){
+-    long wall=System.currentTimeMillis();ZoneId zone=ZoneId.systemDefault();
++    long wall=WallClock.now();ZoneId zone=ZoneId.systemDefault();
+     LocalDateTime local=Instant.ofEpochMilli(wall).atZone(zone).toLocalDateTime();boolean byClock=WeekendLock.active(local);
+     try{
+       Context c=context.getApplicationContext();SharedPreferences p=prefs(c);
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab-orig/app/src/test/java/es/foco/next/runtime/BlockLogServiceTest.java Foco-Lab/app/src/test/java/es/foco/next/runtime/BlockLogServiceTest.java
+--- Foco-Lab-orig/app/src/test/java/es/foco/next/runtime/BlockLogServiceTest.java	2026-11-18 02:03:50.536505914 +0000
++++ Foco-Lab/app/src/test/java/es/foco/next/runtime/BlockLogServiceTest.java	2026-11-18 03:09:33.099126066 +0000
+@@ -14,8 +14,15 @@
+  private void window(String pkg){AccessibilityWindowInfo w=AccessibilityWindowInfo.obtain();AccessibilityNodeInfo root=AccessibilityNodeInfo.obtain();root.setPackageName(pkg);Shadows.shadowOf(w).setType(AccessibilityWindowInfo.TYPE_APPLICATION);Shadows.shadowOf(w).setFocused(true);Shadows.shadowOf(w).setRoot(root);Shadows.shadowOf(s).setWindows(Collections.singletonList(w));}
+  private void event(String pkg){AccessibilityEvent e=AccessibilityEvent.obtain(AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);e.setPackageName(pkg);s.onAccessibilityEvent(e);}
+  private FocusOverlay overlay(){return ReflectionHelpers.getField(s,"overlay");}
++ /** Reglas absolutas, Regla 2: de 21:00 a 07:00, o con la hora automática apagada, todo el ocio está cerrado. These tests
++  *  are about the daytime 5-minute block, so they run on a weekday at 10:00 with automatic time on, whatever the real clock says. */
++ static void daytime(){
++  Settings.Global.putInt(RuntimeEnvironment.getApplication().getContentResolver(),Settings.Global.AUTO_TIME,1);
++  WallClock.fixForTests(java.time.LocalDateTime.of(2026,11,18,10,0).atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()); // miércoles
++ }
+  private void start(){
+   ReflectionHelpers.callStaticMethod(CalmAudio.class,"resetForTests");
++  daytime();
+   s=Robolectric.buildService(FocusAccessibilityService.class).create().get();
+   s.getSharedPreferences("foco-soundscape",0).edit().clear().commit();
+   ReflectionHelpers.callStaticMethod(Repository.class,"resetForTests");s.deleteFile("focus-lite-v1.json");s.deleteFile("focus-state-v1.json");
+@@ -25,7 +32,7 @@
+  }
+  private void consume(){assertTrue(FocusAccessibilityService.connected());Shadows.shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMinutes(5).plusMillis(500));assertTrue(Repository.get(s).locked());}
+  private void leaveAndReturn(){window("com.android.settings");event("com.android.settings");assertFalse(overlay().visible());window("feed.app");event("feed.app");}
+- @After public void stop(){if(s!=null)s.onDestroy();BlockLog.resetForTests();}
++ @After public void stop(){WallClock.resetForTests();if(s!=null)s.onDestroy();BlockLog.resetForTests();}
+ 
+  @Test public void blockStillAppearsWhenEveryLogWriteThrows(){
+   BlockLog.installForTests(Runnable::run,e->{throw new IllegalStateException("foco-log.db no disponible");});
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab-orig/app/src/test/java/es/foco/next/runtime/LiteRuntimeTest.java Foco-Lab/app/src/test/java/es/foco/next/runtime/LiteRuntimeTest.java
+--- Foco-Lab-orig/app/src/test/java/es/foco/next/runtime/LiteRuntimeTest.java	2026-11-18 02:03:50.536537918 +0000
++++ Foco-Lab/app/src/test/java/es/foco/next/runtime/LiteRuntimeTest.java	2026-11-18 03:09:33.098937849 +0000
+@@ -9,8 +9,15 @@
+  private void window(String pkg){AccessibilityWindowInfo w=AccessibilityWindowInfo.obtain();AccessibilityNodeInfo root=AccessibilityNodeInfo.obtain();root.setPackageName(pkg);Shadows.shadowOf(w).setType(AccessibilityWindowInfo.TYPE_APPLICATION);Shadows.shadowOf(w).setFocused(true);Shadows.shadowOf(w).setRoot(root);Shadows.shadowOf(s).setWindows(Collections.singletonList(w));}
+  private void event(String pkg){AccessibilityEvent e=AccessibilityEvent.obtain(AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);e.setPackageName(pkg);s.onAccessibilityEvent(e);}
+  private FocusOverlay overlay(){return ReflectionHelpers.getField(s,"overlay");}
++ /** Reglas absolutas, Regla 2: de 21:00 a 07:00, o con la hora automática apagada, todo el ocio está cerrado. These tests
++  *  are about the daytime 5-minute block, so they run on a weekday at 10:00 with automatic time on, whatever the real clock says. */
++ static void daytime(){
++  Settings.Global.putInt(RuntimeEnvironment.getApplication().getContentResolver(),Settings.Global.AUTO_TIME,1);
++  WallClock.fixForTests(java.time.LocalDateTime.of(2026,11,18,10,0).atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()); // miércoles
++ }
+  private void start(){
+   ReflectionHelpers.callStaticMethod(CalmAudio.class,"resetForTests");
++  daytime();
+   s=Robolectric.buildService(FocusAccessibilityService.class).create().get();
+   s.getSharedPreferences("foco-soundscape",0).edit().clear().commit();
+   ReflectionHelpers.callStaticMethod(Repository.class,"resetForTests");s.deleteFile("focus-lite-v1.json");s.deleteFile("focus-state-v1.json");
+@@ -19,7 +26,7 @@
+   Repository r=Repository.get(s);AppConfig c=r.config();c.watchedApps.add("feed.app");r.saveConfig(c);window("feed.app");ReflectionHelpers.callInstanceMethod(s,"onServiceConnected");
+  }
+  private void consume(){assertTrue("Service connected",FocusAccessibilityService.connected());assertTrue("Observed window",Repository.get(s).remaining()>0);Shadows.shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMinutes(5).plusMillis(500));assertTrue("Budget: "+Repository.get(s).state().usedMillis,Repository.get(s).locked());assertTrue("Overlay visible, stored budget="+Repository.get(s).state().usedMillis+", logs="+org.robolectric.shadows.ShadowLog.getLogs(),overlay().visible());}
+- @After public void stop(){if(s!=null)s.onDestroy();}
++ @After public void stop(){WallClock.resetForTests();if(s!=null)s.onDestroy();}
+  @Test public void normalUseHasNoOverlayAndFiveMinutesCreatesTouchableBlock(){start();assertFalse(overlay().visible());consume();android.view.View view=ReflectionHelpers.getField(overlay(),"view");android.view.WindowManager.LayoutParams p=(android.view.WindowManager.LayoutParams)view.getLayoutParams();assertEquals(0,p.flags&android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);assertEquals(0,p.preferredRefreshRate,0);}
+  @Test public void bancoGeneralLabelHidesImmediatelyEvenWhenWindowMetadataLags(){start();consume();PackageInfo info=new PackageInfo();info.packageName="com.example.finance";info.applicationInfo=new ApplicationInfo();info.applicationInfo.packageName=info.packageName;info.applicationInfo.nonLocalizedLabel="Banco General";Shadows.shadowOf(s.getPackageManager()).installPackage(info);event(info.packageName);assertFalse(overlay().visible());}
+  @Test public void bankScreenStaysOpenAndReturningToLeisureRestoresBlock(){start();consume();window("com.bgeneral.app");event("com.bgeneral.app");assertFalse(overlay().visible());window("feed.app");event("feed.app");assertTrue(overlay().visible());}
 diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab-orig/docs/ORBITAS-2.md Foco-Lab/docs/ORBITAS-2.md
 --- Foco-Lab-orig/docs/ORBITAS-2.md	1970-01-01 00:00:00.000000000 +0000
-+++ Foco-Lab/docs/ORBITAS-2.md	2026-11-18 02:49:07.860527419 +0000
++++ Foco-Lab/docs/ORBITAS-2.md	2026-11-18 03:04:24.808910767 +0000
 @@ -0,0 +1,74 @@
 +# Órbitas 2
 +
@@ -39,7 +139,7 @@ diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab
 +
 +Reglas en `lab-core/.../core/Orbit.kt`.
 +
-+- **Rondas 1–4, calibración espacial.** Caminos de 3 a 5 luces, cada ronda un poco más rápida, con ritmo tranquilo (1150 → 1000 ms por luz; cada fase resta 25 ms y cada nivel 10 ms, nunca por debajo de 850 ms; el nivel añade hasta 3 luces).
++- **Rondas 1–4, calibración espacial.** Caminos de 3 a 5 luces, a velocidad estándar: cada luz dura siempre 1,1 s en todas las rondas, fases, niveles y modos (`Orbit.STEP_MS`). La dificultad sube por la longitud del camino (el nivel añade hasta 3 luces), los nodos especiales y el giro, nunca por la velocidad.
 +- **Rondas 5–8, polaridad y doble pulso.** Sin texto nuevo sobre los nodos:
 +  - **doble anillo**: doble toque (el segundo en menos de 500 ms);
 +  - **magenta**: se toca el nodo diametralmente opuesto.
@@ -92,6 +192,18 @@ diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab
 +
 +- `lab-core`: `OrbitTest` (11 pruebas: fases, velocidad, caminos sin repeticiones seguidas y reproducibles, magenta y Espejo, 6→8→10 nodos, señuelos fuera del anillo, juez de toques simples y dobles, bono de enfoque, cuadrantes tras el giro, registro, fantasma y mapa, Expansiva sin cambio de nivel). `VisualGamesTest` se actualiza al nuevo tipo de ronda.
 +- `lab`: `VisualScenesTest` comprueba que los 8 nodos son accesibles por su posición de reloj y que el tablero no expone números como texto; guarda la captura `build/screenshots/orbitas-tablero.png`.
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab-orig/foco-core/src/test/java/es/foco/next/core/FocusEngineTest.java Foco-Lab/foco-core/src/test/java/es/foco/next/core/FocusEngineTest.java
+--- Foco-Lab-orig/foco-core/src/test/java/es/foco/next/core/FocusEngineTest.java	2026-11-18 02:03:54.846752846 +0000
++++ Foco-Lab/foco-core/src/test/java/es/foco/next/core/FocusEngineTest.java	2026-11-18 03:05:28.168801848 +0000
+@@ -11,7 +11,7 @@
+  private FocusEngine.Decision use(int minutes){FocusEngine.Decision d=step("feed.one",0,true,false,false);for(int i=0;i<minutes;i++)d=step("feed.one",60000,true,false,false);return d;}
+  @Test public void fiveMinutesAreSharedAndCannotBeExtendedBySwitchingApps(){
+   use(3);step("feed.two",30000,true,false,false);step("feed.two",60000,true,false,false);
+-  var d=step("feed.two",30000,true,false,false);assertTrue(d.blocked);assertEquals(55*60000,d.left);assertEquals(300000,s.usedMillis);assertEquals(2,s.lockedApps.size());
++  var d=step("feed.two",30000,true,false,false);assertTrue(d.blocked);assertEquals(55*60000,d.left);assertEquals(300000,s.usedMillis);assertTrue(s.lockedApps.containsAll(java.util.List.of("feed.one","feed.two")));assertTrue(s.lockedApps.containsAll(AbsoluteRules.SOCIAL_PACKAGES));assertEquals(2+AbsoluteRules.SOCIAL_PACKAGES.size(),s.lockedApps.size()); // Regla 1: las redes sociales se cierran con el bloqueo
+   assertTrue(step("feed.one",1000,true,false,false).blocked);
+  }
+  @Test public void exitingDoesNotResetHourOrBudget(){use(2);long end=s.window.elapsed;step("reader.app",0,true,false,false);step("feed.two",60000,true,false,false);assertEquals(120000,s.usedMillis);assertEquals(end,s.window.elapsed);}
 diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/BrainViewModel.kt Foco-Lab/lab/src/main/java/personal/qqq/braintraining/BrainViewModel.kt
 --- Foco-Lab-orig/lab/src/main/java/personal/qqq/braintraining/BrainViewModel.kt	2026-11-18 02:03:56.003959262 +0000
 +++ Foco-Lab/lab/src/main/java/personal/qqq/braintraining/BrainViewModel.kt	2026-11-18 02:06:29.927961113 +0000
@@ -823,8 +935,8 @@ diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab
     val logs=details.mapNotNull{VigilLog.decode(it)};val targets=logs.sumOf{it.targets}
 diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab-orig/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Orbit.kt Foco-Lab/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Orbit.kt
 --- Foco-Lab-orig/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Orbit.kt	1970-01-01 00:00:00.000000000 +0000
-+++ Foco-Lab/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Orbit.kt	2026-11-18 02:49:07.859713464 +0000
-@@ -0,0 +1,175 @@
++++ Foco-Lab/lab-core/src/main/kotlin/personal/qqq/braintraining/core/Orbit.kt	2026-11-18 03:04:24.808444748 +0000
+@@ -0,0 +1,173 @@
 +package personal.qqq.braintraining.core
 +
 +import kotlin.random.Random
@@ -928,8 +1040,8 @@ diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab
 + const val DOUBLE_WINDOW_MS=500L
 + const val DEBOUNCE_MS=70L
 + const val TRAIL_MS=600L
-+ /** Fastest light of the demonstration: slow enough to follow and learn the path. */
-+ const val MIN_STEP_MS=850L
++ /** One standard pace for every light, round and level (user feedback): difficulty comes from the path, never from speed. */
++ const val STEP_MS=1100L
 + const val FOCUS_BONUS=25
 + const val ROUNDS=12
 + val quadrantNames=listOf("superior derecho","inferior derecho","inferior izquierdo","superior izquierdo")
@@ -957,9 +1069,7 @@ diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab
 +  // Path length: the phase sets the base and the level adds up to three more lights.
 +  val base=when(stage){0->listOf(3,4,4,5)[local];1->listOf(4,5,5,6)[local];else->listOf(4,5,5,6)[local]}
 +  val length=(base+(level-1)/3+(if(mode==OrbitMode.EXPAND&&round>=ROUNDS)(round/ROUNDS).coerceAtMost(3) else 0)).coerceAtMost(10)
-+  // Calm pace (user feedback: faster paths made learning impossible): 1150 → 1000 ms per light inside a phase, each phase
-+  // and level only shave a little, and it never goes below [MIN_STEP_MS].
-+  val stepMs=(listOf(1150L,1100L,1050L,1000L)[local]-stage*25L-level*10L).coerceAtLeast(MIN_STEP_MS)
++  val stepMs=STEP_MS
 +  val nodesSeq=ArrayList<Int>(length);var prev=-1
 +  repeat(length){var k:Int;do{k=r.nextInt(n)}while(k==prev);nodesSeq+=k;prev=k}
 +  val kinds=IntArray(length){SINGLE}
@@ -1002,8 +1112,8 @@ diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab
 +}
 diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab-orig/lab-core/src/test/kotlin/personal/qqq/braintraining/core/OrbitTest.kt Foco-Lab/lab-core/src/test/kotlin/personal/qqq/braintraining/core/OrbitTest.kt
 --- Foco-Lab-orig/lab-core/src/test/kotlin/personal/qqq/braintraining/core/OrbitTest.kt	1970-01-01 00:00:00.000000000 +0000
-+++ Foco-Lab/lab-core/src/test/kotlin/personal/qqq/braintraining/core/OrbitTest.kt	2026-11-18 02:49:07.860124554 +0000
-@@ -0,0 +1,115 @@
++++ Foco-Lab/lab-core/src/test/kotlin/personal/qqq/braintraining/core/OrbitTest.kt	2026-11-18 03:04:24.808629245 +0000
+@@ -0,0 +1,113 @@
 +package personal.qqq.braintraining.core
 +
 +import org.junit.Assert.*
@@ -1024,10 +1134,8 @@ diff -ruN -x build -x .gradle -x '*.png' -x .kotlin -x local.properties Foco-Lab
 +  }
 + }
 +
-+ @Test fun calibrationSpeedsUpRoundByRound(){
-+  for(level in 1..10){val ms=(0..3).map{Orbit.make(level,7,it).stepMs};assertEquals(ms.sortedDescending(),ms);assertTrue(ms.all{it>=Orbit.MIN_STEP_MS})}
-+  assertEquals(1140L,Orbit.make(1,0,0).stepMs)
-+  assertEquals(Orbit.MIN_STEP_MS,Orbit.make(10,0,11).stepMs)
++ @Test fun everyLightKeepsTheSameStandardPace(){
++  for(mode in OrbitMode.values())for(level in 1..10)for(round in 0 until 24)assertEquals(Orbit.STEP_MS,Orbit.make(level,7,round,mode).stepMs)
 +  assertEquals(3,Orbit.make(1,0,0).steps.size)
 +  assertEquals(5,Orbit.make(1,0,3).steps.size)
 + }
