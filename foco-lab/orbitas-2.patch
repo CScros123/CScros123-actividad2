@@ -1,3 +1,19 @@
+diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/app/src/main/java/es/foco/next/log/InspectorLog.java Foco-Lab/app/src/main/java/es/foco/next/log/InspectorLog.java
+--- Foco-Lab-orig/app/src/main/java/es/foco/next/log/InspectorLog.java	2026-11-18 02:03:50.530580897 +0000
++++ Foco-Lab/app/src/main/java/es/foco/next/log/InspectorLog.java	2026-11-18 02:21:09.308119240 +0000
+@@ -134,10 +134,10 @@
+   }
+   public static String csv(LogDatabase db,String fromDay,Function<String,String> label){return csv(db,fromDay,label,db.inspectorRows(fromDay));}
+   /** Como {@link #csv(LogDatabase,String,Function)}, con el detalle ya medido por {@link #rows}. */
+-  public static String csv(LogDatabase db,String fromDay,Function<String,String> label,List<LogDatabase.InspectorRow> detail){
++  public static String csv(LogDatabase db,String fromDay,Function<String,String> label,List<LogDatabase.InspectorRow> measured){
+     StringBuilder csv=new StringBuilder(HEADER).append("\r\n");
+     for(LogDatabase.InspectorRow r:db.inspectorDays(fromDay))row(csv,r,label);
+-    for(LogDatabase.InspectorRow r:detail)row(csv,r,label);
++    for(LogDatabase.InspectorRow r:measured)row(csv,r,label);
+     // Bloqueos e intentos: salen del registro de bloqueos (cada evento es una vez; nunca suman segundos).
+     Map<String,LogDatabase.InspectorRow> blocks=new LinkedHashMap<>();
+     List<BlockEvent> events=db.events(fromDay);
 diff -ruN -x build -x .gradle -x '*.png' -x .kotlin Foco-Lab-orig/docs/ORBITAS-2.md Foco-Lab/docs/ORBITAS-2.md
 --- Foco-Lab-orig/docs/ORBITAS-2.md	1970-01-01 00:00:00.000000000 +0000
 +++ Foco-Lab/docs/ORBITAS-2.md	2026-11-18 02:15:16.349985575 +0000
