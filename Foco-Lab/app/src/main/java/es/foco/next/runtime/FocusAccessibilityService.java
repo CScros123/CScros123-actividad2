@@ -787,6 +787,11 @@ public final class FocusAccessibilityService extends AccessibilityService
         if (closed || repository == null || e == null) return;
         int type = e.getEventType();
         String pkg = e.getPackageName() == null ? "" : e.getPackageName().toString();
+        // v35: deslizar al siguiente video (solo interesa en la sesión de ocio en curso).
+        if (type == AccessibilityEvent.TYPE_VIEW_SCROLLED) {
+            awScroll(pkg, e);
+            return;
+        }
         if (type == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
             repository.touch(pkg, SystemClock.elapsedRealtime());
             if (purchaseCheck(pkg, null, false)) return;
@@ -1318,6 +1323,31 @@ public final class FocusAccessibilityService extends AccessibilityService
     private long awStart = -1, awLast = -1;
     private long awDayBefore; // v34: ocio de hoy antes de esta sesión (adelanta la pregunta)
     private boolean awAsked, awReopen;
+    // v35: corte entre videos. awDueSince = desde cuándo ya tocaba preguntar (-1 = aún no).
+    private int awIndex = -1, awVideos;
+    private long awSwipeAt = -1, awDueSince = -1;
+    private final Runnable awCut = () -> evaluate(false);
+
+    /** v35: un cambio de video en la app de la sesión (deslizar). Barato: sale enseguida si no toca. */
+    private void awScroll(String pkg, AccessibilityEvent e) {
+        try {
+            if (awPkg.isEmpty() || !pkg.equals(awPkg)) return;
+            int idx = e.getFromIndex();
+            if (idx < 0 || idx == awIndex) return;
+            boolean first = awIndex < 0;
+            awIndex = idx;
+            if (first) return; // la primera posición vista no es un cambio
+            long now = SystemClock.elapsedRealtime();
+            if (awSwipeAt >= 0 && now - awSwipeAt < es.foco.next.core.care.Awareness.SWIPE_GAP_MS) return;
+            awSwipeAt = now;
+            awVideos++;
+            if (awDueSince >= 0) { // ya tocaba: este es el corte
+                main.removeCallbacks(awCut);
+                main.post(awCut);
+            }
+        } catch (RuntimeException ignored) {
+        }
+    }
 
     /**
      * Lleva la sesión de ocio y abre la ventana «¿Me aporta?» cuando toca. Devuelve en cuánto
@@ -1342,6 +1372,10 @@ public final class FocusAccessibilityService extends AccessibilityService
                 awAsked = false;
                 awReopen = AwarenessStore.reopenedAfterNo(this, pkg);
                 awDayBefore = AwarenessStore.leisureTodayMs(this, repository.config());
+                awIndex = -1;
+                awVideos = 0;
+                awSwipeAt = -1;
+                awDueSince = -1;
                 AwarenessStore.newSession(this, pkg);
             }
             awLast = now;
@@ -1353,11 +1387,20 @@ public final class FocusAccessibilityService extends AccessibilityService
                             System.currentTimeMillis(),
                             awReopen,
                             awDayBefore);
-            if (due > 0) return due;
+            if (due > 0) {
+                awDueSince = -1;
+                return due;
+            }
+            // v35: ya toca, pero se espera al siguiente video (o se agota la espera).
+            if (awDueSince < 0) awDueSince = now;
+            long grace = es.foco.next.core.care.Awareness.cutGraceMs(pkg, session, awVideos);
+            if (!es.foco.next.core.care.Awareness.cutNow(awSwipeAt >= awDueSince, awReopen, now - awDueSince, grace))
+                return Math.max(1_000, grace - (now - awDueSince));
             if (!AwarenessStore.canOpen()) return 20_000;
-            if (es.foco.next.ui.AwarenessActivity.open(this, pkg, session, awDayBefore + session)) {
+            if (es.foco.next.ui.AwarenessActivity.open(this, pkg, session, awDayBefore + session, awVideos)) {
                 awAsked = true;
                 awReopen = false;
+                awDueSince = -1;
             }
             return 60_000;
         } catch (RuntimeException e) {

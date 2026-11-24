@@ -73,6 +73,26 @@ public class AwarenessTest {
     }
 
     @Test
+    public void elCorteEsperaAlSiguienteVideo() {
+        // Duración típica mientras no hay datos; luego tu ritmo real.
+        assertEquals(45_000, Awareness.videoMs("com.zhiliaoapp.musically", 60_000, 2));
+        assertEquals(30_000, Awareness.videoMs("com.instagram.android", 0, 0));
+        assertEquals(20_000, Awareness.videoMs("com.zhiliaoapp.musically", 10 * M, 30));
+        // Espera: dos videos, entre 30 s y 3 min.
+        assertEquals(90_000, Awareness.cutGraceMs("com.zhiliaoapp.musically", 0, 0));
+        assertEquals(60_000, Awareness.cutGraceMs("com.instagram.android", 0, 0));
+        assertEquals(30_000, Awareness.cutGraceMs("x", 10 * M, 100)); // 6 s por video → mínimo 30 s
+        assertEquals(3 * M, Awareness.cutGraceMs("x", 60 * M, 5)); // videos largos → máximo 3 min
+        // Se abre al deslizar, al volver tras un «no» o al agotar la espera.
+        assertTrue(Awareness.cutNow(true, false, 1_000, 90_000));
+        assertTrue(Awareness.cutNow(false, true, 0, 90_000));
+        assertFalse(Awareness.cutNow(false, false, 89_000, 90_000));
+        assertTrue(Awareness.cutNow(false, false, 90_000, 90_000));
+        assertEquals("", Awareness.videosText(5 * M, 3));
+        assertEquals("≈ 30 videos · unos 20 s cada uno", Awareness.videosText(10 * M, 30));
+    }
+
+    @Test
     public void textos() {
         assertEquals("32 min", Awareness.duration(32 * M));
         assertEquals("1 h 05", Awareness.duration(65 * M));

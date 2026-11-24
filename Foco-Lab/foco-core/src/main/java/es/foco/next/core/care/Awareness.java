@@ -130,6 +130,64 @@ public final class Awareness {
         return Math.max(0, at - session);
     }
 
+    // v35: corte preciso entre videos. Cuando toca preguntar, Foco espera a que pases al siguiente
+    // video (deslizar) y abre la ventana justo ahí, nunca a mitad de uno. Si no deslizas en
+    // {@link #cutGraceMs} (video largo, comentarios, chat), pregunta igual.
+    /** Dos cambios de video más juntos que esto cuentan como uno (un deslizamiento manda varios). */
+    public static final long SWIPE_GAP_MS = 3_000;
+    /** Videos medidos en la sesión para usar tu ritmo real en lugar del típico. */
+    public static final int MIN_VIDEOS_FOR_PACE = 5;
+    public static final long GRACE_MIN_MS = 30_000;
+    public static final long GRACE_MAX_MS = 3 * MIN;
+
+    /**
+     * Duración típica de un video corto por app (lo que se suele ver antes de deslizar): TikTok
+     * ~45 s, Reels de Instagram y Facebook ~30 s, Shorts de YouTube ~40 s; otras, 60 s.
+     */
+    public static long typicalVideoMs(String pkg) {
+        if (pkg == null) return 60_000;
+        switch (pkg) {
+            case "com.zhiliaoapp.musically":
+            case "com.ss.android.ugc.trill":
+            case "com.zhiliaoapp.musically.go":
+                return 45_000;
+            case "com.instagram.android":
+            case "com.instagram.lite":
+            case "com.facebook.katana":
+            case "com.facebook.lite":
+                return 30_000;
+            case "com.google.android.youtube":
+                return 40_000;
+            default:
+                return 60_000;
+        }
+    }
+
+    /** Tu ritmo: tiempo medio por video en esta sesión, o el típico de la app si aún hay pocos. */
+    public static long videoMs(String pkg, long sessionMs, int videos) {
+        if (videos >= MIN_VIDEOS_FOR_PACE && sessionMs > 0) return sessionMs / videos;
+        return typicalVideoMs(pkg);
+    }
+
+    /** Cuánto se espera al siguiente video antes de preguntar igual: dos videos (entre 30 s y 3 min). */
+    public static long cutGraceMs(String pkg, long sessionMs, int videos) {
+        return Math.max(GRACE_MIN_MS, Math.min(GRACE_MAX_MS, 2 * videoMs(pkg, sessionMs, videos)));
+    }
+
+    /**
+     * ¿Se abre ya la pregunta? Solo cuando ya tocaba ({@code waitedMs} desde entonces): al pasar
+     * de video, al volver tras un «no» (al abrir la app), o al agotar la espera.
+     */
+    public static boolean cutNow(boolean swipedSinceDue, boolean reopenedAfterNo, long waitedMs, long graceMs) {
+        return reopenedAfterNo || swipedSinceDue || waitedMs >= graceMs;
+    }
+
+    /** «≈ 38 videos · unos 28 s cada uno» (vacío si aún no hay datos). */
+    public static String videosText(long sessionMs, int videos) {
+        if (videos < MIN_VIDEOS_FOR_PACE || sessionMs <= 0) return "";
+        return "≈ " + videos + " videos · unos " + Math.max(1, sessionMs / videos / 1000) + " s cada uno";
+    }
+
     /** Minutos seguidos hasta la primera pregunta, según el ocio de hoy (contando esta sesión). */
     public static long firstCheckMs(long todayMs) {
         if (todayMs >= TODAY_2H_MS) return FIRST_CHECK_2H_MS;

@@ -492,3 +492,20 @@ Si cruzas 1 h o 2 h a mitad de una sesión, la pregunta llega en ese momento (co
 Acceso de uso se queda en 15 min. Números en `core/care/Awareness` (`TODAY_1H_MS`, `TODAY_2H_MS`,
 `FIRST_CHECK_1H_MS`, `FIRST_CHECK_2H_MS`, `EXTEND_2H_MS`); el total, `AwarenessStore.leisureTodayMs`
 (una consulta por sesión).
+
+## v35: corte preciso entre videos
+
+Cuando ya toca «¿Me aporta?» (los tramos de la v34), Foco no corta a mitad de un video: espera a
+que deslices al siguiente y abre la ventana justo ahí. La Accesibilidad escucha ahora también
+`typeViewScrolled`, pero solo lo usa en la app de la sesión de ocio en curso (sale enseguida en las
+demás).
+
+- Un video = cambio de posición en la lista que se desliza; varios cambios en menos de 3 s cuentan
+  como uno.
+- Espera máxima = dos videos, entre 30 s y 3 min. Video típico: TikTok 45 s, Reels (Instagram,
+  Facebook) 30 s, Shorts 40 s, otras 60 s. Tras 5 videos se usa tu ritmo real de la sesión.
+- Volver tras un «no» sigue preguntando al abrir, sin esperar.
+- La ventana muestra «≈ 38 videos · unos 28 s cada uno».
+
+Reglas en `core/care/Awareness` (`typicalVideoMs`, `cutGraceMs`, `cutNow`, `videosText`); el
+deslizamiento, `FocusAccessibilityService.awScroll`.

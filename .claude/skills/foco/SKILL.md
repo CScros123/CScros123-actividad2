@@ -66,7 +66,8 @@ Compose necesitan `imePadding()`).
 - **«¿Me aporta?» (v33):** reglas en `core/care/Awareness`, datos en `runtime/AwarenessStore`,
   ventana `ui/AwarenessActivity` (actividad propia, no capa: así se pausa TikTok y el teclado va
   bien), y la sesión la lleva `FocusAccessibilityService.awareness()`. v34: los tramos por ocio de hoy
-  (15/10/5 min) están en `Awareness.dueIn(..., todayBeforeMs)`. El texto de las notas nunca
+  (15/10/5 min) están en `Awareness.dueIn(..., todayBeforeMs)`. v35: corte entre videos (espera al
+  deslizar, `awScroll` + `Awareness.cutNow`). El texto de las notas nunca
   va al registro exportable; solo al informe del teléfono.
 - **Horario de la noche:** siempre `AbsoluteRules.nightStart()/esNocheAbsoluta()` (leen
   preferencias vía `CareStore.install`), nunca un valor guardado aparte.

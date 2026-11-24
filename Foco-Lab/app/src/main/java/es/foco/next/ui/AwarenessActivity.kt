@@ -71,20 +71,22 @@ class AwarenessActivity : ComponentActivity() {
         const val EXTRA_PKG = "es.foco.next.extra.AWARE_PKG"
         const val EXTRA_SESSION = "es.foco.next.extra.AWARE_SESSION"
         const val EXTRA_LEISURE = "es.foco.next.extra.AWARE_LEISURE"
+        const val EXTRA_VIDEOS = "es.foco.next.extra.AWARE_VIDEOS"
 
         /** La abre la Accesibilidad. false si no se pudo. */
         @JvmStatic
-        fun open(c: Context, pkg: String, sessionMs: Long): Boolean = open(c, pkg, sessionMs, 0L)
+        fun open(c: Context, pkg: String, sessionMs: Long): Boolean = open(c, pkg, sessionMs, 0L, 0)
 
-        /** v34: con el ocio de hoy (cambia el texto y cuánto dura el «sí»). */
+        /** v34: con el ocio de hoy (cambia el texto y cuánto dura el «sí»); v35: y los videos vistos. */
         @JvmStatic
-        fun open(c: Context, pkg: String, sessionMs: Long, leisureTodayMs: Long): Boolean =
+        fun open(c: Context, pkg: String, sessionMs: Long, leisureTodayMs: Long, videos: Int): Boolean =
             runCatching {
                     c.startActivity(
                         Intent(c, AwarenessActivity::class.java)
                             .putExtra(EXTRA_PKG, pkg)
                             .putExtra(EXTRA_SESSION, sessionMs)
                             .putExtra(EXTRA_LEISURE, leisureTodayMs)
+                            .putExtra(EXTRA_VIDEOS, videos)
                             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                     )
                     true
@@ -95,6 +97,7 @@ class AwarenessActivity : ComponentActivity() {
     private var pkg = ""
     private var sessionMs = 0L
     private var leisureMs = 0L
+    private var videos = 0
     private var decided = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -106,6 +109,7 @@ class AwarenessActivity : ComponentActivity() {
         }
         sessionMs = intent.getLongExtra(EXTRA_SESSION, 0)
         leisureMs = intent.getLongExtra(EXTRA_LEISURE, 0)
+        videos = intent.getIntExtra(EXTRA_VIDEOS, 0)
         // Doble seguro para el video: la tecla de pausa (si la app la obedece) y la música, que pide
         // el foco de audio. Además esta ventana tapa la app y la deja en segundo plano.
         runCatching { MediaPause.pauseOthers(this) }
@@ -121,6 +125,7 @@ class AwarenessActivity : ComponentActivity() {
                 sessionMs = sessionMs,
                 todayMs = today,
                 leisureMs = leisureMs,
+                videos = videos,
                 sinceNo = sinceNo,
                 productiveLabel = productiveLabel,
                 onNo = { answerNo() },
@@ -219,6 +224,7 @@ private fun AwarenessScreen(
     sessionMs: Long,
     todayMs: Long,
     leisureMs: Long,
+    videos: Int,
     sinceNo: Long,
     productiveLabel: String?,
     onNo: () -> Int,
@@ -246,7 +252,7 @@ private fun AwarenessScreen(
     Box(Modifier.fillMaxSize().background(bg).statusBarsPadding().navigationBarsPadding().imePadding()) {
         when (step) {
             AwarenessStep.ASK ->
-                Ask(label, sessionMs, todayMs, leisureMs, sinceNo, onNo = {
+                Ask(label, sessionMs, todayMs, leisureMs, videos, sinceNo, onNo = {
                     decisions = onNo()
                     step = AwarenessStep.DONE
                 }, onYes = { step = AwarenessStep.NOTE })
@@ -305,6 +311,7 @@ private fun Ask(
     sessionMs: Long,
     todayMs: Long,
     leisureMs: Long,
+    videos: Int,
     sinceNo: Long,
     onNo: () -> Unit,
     onYes: () -> Unit,
@@ -329,6 +336,11 @@ private fun Ask(
                     "seguidos en $label" + if (todayMs > 0) " · hoy ${Awareness.duration(todayMs)}" else "",
                     color = AwSoft, fontSize = 14.sp,
                 )
+            }
+            // v35: cuántos videos y a qué ritmo (si se pudo medir).
+            val pace = Awareness.videosText(sessionMs, videos)
+            if (sinceNo < 0 && pace.isNotEmpty()) {
+                Text(pace, color = AwSoft, fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp))
             }
             // v34: el tramo del día (desde 1 h de ocio hoy).
             val stage = Awareness.stageText(leisureMs)
