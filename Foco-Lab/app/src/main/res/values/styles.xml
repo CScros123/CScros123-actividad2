@@ -16,6 +16,13 @@
   <item name="android:statusBarColor">@color/home_background</item>
   <item name="android:navigationBarColor">@color/home_background</item>
  </style>
+ <!-- v33: ventana «¿Me aporta?»: oscura y tranquila (sin rojo de fondo). -->
+ <style name="AwarenessTheme" parent="AppTheme">
+  <item name="android:windowBackground">#FF121014</item>
+  <item name="android:statusBarColor">#FF2A1A20</item>
+  <item name="android:navigationBarColor">#FF121014</item>
+  <item name="android:windowLightStatusBar">false</item>
+ </style>
  <style name="FocusDialog" parent="android:style/Theme.Material.Light.Dialog.Alert">
   <item name="android:colorAccent">@color/copper</item>
   <item name="android:fontFamily">sans-serif</item>

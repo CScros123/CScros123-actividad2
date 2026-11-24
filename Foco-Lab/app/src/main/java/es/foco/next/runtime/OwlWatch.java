@@ -73,6 +73,11 @@ public final class OwlWatch extends BroadcastReceiver {
             RoutineStore.sweep(c, true);
             return;
         }
+        // v33: respuesta de «¿Valió la pena?» desde el aviso.
+        if (i != null && AwarenessStore.ACTION_WORTH.equals(i.getAction())) {
+            AwarenessStore.answerWorth(c, i.getStringExtra(AwarenessStore.EXTRA_PKG), i.getStringExtra(AwarenessStore.EXTRA_ANSWER));
+            return;
+        }
         ensure(c);
         check(c);
         RoutineStore.scheduleNext(c); // también tras reiniciar el teléfono o actualizar Foco
@@ -115,6 +120,7 @@ public final class OwlWatch extends BroadcastReceiver {
                 }
             }
             roleCheck(app, HomeRole.held(app));
+            AwarenessStore.weekly(app); // v33: tu semana consciente (domingo)
         } catch (RuntimeException ignored) {
         }
     }

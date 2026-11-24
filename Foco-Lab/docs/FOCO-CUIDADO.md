@@ -455,3 +455,23 @@ Sin bloqueos nuevos ni funciones nuevas: corrige y unifica. Hecho sin compilar.
 - **Limpieza:** fuera los restos del banco del motor (`bank`, `freeAllowed`, `paid`, el registro de minutos gastados). `in.gated` es la puerta de Foco Core. `bankMs` se sigue leyendo y escribiendo para las copias antiguas.
 - **Cupones:** Telegram (bloqueo total) ya no sale en la lista del cupón, porque nunca se abría.
 - **Pendiente a propósito:** R12 (rendimiento): medir antes de tocar nada.
+
+## Versión 33: «¿Lo que veo ahora me aporta?»
+
+Semana 1 del plan «ser consciente de lo que pierdo y lo que gano». No añade bloqueos: pregunta y mide. Hecho sin compilar.
+
+- **Reglas puras:** `core/care/Awareness.java`, con su prueba `AwarenessTest`.
+  - La primera pregunta llega a los **15 min seguidos** en una app de ocio. Salir y volver en menos de 10 min no reinicia la cuenta.
+  - Tras un «sí» hay **5 min** más y luego otra pregunta.
+  - La nota pide **15 palabras distintas** («asdf asdf» cuenta 1).
+  - Tras un «no», la música sigue **3 min**. Si vuelves a esa app antes de **20 min**, la pregunta sale al abrirla.
+- **Ventana aparte** (`ui/AwarenessActivity.kt`, Compose, tema oscuro `AwarenessTheme`). No es una capa encima: al abrirse, la app de ocio pasa a segundo plano y se pausa, aunque no obedezca la tecla de pausa (TikTok). Además se envía esa tecla (`MediaPause`) y suena la música tranquila (`CalmAudio`, que toma el sonido).
+  - **«No, ya está»:** es el botón grande. Lleva a «Buena decisión» con tres alternativas (caminar con música, leer, cocinar), **una app productiva al azar** (tus apps productivas y las conocidas de `GoodApps`, por ejemplo Duolingo) o tus tareas. A los 30 s sin tocar nada, va al inicio.
+  - **«Sí, me aporta»:** pide la nota con tres atajos (Aprendo, Me relaja, Hablo con alguien) y una barra de palabras. El botón «Seguir 5 min» no se enciende hasta llegar a 15 palabras. Al seguir, vuelves a la app.
+  - **Atrás:** en la pregunta cuenta como «no».
+- **«¿Valió la pena?»:** al salir de una sesión de 10 min o más sin pregunta, llega un aviso con tres botones (Sí / Más o menos / No). Como mucho 6 al día; nunca de noche ni con No molestar. Lo recibe `OwlWatch`.
+- **Datos:** `runtime/AwarenessStore.java`, preferencias `foco-conciencia`, últimas 300 notas.
+  - El registro exportable guarda solo el tipo (`decision_consciente`, `valio_la_pena`), nunca el texto de la nota.
+  - El informe diario trae la sección «CONCIENCIA»: decisiones, «valió la pena» por app y tus notas.
+  - El domingo desde las 18:00, el búho resume la semana con tu última nota. Pasa por `OwlBudget`.
+- **Quién pregunta:** `FocusAccessibilityService.awareness()` lleva la sesión seguida con el reloj de arranque. Vale en Normal, hora libre, cupón y Cuidado; de noche no, porque el ocio ya está cerrado.

@@ -43,6 +43,8 @@
     <category android:name="android.intent.category.DEFAULT"/>
    </intent-filter>
   </activity>
+  <!-- v33: «¿Me aporta?», ventana aparte (la app de ocio queda en pausa detrás). -->
+  <activity android:name=".ui.AwarenessActivity" android:exported="false" android:launchMode="singleTask" android:taskAffinity="es.foco.next.conciencia" android:excludeFromRecents="true" android:windowSoftInputMode="adjustResize" android:theme="@style/AwarenessTheme"/>
   <activity android:name=".ui.StatsActivity" android:exported="false"/><!-- Lote 4: Estadísticas -->
   <service android:name=".runtime.FocusAccessibilityService" android:exported="true" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:label="@string/app_name"><intent-filter><action android:name="android.accessibilityservice.AccessibilityService"/></intent-filter><meta-data android:name="android.accessibilityservice" android:resource="@xml/accessibility"/></service>
   <service android:name=".runtime.CalmAudioService" android:exported="false" android:foregroundServiceType="mediaPlayback"/>

@@ -71,7 +71,10 @@ public final class InspectorLog {
             // del sistema con Acceso de uso) forman las cuatro clases del ocio.
             OCIO_PREMIO = "ocio_premio",
             OCIO_CUIDADO = "ocio_cuidado",
-            OCIO_FUERA = "ocio_fuera";
+            OCIO_FUERA = "ocio_fuera",
+            // v33: «¿me aporta?» (detalle: no / si;tipo) y «¿valió la pena?» (si / mas_o_menos / no).
+            CONCIENCIA = "decision_consciente",
+            VALIO = "valio_la_pena";
 
     /**
      * Contrato con Lab (personal.qqq.braintraining.InspectorQueue): cola persistente de retos y

@@ -63,6 +63,10 @@ Compose necesitan `imePadding()`).
 - **Registro:** `InspectorLog` → `LogDatabase`. Las evasiones cuentan una vez por hecho (solo si se
   insertó). No añadas más efectos de negocio al registro.
 - **Avisos no críticos:** pasan por `OwlBudget.take` (8 al día). Los críticos no.
+- **«¿Me aporta?» (v33):** reglas en `core/care/Awareness`, datos en `runtime/AwarenessStore`,
+  ventana `ui/AwarenessActivity` (actividad propia, no capa: así se pausa TikTok y el teclado va
+  bien), y la sesión la lleva `FocusAccessibilityService.awareness()`. El texto de las notas nunca
+  va al registro exportable; solo al informe del teléfono.
 - **Horario de la noche:** siempre `AbsoluteRules.nightStart()/esNocheAbsoluta()` (leen
   preferencias vía `CareStore.install`), nunca un valor guardado aparte.
 - Documentación por versión: `docs/FOCO-CUIDADO.md` (añade una sección por versión).

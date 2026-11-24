@@ -1215,6 +1215,11 @@ public final class FocusAccessibilityService extends AccessibilityService
                             : null,
                     wall,
                     in.elapsed);
+            // v33: «¿Me aporta?» a los 15 min seguidos en una app de ocio (y cada 5 min tras un «sí»).
+            long awareDue =
+                    awareness(
+                            leisureApp && night == null && !pauseShown && DeviceState.awake(this),
+                            in.elapsed);
             if (pill != null)
                 pill.show(
                         leisureApp && night == null && !careLeisure && stop == null && !dnsPause
@@ -1229,6 +1234,7 @@ public final class FocusAccessibilityService extends AccessibilityService
                 long cl = RewardStore.grantLeftMs(this) + 500;
                 next = next > 0 ? Math.min(next, cl) : cl;
             }
+            if (awareDue > 0) next = next > 0 ? Math.min(next, awareDue) : awareDue;
             long aduana = strict ? AduanaStore.current(this).msLeft(foreground, wall) : 0; // Foco Home
             if (aduana > 0) next = next > 0 ? Math.min(next, aduana) : aduana;
             if (stop != null || d.noBalance || night != null)
@@ -1302,6 +1308,53 @@ public final class FocusAccessibilityService extends AccessibilityService
         } catch (RuntimeException e) {
             android.util.Log.e("Foco", "No se pudo actualizar la medición", e);
             overlay.dismiss();
+        }
+    }
+
+    // v33: sesión seguida en una app de ocio para «¿Me aporta?» (reloj de arranque: no lo mueve
+    // cambiar la hora).
+    private String awPkg = "";
+    private long awStart = -1, awLast = -1;
+    private boolean awAsked, awReopen;
+
+    /**
+     * Lleva la sesión de ocio y abre la ventana «¿Me aporta?» cuando toca. Devuelve en cuánto
+     * volver a mirar (0 = no hace falta).
+     */
+    private long awareness(boolean on, long now) {
+        try {
+            String pkg = foreground;
+            // Al salir de una sesión (otra app, pantalla apagada…): «¿Valió la pena?» si fue larga y
+            // no hubo pregunta. Volver en menos de 10 min sigue siendo la misma sesión.
+            if (!awPkg.isEmpty() && (!on || !pkg.equals(awPkg))) {
+                if (!awAsked && awLast >= 0 && awStart >= 0) {
+                    AwarenessStore.askWorth(this, awPkg, awLast - awStart);
+                    awAsked = true; // una vez por sesión
+                }
+                if (!on && awLast >= 0 && now - awLast > es.foco.next.core.care.Awareness.SESSION_GAP_MS) awPkg = "";
+            }
+            if (!on) return 0;
+            if (!pkg.equals(awPkg) || awLast < 0 || now - awLast > es.foco.next.core.care.Awareness.SESSION_GAP_MS) {
+                awPkg = pkg;
+                awStart = now;
+                awAsked = false;
+                awReopen = AwarenessStore.reopenedAfterNo(this, pkg);
+                AwarenessStore.newSession(this, pkg);
+            }
+            awLast = now;
+            long session = now - awStart;
+            long due =
+                    es.foco.next.core.care.Awareness.dueIn(
+                            session, AwarenessStore.extendedUntil(this, pkg), System.currentTimeMillis(), awReopen);
+            if (due > 0) return due;
+            if (!AwarenessStore.canOpen()) return 20_000;
+            if (es.foco.next.ui.AwarenessActivity.open(this, pkg, session)) {
+                awAsked = true;
+                awReopen = false;
+            }
+            return 60_000;
+        } catch (RuntimeException e) {
+            return 0;
         }
     }
 

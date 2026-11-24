@@ -321,6 +321,27 @@ public final class Inspector {
         } catch (RuntimeException ignored) {
         }
 
+        // v33: «¿Me aporta?» y «¿Valió la pena?» (las notas son tuyas y solo están aquí).
+        try {
+            String dd = day.toString();
+            s.append("\n== CONCIENCIA (¿me aporta?) ==\n");
+            s.append("decisiones_no=").append(AwarenessStore.noCount(c, dd)).append('\n');
+            s.append("decisiones_si_con_nota=").append(AwarenessStore.yesCount(c, dd)).append('\n');
+            int[] w = AwarenessStore.worth(c, dd);
+            s.append("valio_la_pena=si:").append(w[0]).append(",mas_o_menos:").append(w[1]).append(",no:").append(w[2]).append('\n');
+            for (es.foco.next.core.care.Awareness.Worth v : es.foco.next.core.care.Awareness.Worth.values()) {
+                String apps = AwarenessStore.worthApps(c, dd, v);
+                if (apps.isEmpty()) continue;
+                java.util.Map<String, Integer> byApp = new java.util.LinkedHashMap<>();
+                for (String p : apps.split(",")) byApp.merge(AwarenessStore.label(c, p), 1, Integer::sum);
+                s.append("valio_").append(v.name().toLowerCase()).append("_en=").append(byApp).append('\n');
+            }
+            for (String[] n : AwarenessStore.notes(c, dd))
+                s.append("- nota ").append(n[0]).append(" · ").append(n[1]).append(" · ").append(n[2]).append(" · ")
+                        .append(n[3].replace('\n', ' ')).append('\n');
+        } catch (RuntimeException ignored) {
+        }
+
         s.append("\n== DENTRO DEL TELÉFONO ==\n");
         Repository r = Repository.get(c);
         AppConfig config = r.config();
