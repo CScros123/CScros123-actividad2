@@ -1,0 +1,43 @@
+// Foco Home en Kotlin + Compose (mismas versiones que :lab); el resto de Foco sigue en Java.
+plugins { id 'com.android.application'; id 'org.jetbrains.kotlin.android' }
+android {
+ namespace 'es.foco.next'
+ compileSdk 35
+ buildToolsVersion '35.0.0'
+ defaultConfig { applicationId 'es.foco.next'; minSdk 33; targetSdk 35; versionCode 71; versionName '1.11'; testInstrumentationRunner 'android.test.InstrumentationTestRunner' }
+ compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+ kotlinOptions { jvmTarget = '17' }
+ buildFeatures { compose true }
+ composeOptions { kotlinCompilerExtensionVersion '1.5.15' }
+ signingConfigs { release { def storePath=System.getenv('FOCO_KEYSTORE'); if(storePath) { storeFile file(storePath); storePassword System.getenv('FOCO_STORE_PASSWORD'); keyAlias System.getenv('FOCO_KEY_ALIAS') ?: 'foco'; keyPassword System.getenv('FOCO_KEY_PASSWORD') ?: System.getenv('FOCO_STORE_PASSWORD') } } }
+ buildTypes {
+  release {
+   debuggable false
+   minifyEnabled true
+   shrinkResources true
+   proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+   if(System.getenv('FOCO_KEYSTORE')) signingConfig signingConfigs.release
+  }
+  // Para medir la fluidez real (120 Hz): como release (R8, sin depuración) pero firmada con la
+  // clave de depuración. ./gradlew :app:assemblePerf. Compose en debug va bastante más lento.
+  perf {
+   initWith release
+   signingConfig signingConfigs.debug
+   matchingFallbacks = ['release']
+  }
+ }
+ testOptions {
+  unitTests.includeAndroidResources = true
+  // Robolectric installs process-global crypto providers; isolate native Android and TLS fixtures.
+  unitTests.all { forkEvery = 1; maxParallelForks = 1 }
+ }
+ // Kotlin/coroutines de :lab traen licencias duplicadas en META-INF.
+ packaging { resources { excludes.add('/META-INF/{AL2.0,LGPL2.1}') } }
+ lint { abortOnError true; checkReleaseBuilds true }
+ useLibrary 'android.test.runner'
+ useLibrary 'android.test.base'
+ useLibrary 'android.test.mock'
+}
+dependencies { implementation project(':foco-core'); implementation project(':lab');
+ // Foco Home (Compose). No son dependencias nuevas del APK: :lab ya las incluye con estas versiones.
+ implementation platform('androidx.compose:compose-bom:2024.09.03'); implementation 'androidx.activity:activity-compose:1.9.3'; implementation 'androidx.compose.material3:material3'; implementation 'androidx.compose.material:material-icons-extended'; implementation 'androidx.lifecycle:lifecycle-runtime-compose:2.8.7'; implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7'; implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'; testImplementation 'junit:junit:4.13.2'; testImplementation 'org.json:json:20240303'; testImplementation 'org.robolectric:robolectric:4.14.1' }

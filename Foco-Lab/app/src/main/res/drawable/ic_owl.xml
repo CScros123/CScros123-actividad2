@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Búho de Foco: icono pequeño de las notificaciones (silueta, un solo color). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M5,3 L8,6.2 C9.2,5.6 10.6,5.3 12,5.3 C13.4,5.3 14.8,5.6 16,6.2 L19,3 L19,9.5 C20.2,10.9 20.8,12.6 20.8,14.4 C20.8,18.9 16.9,21.5 12,21.5 C7.1,21.5 3.2,18.9 3.2,14.4 C3.2,12.6 3.8,10.9 5,9.5 Z" />
+</vector>

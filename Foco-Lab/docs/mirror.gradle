@@ -1,0 +1,3 @@
+def gm = { repos -> def r = repos.maven { name = 'gmirror'; url 'https://maven-central.storage-download.googleapis.com/maven2/' }; repos.remove(r); repos.add(0, r) }
+settingsEvaluated { s -> gm(s.pluginManagement.repositories); gm(s.dependencyResolutionManagement.repositories) }
+allprojects { tasks.withType(Test).configureEach { systemProperty 'robolectric.dependency.repo.url', 'https://maven-central.storage-download.googleapis.com/maven2/'; systemProperty 'robolectric.dependency.repo.id', 'gmirror' } }

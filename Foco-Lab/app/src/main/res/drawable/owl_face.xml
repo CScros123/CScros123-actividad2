@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Búho de Foco en color (notificaciones grandes y pausa de Enfoque). Expresión tierna:
+     ojos grandes y cejas arriba. Sin rojo ni negro puro. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp" android:height="96dp"
+    android:viewportWidth="96" android:viewportHeight="96">
+    <!-- cuerpo y orejas -->
+    <path android:fillColor="#FF4E6E58"
+        android:pathData="M20,10 L33,22 C37,20.5 42.4,19.6 48,19.6 C53.6,19.6 59,20.5 63,22 L76,10 L76,38 C81,44 84,51 84,58 C84,78 68,90 48,90 C28,90 12,78 12,58 C12,51 15,44 20,38 Z" />
+    <!-- pecho -->
+    <path android:fillColor="#FFEEF3EE"
+        android:pathData="M48,52 C60,52 68,62 68,74 C68,83 59,88 48,88 C37,88 28,83 28,74 C28,62 36,52 48,52 Z" />
+    <!-- discos de los ojos -->
+    <path android:fillColor="#FFF6F2E8" android:pathData="M34,46 m-14,0 a14,14 0 1,0 28,0 a14,14 0 1,0 -28,0" />
+    <path android:fillColor="#FFF6F2E8" android:pathData="M62,46 m-14,0 a14,14 0 1,0 28,0 a14,14 0 1,0 -28,0" />
+    <!-- iris y pupilas -->
+    <path android:fillColor="#FFF5B041" android:pathData="M34,47 m-8,0 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0" />
+    <path android:fillColor="#FFF5B041" android:pathData="M62,47 m-8,0 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0" />
+    <path android:fillColor="#FF111613" android:pathData="M34,47 m-4.5,0 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0 -9,0" />
+    <path android:fillColor="#FF111613" android:pathData="M62,47 m-4.5,0 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0 -9,0" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M36,44.5 m-1.8,0 a1.8,1.8 0 1,0 3.6,0 a1.8,1.8 0 1,0 -3.6,0" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M64,44.5 m-1.8,0 a1.8,1.8 0 1,0 3.6,0 a1.8,1.8 0 1,0 -3.6,0" />
+    <!-- cejas arriba por dentro: preocupado y tierno -->
+    <path android:strokeColor="#FF1D2820" android:strokeWidth="2.6" android:strokeLineCap="round"
+        android:pathData="M24,32 Q32,27 41,30" />
+    <path android:strokeColor="#FF1D2820" android:strokeWidth="2.6" android:strokeLineCap="round"
+        android:pathData="M72,32 Q64,27 55,30" />
+    <!-- pico -->
+    <path android:fillColor="#FFE69A38" android:pathData="M44,55 L52,55 L48,63 Z" />
+</vector>

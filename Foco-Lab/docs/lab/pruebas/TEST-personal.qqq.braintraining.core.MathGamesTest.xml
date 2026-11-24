@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="personal.qqq.braintraining.core.MathGamesTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-06T20:31:48" hostname="94092ded54f2" time="0.352">
+  <properties/>
+  <testcase name="newProblemsHaveCorrectAnswersAndUniqueChoices" classname="personal.qqq.braintraining.core.MathGamesTest" time="0.337"/>
+  <testcase name="arithmeticHonorsOrderAndDivision" classname="personal.qqq.braintraining.core.MathGamesTest" time="0.013"/>
+  <testcase name="practicalSuggestionsHandleEveryDate" classname="personal.qqq.braintraining.core.MathGamesTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

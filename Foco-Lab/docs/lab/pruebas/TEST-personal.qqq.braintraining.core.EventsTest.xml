@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="personal.qqq.braintraining.core.EventsTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-06T20:31:48" hostname="94092ded54f2" time="0.054">
+  <properties/>
+  <testcase name="realApplicationIsNeededForItsReward" classname="personal.qqq.braintraining.core.EventsTest" time="0.042"/>
+  <testcase name="repeatedEvidenceCannotDuplicateXp" classname="personal.qqq.braintraining.core.EventsTest" time="0.004"/>
+  <testcase name="periodsAreStableAndRotateWithoutErasingRewards" classname="personal.qqq.braintraining.core.EventsTest" time="0.002"/>
+  <testcase name="weeklyGoalsUseDistinctDaysAndCompletedSessions" classname="personal.qqq.braintraining.core.EventsTest" time="0.001"/>
+  <testcase name="timezoneAndFirstShortWeekAreCorrect" classname="personal.qqq.braintraining.core.EventsTest" time="0.004"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

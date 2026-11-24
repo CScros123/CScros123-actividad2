@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="personal.qqq.braintraining.StorageTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-06T20:32:48" hostname="94092ded54f2" time="2.429">
+  <properties/>
+  <testcase name="restoreRoundTrip" classname="personal.qqq.braintraining.StorageTest" time="2.19"/>
+  <testcase name="realApplicationsAreIdempotentAndSurviveBackup" classname="personal.qqq.braintraining.StorageTest" time="0.066"/>
+  <testcase name="invalidBackupPreservesHistory" classname="personal.qqq.braintraining.StorageTest" time="0.042"/>
+  <testcase name="idempotent" classname="personal.qqq.braintraining.StorageTest" time="0.038"/>
+  <testcase name="malformedApplicationBackupPreservesData" classname="personal.qqq.braintraining.StorageTest" time="0.031"/>
+  <testcase name="newSkillsAndLearningSettingRoundTrip" classname="personal.qqq.braintraining.StorageTest" time="0.062"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

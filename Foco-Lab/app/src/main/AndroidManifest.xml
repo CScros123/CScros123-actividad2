@@ -1,0 +1,69 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
+ <!-- Temas fotográficos: poner la foto del tema en la pantalla de bloqueo (opcional, permiso normal). -->
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+    <uses-permission android:name="android.permission.SET_WALLPAPER" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <!-- Solo para leer las estadísticas de NextDNS (api.nextdns.io) con la clave que pegas tú. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+ <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+ <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+ <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+ <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
+ <!-- Modo estricto reforzado: respaldo del bloqueo (GuardService) cuando Accesibilidad está desactivada. -->
+ <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
+ <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+ <!-- Fase 4 (plan 5A): Acceso de uso (lo concede el usuario en Ajustes; solo contrasta tiempos en el Registro) y exclusión de batería. -->
+ <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions"/>
+ <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
+ <!-- Foco Home: estado de la red en la barra de protección y No molestar. -->
+ <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+ <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY"/>
+ <!-- Foco Home, etapa 5.4: DNS automático de respaldo. Solo funciona si se concede por adb: adb shell pm grant es.foco.next android.permission.WRITE_SECURE_SETTINGS -->
+ <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" tools:ignore="ProtectedPermissions"/>
+ <!-- Fase 1: androidx.core (traido por :lab) declara este permiso propio de firma. Con minSdk 33 no se usa; no se anade. -->
+ <permission android:name="${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" tools:node="remove"/>
+ <uses-permission android:name="${applicationId}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" tools:node="remove"/>
+ <queries>
+  <intent><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent>
+  <intent><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.HOME"/></intent>
+  <intent><action android:name="android.intent.action.DIAL"/><data android:scheme="tel"/></intent>
+  <!-- Lote 3: saber qué apps son navegadores (Bloquear navegadores no compatibles). Visibilidad, no permiso. -->
+  <intent><action android:name="android.intent.action.VIEW"/><data android:scheme="http"/></intent>
+  <package android:name="com.spotify.music"/>
+  <package android:name="com.apple.android.music"/>
+ </queries>
+ <application android:icon="@drawable/ic_launcher" android:allowBackup="false" android:fullBackupContent="false" android:dataExtractionRules="@xml/data_extraction_rules" android:label="@string/app_name" android:theme="@style/AppTheme" android:supportsRtl="true" android:usesCleartextTraffic="false">
+  <activity android:name=".ui.MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity>
+  <activity android:name=".ui.RegistroActivity" android:exported="false"/><!-- Fase 4: Registro -->
+  <!-- Foco Home (etapa 2): inicio. singleTask + taskAffinity propio: una sola instancia, sin mezclarse con la tarea de Foco ni con la pausa. -->
+  <activity android:name=".ui.HomeActivity" android:exported="true" android:launchMode="singleTask" android:taskAffinity="es.foco.next.home" android:stateNotNeeded="true" android:clearTaskOnLaunch="true" android:excludeFromRecents="true" android:resumeWhilePausing="true" android:windowSoftInputMode="adjustResize" android:theme="@style/HomeTheme" android:label="Foco Home">
+   <intent-filter>
+    <action android:name="android.intent.action.MAIN"/>
+    <category android:name="android.intent.category.HOME"/>
+    <category android:name="android.intent.category.DEFAULT"/>
+   </intent-filter>
+  </activity>
+  <activity android:name=".ui.StatsActivity" android:exported="false"/><!-- Lote 4: Estadísticas -->
+  <service android:name=".runtime.FocusAccessibilityService" android:exported="true" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:label="@string/app_name"><intent-filter><action android:name="android.accessibilityservice.AccessibilityService"/></intent-filter><meta-data android:name="android.accessibilityservice" android:resource="@xml/accessibility"/></service>
+  <service android:name=".runtime.CalmAudioService" android:exported="false" android:foregroundServiceType="mediaPlayback"/>
+  <service android:name=".runtime.GuardService" android:exported="false" android:foregroundServiceType="specialUse">
+   <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="Respaldo del bloqueo cuando Accesibilidad está desactivada"/>
+  </service>
+  <receiver android:name=".runtime.DailyReminder" android:exported="false"><intent-filter>
+   <action android:name="android.intent.action.BOOT_COMPLETED"/><action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+   <action android:name="android.intent.action.TIME_SET"/><action android:name="android.intent.action.TIMEZONE_CHANGED"/>
+  </intent-filter></receiver>
+  <!-- El búho vigila con calma: Foco apagado, inicio perdido (alarma inexacta cada ~2 h y al arrancar). -->
+  <!-- Foco Core: la cámara escribe aquí la foto temporal; Foco la comprime y la borra. -->
+  <provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.evidencias" android:exported="false" android:grantUriPermissions="true"><meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/evidencias_paths"/></provider>
+  <receiver android:name=".runtime.OwlWatch" android:exported="false"><intent-filter>
+   <action android:name="android.intent.action.BOOT_COMPLETED"/><action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+  </intent-filter></receiver>
+  <!-- Foco Home, etapa 6: mensaje de acompañamiento descartado (mensaje_ignorado). -->
+  <receiver android:name=".runtime.CompanionNotifier" android:exported="false"/>
+  <receiver android:name=".runtime.StrictAdmin" android:exported="true" android:permission="android.permission.BIND_DEVICE_ADMIN">
+   <meta-data android:name="android.app.device_admin" android:resource="@xml/device_admin"/>
+   <intent-filter><action android:name="android.app.action.DEVICE_ADMIN_ENABLED"/></intent-filter>
+  </receiver>
+ </application>
+</manifest>
