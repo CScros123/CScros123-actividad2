@@ -70,15 +70,21 @@ class AwarenessActivity : ComponentActivity() {
     companion object {
         const val EXTRA_PKG = "es.foco.next.extra.AWARE_PKG"
         const val EXTRA_SESSION = "es.foco.next.extra.AWARE_SESSION"
+        const val EXTRA_LEISURE = "es.foco.next.extra.AWARE_LEISURE"
 
         /** La abre la Accesibilidad. false si no se pudo. */
         @JvmStatic
-        fun open(c: Context, pkg: String, sessionMs: Long): Boolean =
+        fun open(c: Context, pkg: String, sessionMs: Long): Boolean = open(c, pkg, sessionMs, 0L)
+
+        /** v34: con el ocio de hoy (cambia el texto y cuánto dura el «sí»). */
+        @JvmStatic
+        fun open(c: Context, pkg: String, sessionMs: Long, leisureTodayMs: Long): Boolean =
             runCatching {
                     c.startActivity(
                         Intent(c, AwarenessActivity::class.java)
                             .putExtra(EXTRA_PKG, pkg)
                             .putExtra(EXTRA_SESSION, sessionMs)
+                            .putExtra(EXTRA_LEISURE, leisureTodayMs)
                             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                     )
                     true
@@ -88,6 +94,7 @@ class AwarenessActivity : ComponentActivity() {
 
     private var pkg = ""
     private var sessionMs = 0L
+    private var leisureMs = 0L
     private var decided = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -98,6 +105,7 @@ class AwarenessActivity : ComponentActivity() {
             return
         }
         sessionMs = intent.getLongExtra(EXTRA_SESSION, 0)
+        leisureMs = intent.getLongExtra(EXTRA_LEISURE, 0)
         // Doble seguro para el video: la tecla de pausa (si la app la obedece) y la música, que pide
         // el foco de audio. Además esta ventana tapa la app y la deja en segundo plano.
         runCatching { MediaPause.pauseOthers(this) }
@@ -112,6 +120,7 @@ class AwarenessActivity : ComponentActivity() {
                 label = label,
                 sessionMs = sessionMs,
                 todayMs = today,
+                leisureMs = leisureMs,
                 sinceNo = sinceNo,
                 productiveLabel = productiveLabel,
                 onNo = { answerNo() },
@@ -146,7 +155,7 @@ class AwarenessActivity : ComponentActivity() {
 
     private fun answerYes(label: String, kind: Awareness.Kind, note: String) {
         decided = true
-        AwarenessStore.answerYes(this, pkg, label, kind, note, sessionMs)
+        AwarenessStore.answerYes(this, pkg, label, kind, note, sessionMs, Awareness.extendMs(leisureMs))
         AwarenessStore.musicOff(0)
         go(packageManager.getLaunchIntentForPackage(pkg))
     }
@@ -209,6 +218,7 @@ private fun AwarenessScreen(
     label: String,
     sessionMs: Long,
     todayMs: Long,
+    leisureMs: Long,
     sinceNo: Long,
     productiveLabel: String?,
     onNo: () -> Int,
@@ -236,12 +246,12 @@ private fun AwarenessScreen(
     Box(Modifier.fillMaxSize().background(bg).statusBarsPadding().navigationBarsPadding().imePadding()) {
         when (step) {
             AwarenessStep.ASK ->
-                Ask(label, sessionMs, todayMs, sinceNo, onNo = {
+                Ask(label, sessionMs, todayMs, leisureMs, sinceNo, onNo = {
                     decisions = onNo()
                     step = AwarenessStep.DONE
                 }, onYes = { step = AwarenessStep.NOTE })
             AwarenessStep.NOTE ->
-                Note(onYes = onYes, onNo = {
+                Note(extendMin = Awareness.extendMs(leisureMs) / Awareness.MIN, onYes = onYes, onNo = {
                     decisions = onNo()
                     step = AwarenessStep.DONE
                 })
@@ -290,7 +300,15 @@ private fun MusicRow(text: String) {
 }
 
 @Composable
-private fun Ask(label: String, sessionMs: Long, todayMs: Long, sinceNo: Long, onNo: () -> Unit, onYes: () -> Unit) {
+private fun Ask(
+    label: String,
+    sessionMs: Long,
+    todayMs: Long,
+    leisureMs: Long,
+    sinceNo: Long,
+    onNo: () -> Unit,
+    onYes: () -> Unit,
+) {
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
         Column(Modifier.fillMaxWidth().padding(top = 40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
@@ -312,6 +330,15 @@ private fun Ask(label: String, sessionMs: Long, todayMs: Long, sinceNo: Long, on
                     color = AwSoft, fontSize = 14.sp,
                 )
             }
+            // v34: el tramo del día (desde 1 h de ocio hoy).
+            val stage = Awareness.stageText(leisureMs)
+            if (stage.isNotEmpty()) {
+                Text(
+                    stage,
+                    color = Color(0xFFFFB4A2), fontSize = 13.sp, textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 10.dp, start = 24.dp, end = 24.dp),
+                )
+            }
         }
         Card {
             OwlBadge(54)
@@ -329,7 +356,7 @@ private fun Ask(label: String, sessionMs: Long, todayMs: Long, sinceNo: Long, on
 }
 
 @Composable
-private fun Note(onYes: (Awareness.Kind, String) -> Unit, onNo: () -> Unit) {
+private fun Note(extendMin: Long, onYes: (Awareness.Kind, String) -> Unit, onNo: () -> Unit) {
     var kind by remember { mutableStateOf(Awareness.Kind.APRENDO) }
     var text by remember { mutableStateOf("") }
     val words = Awareness.words(text)
@@ -397,7 +424,7 @@ private fun Note(onYes: (Awareness.Kind, String) -> Unit, onNo: () -> Unit) {
                 )
             }
             Spacer(Modifier.height(6.dp))
-            Big("Seguir ${Awareness.EXTEND_MS / Awareness.MIN} min", AwGreenBg, AwGreenInk, border = AwGreenLine, enabled = ok) { onYes(kind, text) }
+            Big("Seguir $extendMin min", AwGreenBg, AwGreenInk, border = AwGreenLine, enabled = ok) { onYes(kind, text) }
             Text(
                 "Mejor lo dejo",
                 color = Color(0xFFFFB3A8),

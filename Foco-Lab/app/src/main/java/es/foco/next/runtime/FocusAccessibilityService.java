@@ -1216,6 +1216,7 @@ public final class FocusAccessibilityService extends AccessibilityService
                     wall,
                     in.elapsed);
             // v33: «¿Me aporta?» a los 15 min seguidos en una app de ocio (y cada 5 min tras un «sí»).
+            // v34: antes cuanto más ocio llevas hoy (10 min desde 1 h; 5 min y «sí» de 3 desde 2 h).
             long awareDue =
                     awareness(
                             leisureApp && night == null && !pauseShown && DeviceState.awake(this),
@@ -1315,6 +1316,7 @@ public final class FocusAccessibilityService extends AccessibilityService
     // cambiar la hora).
     private String awPkg = "";
     private long awStart = -1, awLast = -1;
+    private long awDayBefore; // v34: ocio de hoy antes de esta sesión (adelanta la pregunta)
     private boolean awAsked, awReopen;
 
     /**
@@ -1339,16 +1341,21 @@ public final class FocusAccessibilityService extends AccessibilityService
                 awStart = now;
                 awAsked = false;
                 awReopen = AwarenessStore.reopenedAfterNo(this, pkg);
+                awDayBefore = AwarenessStore.leisureTodayMs(this, repository.config());
                 AwarenessStore.newSession(this, pkg);
             }
             awLast = now;
             long session = now - awStart;
             long due =
                     es.foco.next.core.care.Awareness.dueIn(
-                            session, AwarenessStore.extendedUntil(this, pkg), System.currentTimeMillis(), awReopen);
+                            session,
+                            AwarenessStore.extendedUntil(this, pkg),
+                            System.currentTimeMillis(),
+                            awReopen,
+                            awDayBefore);
             if (due > 0) return due;
             if (!AwarenessStore.canOpen()) return 20_000;
-            if (es.foco.next.ui.AwarenessActivity.open(this, pkg, session)) {
+            if (es.foco.next.ui.AwarenessActivity.open(this, pkg, session, awDayBefore + session)) {
                 awAsked = true;
                 awReopen = false;
             }

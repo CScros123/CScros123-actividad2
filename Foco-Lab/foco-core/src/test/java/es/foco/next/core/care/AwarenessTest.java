@@ -48,6 +48,31 @@ public class AwarenessTest {
     }
 
     @Test
+    public void conMasOcioHoyLaPreguntaLlegaAntes() {
+        // Menos de 1 h hoy: 15 min.
+        assertEquals(15 * M, Awareness.dueIn(0, 0, 1000, false, 30 * M));
+        // Entre 1 y 2 h: 10 min.
+        assertEquals(10 * M, Awareness.dueIn(0, 0, 1000, false, 70 * M));
+        // 2 h o más (como hoy: TikTok 1 h 07 + Instagram 1 h 01): 5 min.
+        assertEquals(5 * M, Awareness.dueIn(0, 0, 1000, false, 128 * M));
+        // Cruzar la hora a mitad de sesión: 55 min antes → toca a los 10 min seguidos.
+        assertEquals(10 * M, Awareness.dueIn(0, 0, 1000, false, 55 * M));
+        // Cruzar las 2 h: 112 min antes → a los 8 min (al llegar a 2 h), no a los 10.
+        assertEquals(8 * M, Awareness.dueIn(0, 0, 1000, false, 112 * M));
+        assertEquals(3 * M, Awareness.dueIn(5 * M, 0, 1000, false, 112 * M));
+        // Tras un «sí», manda la ventana del «sí».
+        assertEquals(2 * M, Awareness.dueIn(30 * M, 1000 + 2 * M, 1000, false, 200 * M));
+    }
+
+    @Test
+    public void elSiDuraMenosConMuchoOcio() {
+        assertEquals(5 * M, Awareness.extendMs(90 * M));
+        assertEquals(3 * M, Awareness.extendMs(120 * M));
+        assertEquals("", Awareness.stageText(40 * M));
+        assertEquals("Hoy llevas 2 h 08 de ocio: te pregunto a los 5 min", Awareness.stageText(128 * M));
+    }
+
+    @Test
     public void textos() {
         assertEquals("32 min", Awareness.duration(32 * M));
         assertEquals("1 h 05", Awareness.duration(65 * M));

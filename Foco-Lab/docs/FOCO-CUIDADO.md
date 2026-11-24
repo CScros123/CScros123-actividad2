@@ -475,3 +475,20 @@ Semana 1 del plan «ser consciente de lo que pierdo y lo que gano». No añade b
   - El informe diario trae la sección «CONCIENCIA»: decisiones, «valió la pena» por app y tus notas.
   - El domingo desde las 18:00, el búho resume la semana con tu última nota. Pasa por `OwlBudget`.
 - **Quién pregunta:** `FocusAccessibilityService.awareness()` lleva la sesión seguida con el reloj de arranque. Vale en Normal, hora libre, cupón y Cuidado; de noche no, porque el ocio ya está cerrado.
+
+## v34: la pregunta se adelanta según el ocio de hoy
+
+«¿Me aporta?» ya no espera siempre 15 min. Cuenta el ocio del día de Foco (desde las 04:00) en las
+apps vigiladas, con el Acceso de uso:
+
+| Ocio hoy | Primera pregunta | Tras un «sí» |
+|---|---|---|
+| menos de 1 h | 15 min seguidos | 5 min |
+| de 1 h a 2 h | 10 min seguidos | 5 min |
+| 2 h o más | 5 min seguidos | 3 min |
+
+Si cruzas 1 h o 2 h a mitad de una sesión, la pregunta llega en ese momento (con el mínimo de 10 o
+5 min seguidos). La ventana lo dice: «Hoy llevas 2 h 08 de ocio: te pregunto a los 5 min». Sin
+Acceso de uso se queda en 15 min. Números en `core/care/Awareness` (`TODAY_1H_MS`, `TODAY_2H_MS`,
+`FIRST_CHECK_1H_MS`, `FIRST_CHECK_2H_MS`, `EXTEND_2H_MS`); el total, `AwarenessStore.leisureTodayMs`
+(una consulta por sesión).

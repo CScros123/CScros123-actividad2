@@ -122,8 +122,41 @@ public final class AwarenessStore {
         return n;
     }
 
+    /**
+     * v34: ocio de hoy (día de Foco, desde las 04:00) en las apps que vigila Foco, según el sistema
+     * (Acceso de uso). 0 si no hay permiso o falla: entonces la pregunta va a los 15 min de siempre.
+     * Se llama una vez por sesión, no en cada evento.
+     */
+    public static long leisureTodayMs(Context c, es.foco.next.core.AppConfig config) {
+        try {
+            if (config == null || !es.foco.next.log.UsageContrast.allowed(c)) return 0;
+            LocalDateTime now = LocalDateTime.now();
+            LocalDate day = now.getHour() < 4 ? now.toLocalDate().minusDays(1) : now.toLocalDate();
+            long start = day.atTime(4, 0).atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli();
+            android.app.usage.UsageStatsManager usm = c.getSystemService(android.app.usage.UsageStatsManager.class);
+            if (usm == null) return 0;
+            long sum = 0;
+            for (java.util.Map.Entry<String, android.app.usage.UsageStats> e :
+                    usm.queryAndAggregateUsageStats(start, System.currentTimeMillis()).entrySet()) {
+                String pkg = e.getKey();
+                if ((config.enabled || AbsoluteRules.social(pkg))
+                        && es.foco.next.core.FocusEngine.watched(config, pkg))
+                    sum += e.getValue().getTotalTimeInForeground();
+            }
+            return sum;
+        } catch (RuntimeException e) {
+            return 0;
+        }
+    }
+
     /** «Sí» con su nota: 5 min más para esa app. */
     public static void answerYes(Context c, String pkg, String label, Awareness.Kind kind, String note, long sessionMs) {
+        answerYes(c, pkg, label, kind, note, sessionMs, Awareness.EXTEND_MS);
+    }
+
+    /** v34: «Sí» con su nota; la ventana dura {@code extendMs} (3 min con 2 h o más de ocio hoy). */
+    public static void answerYes(
+            Context c, String pkg, String label, Awareness.Kind kind, String note, long sessionMs, long extendMs) {
         SharedPreferences p = prefs(c);
         String day = today();
         long now = System.currentTimeMillis();
@@ -142,10 +175,10 @@ public final class AwarenessStore {
                     .putString("notas", keep.toString())
                     .putInt("si_dia_" + day, p.getInt("si_dia_" + day, 0) + 1)
                     .putString("extApp", pkg)
-                    .putLong("extHasta", now + Awareness.EXTEND_MS)
+                    .putLong("extHasta", now + extendMs)
                     .apply();
         } catch (Exception e) {
-            p.edit().putString("extApp", pkg).putLong("extHasta", now + Awareness.EXTEND_MS).apply();
+            p.edit().putString("extApp", pkg).putLong("extHasta", now + extendMs).apply();
         }
         // El texto de la nota no va al registro exportable: solo el tipo.
         InspectorLog.event(c, InspectorLog.CONCIENCIA, pkg, now, sessionMs, 1, 0, "si;" + kind.name().toLowerCase(), null);
