@@ -22,10 +22,10 @@ fi
 echo "== Parando compilaciones colgadas"
 ./gradlew --stop >/dev/null 2>&1
 
-echo "== Compilando (sin lint de release)…"
+echo "== Compilando (versión rápida de prueba; tarda unos minutos)…"
 LOG=build/compilar.log
 mkdir -p build
-if ./gradlew :app:assemblePerf -Prapido --console=plain >"$LOG" 2>&1; then
+if ./gradlew :app:assemblePerf -Prapido --console=plain 2>&1 | tee "$LOG"; then
   echo "== BUILD SUCCESSFUL"
   if adb get-state >/dev/null 2>&1; then
     echo "== Instalando en el teléfono"
