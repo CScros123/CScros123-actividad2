@@ -29,9 +29,11 @@ español, claro y sin tecnicismos innecesarios.
 
 ## Dónde está el código
 
-El código **no está en este repositorio**: el usuario lo tiene en `~/Foco-Lab` y lo comparte en
-un zip. Si no está en la sesión, pídelo. Trabaja sobre una copia en el scratchpad y, antes de cada
-versión, guarda una copia intacta (`Foco-Lab-before-vNN`) para poder comparar y volver atrás.
+El código está en **`Foco-Lab/`** de este repositorio (subido en la v32). El usuario compila su
+propia copia en `~/Foco-Lab`: si él compiló cambios que no están aquí, pídele el zip antes de
+empezar. Antes de cada versión guarda una copia intacta (`Foco-Lab-before-vNN` en el scratchpad)
+para comparar y armar el zip acumulado, y al terminar haz commit de `Foco-Lab/` en la rama de
+trabajo.
 
 Módulos: `:foco-core` (Java puro, reglas y pruebas), `:app` (Java + Compose), `:lab` /
 `:lab-core` / `:lab-data` (juegos de entrenamiento; se conservan, el usuario los mejorará).
