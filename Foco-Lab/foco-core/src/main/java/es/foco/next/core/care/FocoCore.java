@@ -68,6 +68,49 @@ public final class FocoCore {
         return t.window >= 0 && !done && minute >= t.window && !missedAt(t, false, minute);
     }
 
+    // v36: aviso insistente antes de la hora límite (de una tarea o de toda la franja).
+    /** Empieza a insistir estos minutos antes de la hora. */
+    public static final int NAG_LEAD_MIN = 30;
+    /** Cada cuánto insiste. */
+    public static final long NAG_EVERY_MS = 5 * 60_000L;
+    /** Horas límite por defecto de las franjas: mañana a las 9:00, tarde y noche a las 23:00. */
+    public static final int MORNING_DEADLINE = 9 * 60, NIGHT_DEADLINE = 23 * 60;
+
+    /**
+     * Hora límite en el día de Foco (que empieza a las 04:00): 0:30 cuenta como 24:30. -1 = sin
+     * hora.
+     */
+    public static int logicalDeadline(int minuteOfDay) {
+        if (minuteOfDay < 0) return -1;
+        return minuteOfDay < 4 * 60 ? minuteOfDay + 24 * 60 : minuteOfDay;
+    }
+
+    /**
+     * ¿Toca insistir? Desde {@link #NAG_LEAD_MIN} antes de la hora hasta que vence el margen de 10
+     * min, mientras no esté hecho. {@code deadline} y {@code minute} en minutos del día de Foco.
+     */
+    public static boolean nagAt(int deadline, boolean done, int minute) {
+        return deadline >= 0
+                && !done
+                && minute >= deadline - NAG_LEAD_MIN
+                && minute * 60_000L < deadline * 60_000L + GRACE_MS;
+    }
+
+    /** ¿Ya pasaron 5 min desde el último aviso? */
+    public static boolean nagAgain(long lastNagMs, long nowMs) {
+        return lastNagMs <= 0 || nowMs - lastNagMs >= NAG_EVERY_MS - 30_000L;
+    }
+
+    /** «Quedan 12 min (hasta las 9:00)» o «Ya es la hora: 6 min de margen». */
+    public static String nagText(int deadline, int minute) {
+        int left = deadline - minute;
+        int h = (deadline / 60) % 24, m = deadline % 60;
+        String at = h + ":" + (m < 10 ? "0" : "") + m;
+        if (left > 0) return "Quedan " + left + " min (hasta las " + at + ")";
+        long grace = GRACE_MS / 60_000L + left;
+        return "Ya son las " + at + ": " + Math.max(0, grace) + " min de margen";
+    }
+
     /**
      * Penalización por una tarea vencida: 1 h desde ahora, pero no se acumula (si ya hay una activa
      * no se crea otra) y nunca de noche (la noche ya cierra el ocio). 0 si no corresponde.

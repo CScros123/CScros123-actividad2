@@ -509,3 +509,23 @@ demás).
 
 Reglas en `core/care/Awareness` (`typicalVideoMs`, `cutGraceMs`, `cutNow`, `videosText`); el
 deslizamiento, `FocusAccessibilityService.awScroll`.
+
+## v36: «¿Cómo lo hiciste?» y aviso cada 5 min antes de la hora límite
+
+**Al tocar una tarea** (en la lista o «✓ Hecha» de «Lo siguiente») ya no se marca sin más: se abre
+una hoja con «¿Cómo lo hiciste?» y dos botones, «📷 Foto y hecha» y «✓ Hecha». Nota y foto son
+opcionales y van al informe del día (`cómo: …` y `con foto` en cada tarea). Si ya escribiste algo
+para esa tarea otro día, «↺ Igual que la última vez» lo pone con un toque. La nota se queda en el
+teléfono (`RoutineStore.saveNote`, prefs `nota_*` y `ultimaNota|*`): nunca va al registro exportable.
+Tocar una tarea hecha la desmarca, como antes.
+
+**Hora límite de cada franja:** Mañana hasta las 9:00 y Tarde y noche hasta las 23:00, cambiables
+tocando «⏰ hasta …» junto al nombre de la franja («Sin hora» la quita). Desde 30 min antes, si
+queda algo, el búho avisa **cada 5 min** (canal «Hora límite (cada 5 min)», con vibración) hasta que
+la terminas o vence el margen de 10 min. Lo mismo para cada tarea con su propia hora. Al marcar la
+última tarea el aviso se calla. Este aviso lo pidió el usuario: no gasta el presupuesto del búho y
+suena también de noche (No molestar lo silencia). La hora de la franja **no** pone pausa de ocio:
+la pausa sigue siendo solo para las tareas con hora propia.
+
+Reglas en `FocoCore` (`nagAt`, `nagAgain`, `nagText`, `logicalDeadline`, `MORNING_DEADLINE`,
+`NIGHT_DEADLINE`); aviso y alarma en `RoutineStore.nag` / `scheduleNext`.

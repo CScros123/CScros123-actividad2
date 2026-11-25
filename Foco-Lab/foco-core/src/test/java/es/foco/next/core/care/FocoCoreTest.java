@@ -77,4 +77,24 @@ public class FocoCoreTest {
         assertTrue(s, s.contains("Te pasaste $20"));
         assertTrue(s, s.contains("5 bloqueos"));
     }
+
+    @Test
+    public void insisteCadaCincoMinutosAntesDeLaHora() {
+        int nine = FocoCore.MORNING_DEADLINE; // 9:00
+        assertFalse(FocoCore.nagAt(nine, false, 8 * 60 + 29));
+        assertTrue(FocoCore.nagAt(nine, false, 8 * 60 + 30));
+        assertTrue(FocoCore.nagAt(nine, false, 9 * 60 + 9)); // margen de 10 min
+        assertFalse(FocoCore.nagAt(nine, false, 9 * 60 + 10));
+        assertFalse(FocoCore.nagAt(nine, true, 8 * 60 + 45)); // hecha: silencio
+        assertFalse(FocoCore.nagAt(-1, false, 8 * 60 + 45)); // sin hora
+        assertTrue(FocoCore.nagAgain(0, 1000));
+        assertFalse(FocoCore.nagAgain(1000, 1000 + 2 * 60_000));
+        assertTrue(FocoCore.nagAgain(1000, 1000 + 5 * 60_000));
+        assertEquals("Quedan 12 min (hasta las 9:00)", FocoCore.nagText(nine, 8 * 60 + 48));
+        assertEquals("Ya son las 9:00: 7 min de margen", FocoCore.nagText(nine, 9 * 60 + 3));
+        // La noche: 0:30 es 24:30 en el día de Foco.
+        assertEquals(24 * 60 + 30, FocoCore.logicalDeadline(30));
+        assertEquals(FocoCore.NIGHT_DEADLINE, FocoCore.logicalDeadline(23 * 60));
+        assertEquals("Quedan 20 min (hasta las 0:30)", FocoCore.nagText(24 * 60 + 30, 24 * 60 + 10));
+    }
 }

@@ -281,7 +281,10 @@ public final class Inspector {
                     if (tasks.isEmpty()) continue;
                     Set<Integer> done = RoutineStore.blockDone(c, b, day);
                     Set<Integer> missed = RoutineStore.blockMissed(c, b, day);
-                    s.append("[").append(b.toLowerCase()).append("]\n");
+                    s.append("[").append(b.toLowerCase());
+                    int limit = RoutineStore.blockDeadline(c, b); // v36
+                    if (limit >= 0) s.append(" · hasta las ").append(limit / 60).append(':').append(limit % 60 < 10 ? "0" : "").append(limit % 60);
+                    s.append("]\n");
                     for (int i = 0; i < tasks.size(); i++) {
                         Routine.Task task = tasks.get(i);
                         String mark =
@@ -290,7 +293,12 @@ public final class Inspector {
                                         : done.contains(i) ? "hecha" : missed.contains(i) ? "incumplida" : "pendiente";
                         s.append("- ").append(task.label).append(" · ").append(task.minutes).append(" min");
                         if (task.window >= 0) s.append(" · límite ").append(task.windowText());
-                        s.append(" · ").append(mark).append('\n');
+                        s.append(" · ").append(mark);
+                        // v36: evidencia y «¿cómo lo hiciste?» (opcionales; solo en el teléfono).
+                        if (RoutineStore.hasPhoto(c, b, i, day)) s.append(" · con foto");
+                        s.append('\n');
+                        String how = RoutineStore.note(c, b, i, day);
+                        if (!how.isEmpty()) s.append("    cómo: ").append(how.replace('\n', ' ')).append('\n');
                     }
                 }
                 s.append("pausas_por_tareas=").append(RoutineStore.penalties(c, day)).append('\n');

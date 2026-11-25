@@ -63,6 +63,9 @@ Compose necesitan `imePadding()`).
 - **Registro:** `InspectorLog` → `LogDatabase`. Las evasiones cuentan una vez por hecho (solo si se
   insertó). No añadas más efectos de negocio al registro.
 - **Avisos no críticos:** pasan por `OwlBudget.take` (8 al día). Los críticos no.
+- **Tareas (v36):** tocar una tarea abre `DoneSheet` («¿Cómo lo hiciste?» + foto, opcionales, al
+  informe). Hora límite por franja (`RoutineStore.blockDeadline`, 9:00 / 23:00) con aviso cada 5 min
+  desde 30 min antes (`RoutineStore.nag`, fuera de `OwlBudget` por petición del usuario).
 - **«¿Me aporta?» (v33):** reglas en `core/care/Awareness`, datos en `runtime/AwarenessStore`,
   ventana `ui/AwarenessActivity` (actividad propia, no capa: así se pausa TikTok y el teclado va
   bien), y la sesión la lleva `FocusAccessibilityService.awareness()`. v34: los tramos por ocio de hoy

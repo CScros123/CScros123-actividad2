@@ -335,6 +335,11 @@ public final class RoutineStore {
         } else check(c, Routine.Kind.valueOf(block), i, on);
         if (on && running(c, block, i)) toggleTimer(c, block, i);
         if (on) RewardStore.onProgress(c); // v31: día completo → cupón, racha y desbloqueos
+        // v36: si ya no queda nada urgente, el aviso insistente se calla al momento.
+        if (on) {
+            nag(c, System.currentTimeMillis());
+            scheduleNext(c);
+        }
     }
 
     /**
@@ -646,6 +651,90 @@ public final class RoutineStore {
                 }
             }
         }
+        nag(c, now);
+    }
+
+    /** v36: lo más urgente con hora límite cerca, o null. {título, texto, minutos hasta la hora}. */
+    private static String[] urgent(Context c) {
+        LocalDate d = today();
+        int lm = es.foco.next.core.care.FocoCore.logicalMinute(java.time.LocalTime.now());
+        String[] best = null;
+        int bestDeadline = Integer.MAX_VALUE;
+        for (String b : BLOCKS) {
+            List<Routine.Task> tasks = blockTasks(c, b, d);
+            if (tasks.isEmpty()) continue;
+            Set<Integer> done = blockDone(c, b, d);
+            // Cada tarea con su propia hora.
+            for (int i = 0; i < tasks.size(); i++) {
+                Routine.Task t = tasks.get(i);
+                int dl = es.foco.next.core.care.FocoCore.logicalDeadline(t.window);
+                if (es.foco.next.core.care.FocoCore.nagAt(dl, done.contains(i), lm) && dl < bestDeadline) {
+                    bestDeadline = dl;
+                    best = new String[] {t.label, es.foco.next.core.care.FocoCore.nagText(dl, lm)};
+                }
+            }
+            // La franja entera.
+            int pending = 0;
+            String first = null;
+            for (int i = 0; i < tasks.size(); i++)
+                if (!done.contains(i)) {
+                    pending++;
+                    if (first == null) first = tasks.get(i).label;
+                }
+            int dl = es.foco.next.core.care.FocoCore.logicalDeadline(blockDeadline(c, b));
+            if (es.foco.next.core.care.FocoCore.nagAt(dl, pending == 0, lm) && dl < bestDeadline) {
+                bestDeadline = dl;
+                String word = MORNING.equals(b) ? "la mañana" : "la tarde y noche";
+                best = new String[] {
+                    pending == 1 ? first : first + " y " + (pending - 1) + " más",
+                    es.foco.next.core.care.FocoCore.nagText(dl, lm) + " para terminar " + word + "."
+                };
+            }
+        }
+        return best;
+    }
+
+    private static final String CHANNEL_NAG = "foco-hora-limite";
+    private static final int ID_NAG = 7423;
+
+    /**
+     * v36: aviso insistente cada 5 min desde 30 min antes de la hora límite hasta que la cumples
+     * (o vence el margen). Lo pediste tú: no pasa por el presupuesto del búho y suena también de
+     * noche; con No molestar, el sistema lo silencia.
+     */
+    private static void nag(Context c, long now) {
+        try {
+            String[] u = urgent(c);
+            Context app = c.getApplicationContext();
+            NotificationManager nm = app.getSystemService(NotificationManager.class);
+            if (u == null) {
+                if (nm != null && prefs(c).getLong("ultimoInsistir", 0) > 0) {
+                    nm.cancel(ID_NAG);
+                    prefs(c).edit().remove("ultimoInsistir").apply();
+                }
+                return;
+            }
+            if (!es.foco.next.core.care.FocoCore.nagAgain(prefs(c).getLong("ultimoInsistir", 0), now)) return;
+            if (nm == null || app.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return;
+            prefs(c).edit().putLong("ultimoInsistir", now).apply();
+            NotificationChannel ch = new NotificationChannel(CHANNEL_NAG, "Hora límite (cada 5 min)", NotificationManager.IMPORTANCE_HIGH);
+            ch.enableVibration(true);
+            nm.createNotificationChannel(ch);
+            Intent open = new Intent().setClassName(app, "es.foco.next.ui.HomeActivity").putExtra(EXTRA_CORE, true)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            PendingIntent tap = PendingIntent.getActivity(app, ID_NAG, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            nm.notify(ID_NAG,
+                    new Notification.Builder(app, CHANNEL_NAG)
+                            .setSmallIcon(es.foco.next.R.drawable.ic_owl)
+                            .setContentTitle("🦉 " + u[0])
+                            .setContentText(u[1])
+                            .setStyle(new Notification.BigTextStyle().bigText(u[1] + " Toca para marcarla."))
+                            .setCategory(Notification.CATEGORY_REMINDER)
+                            .setContentIntent(tap)
+                            .setAutoCancel(true)
+                            .build());
+        } catch (RuntimeException ignored) {
+        }
     }
 
     /**
@@ -678,8 +767,37 @@ public final class RoutineStore {
                     }
                 }
             }
+            // v36: el aviso insistente. Durante el tramo, cada 5 min (ventana de 1 min); antes, al
+            // empezar el tramo (30 min antes de cada hora límite).
+            boolean nagging = false;
+            if (enabled(c)) {
+                long now = System.currentTimeMillis();
+                if (urgent(c) != null) {
+                    nagging = true;
+                    long last = prefs(c).getLong("ultimoInsistir", 0);
+                    long at = Math.max(now + 60_000L, (last > 0 ? last : now) + es.foco.next.core.care.FocoCore.NAG_EVERY_MS);
+                    if (at < next) next = at;
+                } else {
+                    LocalDate d = today();
+                    java.time.ZonedDateTime base = d.atStartOfDay(java.time.ZoneId.systemDefault());
+                    for (String b : BLOCKS) {
+                        List<Routine.Task> tasks = blockTasks(c, b, d);
+                        if (tasks.isEmpty()) continue;
+                        Set<Integer> done = blockDone(c, b, d);
+                        java.util.List<Integer> deadlines = new java.util.ArrayList<>();
+                        if (done.size() < tasks.size()) deadlines.add(es.foco.next.core.care.FocoCore.logicalDeadline(blockDeadline(c, b)));
+                        for (int i = 0; i < tasks.size(); i++)
+                            if (!done.contains(i)) deadlines.add(es.foco.next.core.care.FocoCore.logicalDeadline(tasks.get(i).window));
+                        for (int dl : deadlines) {
+                            if (dl < 0) continue;
+                            long start = base.plusMinutes(dl - es.foco.next.core.care.FocoCore.NAG_LEAD_MIN).toInstant().toEpochMilli();
+                            if (start > now && start < next) next = start;
+                        }
+                    }
+                }
+            }
             if (next == Long.MAX_VALUE) am.cancel(pi);
-            else am.setWindow(android.app.AlarmManager.RTC_WAKEUP, next, 5 * 60_000L, pi);
+            else am.setWindow(android.app.AlarmManager.RTC_WAKEUP, next, nagging ? 60_000L : 5 * 60_000L, pi);
         } catch (RuntimeException ignored) {
         }
     }
@@ -810,7 +928,68 @@ public final class RoutineStore {
     }
 
     public static boolean hasPhoto(Context c, String block, int i) {
-        return new java.io.File(evidenceDir(c), today() + "_" + block + "_" + i + ".webp").exists();
+        return hasPhoto(c, block, i, today());
+    }
+
+    /** v36: para el informe de un día. */
+    public static boolean hasPhoto(Context c, String block, int i, LocalDate d) {
+        return new java.io.File(evidenceDir(c), d + "_" + block + "_" + i + ".webp").exists();
+    }
+
+    // ---------------- v36: «¿Cómo lo hiciste?» ----------------
+
+    /** Máximo de la nota de una tarea. */
+    public static final int NOTE_MAX = 300;
+
+    private static String noteKey(String block, int i, LocalDate d) {
+        return "nota_" + blockKey(block, d) + "_" + i;
+    }
+
+    private static String lastNoteKey(String label) {
+        return "ultimaNota|" + (label == null ? "" : label.trim().toLowerCase(java.util.Locale.ROOT));
+    }
+
+    /**
+     * Guarda cómo hiciste una tarea de hoy (opcional; vacía la borra). Solo para el informe del
+     * teléfono: nunca va al registro exportable. Se recuerda la última por nombre de tarea para
+     * proponerla la próxima vez.
+     */
+    public static void saveNote(Context c, String block, int i, String label, String note) {
+        String n = note == null ? "" : note.trim();
+        if (n.length() > NOTE_MAX) n = n.substring(0, NOTE_MAX);
+        SharedPreferences.Editor e = prefs(c).edit();
+        if (n.isEmpty()) e.remove(noteKey(block, i, today()));
+        else e.putString(noteKey(block, i, today()), n).putString(lastNoteKey(label), n);
+        e.apply();
+    }
+
+    public static String note(Context c, String block, int i, LocalDate d) {
+        return prefs(c).getString(noteKey(block, i, d), "");
+    }
+
+    /** La última nota que escribiste para una tarea con ese nombre ("" si ninguna). */
+    public static String lastNote(Context c, String label) {
+        return prefs(c).getString(lastNoteKey(label), "");
+    }
+
+    // ---------------- v36: hora límite de cada franja ----------------
+
+    /**
+     * Hora límite de la franja (minutos del día) o -1 sin hora. Mañana: 9:00; tarde y noche:
+     * 23:00 (se cambian tocando la franja). Las tareas «solo este día» no tienen.
+     */
+    public static int blockDeadline(Context c, String block) {
+        if (MORNING.equals(block)) return prefs(c).getInt("limite_" + MORNING, es.foco.next.core.care.FocoCore.MORNING_DEADLINE);
+        if (NIGHT.equals(block)) return prefs(c).getInt("limite_" + NIGHT, es.foco.next.core.care.FocoCore.NIGHT_DEADLINE);
+        return -1;
+    }
+
+    /** {@code minute} -1 = sin hora. */
+    public static void setBlockDeadline(Context c, String block, int minute) {
+        if (!MORNING.equals(block) && !NIGHT.equals(block)) return;
+        prefs(c).edit().putInt("limite_" + block, minute < 0 ? -1 : Math.min(minute, 24 * 60 - 1)).apply();
+        lastSweep = 0;
+        scheduleNext(c);
     }
 
     /** Solo se guardan 8 semanas de fotos. */

@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -223,6 +224,9 @@ fun coreColors(): CoreColors {
 /** Lo que se edita en la hoja: nueva tarea o una existente (clave + posición, o hoy + bloque). */
 private data class Editing(val task: Routine.Task?, val key: String? = null, val block: String, val index: Int = -1, val today: Boolean = false)
 
+/** v36: la tarea que se está marcando (hoja «¿Cómo lo hiciste?»). */
+private data class Doing(val block: String, val index: Int, val task: Routine.Task)
+
 @Composable
 fun FocoCoreScreen(vm: HomeViewModel, a: HomeActions, startTab: Int, onClose: () -> Unit) {
     val c = LocalHome.current
@@ -232,6 +236,7 @@ fun FocoCoreScreen(vm: HomeViewModel, a: HomeActions, startTab: Int, onClose: ()
     var editing by remember { mutableStateOf<Editing?>(null) }
     var money by remember { mutableStateOf(false) }
     var coupon by remember { mutableStateOf<Boolean?>(null) } // null: cerrada; true: cupón de semana
+    var doing by remember { mutableStateOf<Doing?>(null) }
     val motion = !(vm.reduceMotion || vm.saving)
     // Cronómetros y cuenta atrás: se refresca cada 30 s mientras está abierta.
     LaunchedEffect(Unit) {
@@ -259,7 +264,7 @@ fun FocoCoreScreen(vm: HomeViewModel, a: HomeActions, startTab: Int, onClose: ()
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     when (tab) {
-                        0 -> TodayTab(vm, a, tick, k, motion, onCoupon = { coupon = it }) { editing = it }
+                        0 -> TodayTab(vm, a, tick, k, motion, onCoupon = { coupon = it }, onDo = { doing = it }) { editing = it }
                         1 -> WeekTab(tick, k, onMoney = { money = true }) { editing = it }
                         else -> ReportsTab(tick, k, motion)
                     }
@@ -278,6 +283,23 @@ fun FocoCoreScreen(vm: HomeViewModel, a: HomeActions, startTab: Int, onClose: ()
                 vm.refreshCore()
                 clock++
             }
+        }
+        doing?.let { d ->
+            DoneSheet(
+                d, k,
+                onDismiss = { doing = null },
+                onPhoto = {
+                    doing = null
+                    a.photoTask(d.block, d.index) // al volver de la cámara queda hecha con su foto
+                    clock++
+                },
+                onDone = {
+                    doing = null
+                    vm.refreshRoutine()
+                    vm.refreshCore()
+                    clock++
+                },
+            )
         }
         coupon?.let { week ->
             CouponSheet(vm, week, k, onDismiss = { coupon = null }) {
@@ -311,7 +333,16 @@ private fun CoreTabs(tab: Int, k: CoreColors, onTab: (Int) -> Unit) {
 // ----------------------------------- Hoy -----------------------------------
 
 @Composable
-private fun TodayTab(vm: HomeViewModel, a: HomeActions, tick: Int, k: CoreColors, motion: Boolean, onCoupon: (Boolean) -> Unit, onEdit: (Editing) -> Unit) {
+private fun TodayTab(
+    vm: HomeViewModel,
+    a: HomeActions,
+    tick: Int,
+    k: CoreColors,
+    motion: Boolean,
+    onCoupon: (Boolean) -> Unit,
+    onDo: (Doing) -> Unit,
+    onEdit: (Editing) -> Unit,
+) {
     val c = LocalHome.current
     val ctx = LocalContext.current
     val d = RoutineStore.today()
@@ -369,7 +400,7 @@ private fun TodayTab(vm: HomeViewModel, a: HomeActions, tick: Int, k: CoreColors
             HomeText(meta(t), 12.5.sp, c.muted)
             Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ActionButton(if (running) "❚❚  ${ms / 60_000} min" else "▶  Empezar", c.accent, k.onAccent, Modifier.weight(1f)) { a.toggleTaskTimer(b, i) }
-                ActionButton("✓  Hecha", c.text.copy(alpha = .09f), c.text, Modifier.weight(1f)) { a.completeTask(b, i) }
+                ActionButton("✓  Hecha", c.text.copy(alpha = .09f), c.text, Modifier.weight(1f)) { onDo(Doing(b, i, t)) }
                 ActionButton("📷", c.text.copy(alpha = .09f), c.text, Modifier.width(56.dp)) { a.photoTask(b, i) }
             }
         }
@@ -382,8 +413,21 @@ private fun TodayTab(vm: HomeViewModel, a: HomeActions, tick: Int, k: CoreColors
         val missed = remember(tick, b) { RoutineStore.blockMissed(ctx, b, d) }
         val doneCount = tasks.indices.count { it in done }
         val pending = Routine.remainingMinutes(tasks, done)
+        // v36: hora límite de la franja (tócala para cambiarla); 30 min antes, aviso cada 5 min.
+        var limit by remember(tick, b) { mutableIntStateOf(RoutineStore.blockDeadline(ctx, b)) }
         Row(Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             HomeText("${(BLOCK_TITLES[b] ?: b).uppercase()} · $doneCount/${tasks.size}", 11.sp, c.muted, FontWeight.Bold, Modifier.weight(1f))
+            if (b != RoutineStore.EVENT)
+                HomeText(
+                    if (limit >= 0) "⏰ hasta ${hm(limit)}" else "⏰ sin hora",
+                    11.sp, if (limit >= 0) k.warn else c.muted, FontWeight.Bold,
+                    Modifier.padding(end = 10.dp).clip(RoundedCornerShape(8.dp)).clickable {
+                        pickDeadline(ctx, limit) { m ->
+                            RoutineStore.setBlockDeadline(ctx, b, m)
+                            limit = RoutineStore.blockDeadline(ctx, b)
+                        }
+                    }.padding(horizontal = 6.dp, vertical = 2.dp),
+                )
             HomeText(if (tasks.isNotEmpty() && doneCount == tasks.size) "✓ completa" else if (pending > 0) "~$pending min" else "", 11.sp, if (doneCount == tasks.size && tasks.isNotEmpty()) k.ok else c.muted, FontWeight.Bold)
         }
         var showDone by remember(b) { mutableStateOf(false) }
@@ -396,7 +440,7 @@ private fun TodayTab(vm: HomeViewModel, a: HomeActions, tick: Int, k: CoreColors
             tasks.forEachIndexed { i, t ->
                 if (i !in done)
                     TaskRow(t, false, i in missed, RoutineStore.hasPhoto(ctx, b, i), k,
-                        onCheck = { a.completeTask(b, i) },
+                        onCheck = { onDo(Doing(b, i, t)) },
                         onLong = { onEdit(Editing(t, block = b, index = i, today = true)) })
             }
             if (doneCount > 0) {
@@ -418,6 +462,65 @@ private fun TodayTab(vm: HomeViewModel, a: HomeActions, tick: Int, k: CoreColors
         }
     }
     HomeText("Mantén pulsada una tarea para editarla.", 11.5.sp, c.muted, modifier = Modifier.padding(start = 4.dp))
+}
+
+private fun hm(minute: Int): String = "${minute / 60}:${if (minute % 60 < 10) "0" else ""}${minute % 60}"
+
+/** Reloj del sistema para la hora límite de una franja; «Sin hora» la quita. */
+private fun pickDeadline(ctx: android.content.Context, current: Int, onPick: (Int) -> Unit) {
+    val base = if (current >= 0) current else 9 * 60
+    val dlg = android.app.TimePickerDialog(ctx, { _, h, m -> onPick(h * 60 + m) }, base / 60, base % 60, true)
+    dlg.setButton(android.content.DialogInterface.BUTTON_NEUTRAL, "Sin hora") { _, _ -> onPick(-1) }
+    dlg.show()
+}
+
+/**
+ * v36: al tocar una tarea, «¿Cómo lo hiciste?» y la foto, los dos opcionales: van al informe del
+ * día. Propone la nota de la última vez (aunque sea lo mismo, un toque).
+ */
+@Composable
+private fun DoneSheet(d: Doing, k: CoreColors, onDismiss: () -> Unit, onPhoto: () -> Unit, onDone: () -> Unit) {
+    val c = LocalHome.current
+    val ctx = LocalContext.current
+    val last = remember(d) { RoutineStore.lastNote(ctx, d.task.label) }
+    var note by remember(d) { mutableStateOf(RoutineStore.note(ctx, d.block, d.index, RoutineStore.today())) }
+    CoreSheet(k, onDismiss) {
+        HomeText(d.task.label, 19.sp, weight = FontWeight.Bold)
+        HomeText(meta(d.task), 12.5.sp, c.muted)
+        Label("¿CÓMO LO HICISTE? · OPCIONAL")
+        Box(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.text.copy(alpha = .06f))
+                .border(1.5.dp, c.accent.copy(alpha = .6f), RoundedCornerShape(16.dp)).padding(14.dp),
+        ) {
+            if (note.isEmpty()) HomeText("Ej.: qué hiciste, cuánto tardaste, qué te costó", 14.sp, c.muted)
+            BasicTextField(
+                note, { if (it.length <= RoutineStore.NOTE_MAX) note = it },
+                textStyle = TextStyle(color = c.text, fontSize = 15.sp),
+                cursorBrush = SolidColor(c.accent),
+                keyboardOptions = KeyboardOptions(capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Sentences),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp),
+            )
+        }
+        if (last.isNotEmpty() && note.isEmpty())
+            Box(
+                Modifier.padding(top = 8.dp).clip(RoundedCornerShape(999.dp)).background(c.text.copy(alpha = .07f))
+                    .clickable { note = last }.padding(horizontal = 12.dp, vertical = 7.dp),
+            ) { HomeText("↺ Igual que la última vez: ${last.take(40)}${if (last.length > 40) "…" else ""}", 12.sp, c.text) }
+        HomeText("Va a tu informe del día. La foto también es opcional.", 11.5.sp, c.muted, modifier = Modifier.padding(top = 10.dp))
+        Spacer(Modifier.height(14.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ActionButton("📷  Foto y hecha", c.accent, k.onAccent, Modifier.weight(1f)) {
+                RoutineStore.saveNote(ctx, d.block, d.index, d.task.label, note)
+                onPhoto()
+            }
+            ActionButton("✓  Hecha", c.text.copy(alpha = .09f), c.text, Modifier.weight(1f)) {
+                RoutineStore.saveNote(ctx, d.block, d.index, d.task.label, note)
+                RoutineStore.checkBlock(ctx, d.block, d.index, true)
+                onDone()
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+    }
 }
 
 /** La siguiente tarea de hoy: la que vence antes; sin hora, la primera pendiente. */
