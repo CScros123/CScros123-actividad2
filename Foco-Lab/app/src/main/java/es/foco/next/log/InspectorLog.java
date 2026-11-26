@@ -55,6 +55,8 @@ public final class InspectorLog {
             REDIRECCION = "redireccion",
             NOCHE = "bloqueo_noche_absoluta",
             WEB_SOCIAL = "bloqueo_web_red_social",
+            // v37: intento de abrir la app o la web de NextDNS en este teléfono.
+            INTENTO_NEXTDNS = "intento_panel_nextdns",
             // Foco Home (etapas 1, 5 y 6).
             LAUNCHER_CAMBIADO = "launcher_cambiado",
             DNS_AUTO = "dns_automatico",

@@ -56,6 +56,21 @@ public final class Categories {
         return TOTAL_PACKAGES.contains(pkg) || pkg.toLowerCase(Locale.ROOT).contains("telegram");
     }
 
+    // v37: NextDNS se configura solo desde otro dispositivo. En este teléfono, su app y su web
+    // (my.nextdns.io y el resto de nextdns.io) se cierran siempre, como Telegram. Foco sigue
+    // leyendo las estadísticas con su clave (eso no pasa por el navegador).
+    public static final List<String> DNS_PANEL_DOMAINS = Collections.unmodifiableList(Arrays.asList("nextdns.io"));
+
+    /** La app de NextDNS (o cualquier paquete con "nextdns" en el nombre). */
+    public static boolean dnsPanelApp(String pkg) {
+        return pkg != null && pkg.toLowerCase(Locale.ROOT).contains("nextdns");
+    }
+
+    /** La web de NextDNS (panel, cuenta, ayuda) en la barra del navegador. */
+    public static boolean dnsPanelDomain(String url) {
+        return matches(url, DNS_PANEL_DOMAINS);
+    }
+
     /**
      * Dirección (como sale en la barra del navegador, con o sin https://) de un dominio en bloqueo
      * total o un subdominio suyo.

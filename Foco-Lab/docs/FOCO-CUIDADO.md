@@ -529,3 +529,11 @@ la pausa sigue siendo solo para las tareas con hora propia.
 
 Reglas en `FocoCore` (`nagAt`, `nagAgain`, `nagText`, `logicalDeadline`, `MORNING_DEADLINE`,
 `NIGHT_DEADLINE`); aviso y alarma en `RoutineStore.nag` / `scheduleNext`.
+
+## v37: NextDNS se cambia solo desde otro dispositivo
+
+En este teléfono, la app de NextDNS (cualquier paquete con «nextdns») y su web (`nextdns.io` y
+subdominios: my.nextdns.io, help…) se cierran siempre, como Telegram: sin modo, cupón ni hora libre
+que lo salte. Registro: `intento_panel_nextdns`. Foco sigue leyendo las estadísticas con la clave de
+la API (no pasa por el navegador). Refuerzo recomendado, hecho desde otro dispositivo: añadir
+`my.nextdns.io` a la Denylist del perfil. Reglas en `Categories.dnsPanelApp/dnsPanelDomain`.

@@ -326,6 +326,15 @@ public final class FocusAccessibilityService extends AccessibilityService
                 "Telegram: bloqueo total, sin excepciones");
     }
 
+    /** v37: la app o la web de NextDNS: sus reglas se cambian solo desde otro dispositivo. */
+    private void dnsPanelBlocked(String pkg, String how) {
+        blockedAlways(
+                pkg,
+                how,
+                es.foco.next.log.InspectorLog.INTENTO_NEXTDNS,
+                "NextDNS se cambia solo desde otro dispositivo");
+    }
+
     /**
      * Bloqueo sin ventana ni saldo (Telegram y la web de las redes sociales de la Regla 1): atrás e
      * Inicio, y al log.
@@ -365,6 +374,7 @@ public final class FocusAccessibilityService extends AccessibilityService
                 root.recycle();
             }
             if (Categories.totalDomain(url)) totalBlocked(pkg, "web");
+            else if (Categories.dnsPanelDomain(url)) dnsPanelBlocked(pkg, "web"); // v37
             // Regla 1: la web de las redes sociales, siempre (sin ventana de 5 minutos ni saldo en
             // el navegador).
             else if (AbsoluteRules.socialDomain(url))
@@ -908,6 +918,8 @@ public final class FocusAccessibilityService extends AccessibilityService
             if (Categories.totalBlock(foreground) && DeviceState.awake(this))
                 totalBlocked(
                         foreground, "app"); // Foco 1.0, etapa 2: siempre, con el plan activado o no
+            else if (Categories.dnsPanelApp(foreground) && DeviceState.awake(this))
+                dnsPanelBlocked(foreground, "app"); // v37: NextDNS solo desde otro dispositivo
             FocusEngine.Input in = new FocusEngine.Input();
             in.pkg = foreground;
             in.wall = wall;
