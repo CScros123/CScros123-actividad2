@@ -682,6 +682,7 @@ fun OwlSpeech(mode: Mode, text: String, info: String, cta: String, onNext: () ->
         }
         if (info.isNotEmpty()) GameText(info, 11.5.sp, c.muted, FontWeight.Normal, Modifier.padding(top = 6.dp), maxLines = 1)
         if (cta.isNotEmpty())
-            GameButton(cta, Act.GO, Modifier.padding(top = 10.dp).fillMaxWidth(), height = 42.dp, onClick = onCta)
+            // v43: neutro y bajo: el único verde grande del inicio es la misión.
+            GameButton(cta, Act.GHOST, Modifier.padding(top = 10.dp).fillMaxWidth(), height = 40.dp, onClick = onCta)
     }
 }

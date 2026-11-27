@@ -149,7 +149,8 @@ public final class OwlBrain {
             case NOCHE:
                 return "";
             default:
-                return "Ver idea";
+                // v43: en calma no hay botón: «otra idea» ya es el ↻ del globo.
+                return "";
         }
     }
 }

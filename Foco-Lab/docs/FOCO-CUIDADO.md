@@ -618,3 +618,9 @@ Primera parte del diseño aprobado («modo juego»). El fondo (foto o paisaje de
 El menú de mantener pulsado el búho usaba el desplegable del sistema (fondo claro) con el texto
 claro del tema: no se leía. Ahora es una ventanita propia con el color de la tarjeta y tres botones
 del modo juego: Respirar (turquesa), Siguiente tarea (verde) y ¿Cómo estás? (neutro).
+
+## v43: un solo botón verde grande en el inicio
+
+El globo del búho ya no muestra «Ver idea» en calma (solo cambiaba la frase, igual que ↻). Cuando
+propone algo (leer, un reto, levantarse), su botón es neutro y más bajo: el verde grande queda solo
+para la misión de Foco Core.
