@@ -654,6 +654,15 @@ public final class RoutineStore {
         nag(c, now);
     }
 
+    /** v41: para el inicio (el búho apunta): {tarea, «Quedan 12 min (hasta las 9:00)…»} o null. */
+    public static String[] urgentNow(Context c) {
+        try {
+            return enabled(c) ? urgent(c) : null;
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
     /** v36: lo más urgente con hora límite cerca, o null. {título, texto, minutos hasta la hora}. */
     private static String[] urgent(Context c) {
         LocalDate d = today();

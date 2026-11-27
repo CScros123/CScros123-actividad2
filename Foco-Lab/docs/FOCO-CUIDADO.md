@@ -583,3 +583,32 @@ Primera parte del diseño aprobado («modo juego»). El fondo (foto o paisaje de
   salían dos.
 - Cupones: «Caduca mar 1 · redes 15′» y «TikTok · quedan 12′» en vez de frases largas.
 - Semana: ayuda más corta y con aire abajo para que el botón «Tarea» no la tape.
+
+## v41: modo juego en toda la app (inicio, búho, «¿Me aporta?», Reportes, pantallas Java)
+
+**Inicio**
+- Reloj en Rubik Black. Debajo, el marcador: racha 🔥, barra del día, cupones 🎟 y la **campana**
+  (con número) para lo que no corre prisa: plan del domingo, cuánto estuvo apagado Foco, «Usar Foco
+  como inicio», resumen de la noche y NextDNS. Se abren al tocarla. «Foco apagado» y la pregunta de
+  ánimo siguen a la vista.
+- La tarjeta de Foco Core es una **misión**: etiqueta (SIGUIENTE, PLAN, OCIO EN PAUSA, TODO
+  HECHO), la tarea en grande, el aviso naranja si la hora límite está cerca y un solo botón
+  (Vamos / Anotar / Activar 1 h libre / Ver tareas).
+- Dock en fichas con relieve; tres puntos → **pestañas con icono** (Análisis, Inicio, Practicar).
+- Cajón: grupos con su color (ocio naranja, bloqueadas coral, el resto verde) y chips cortos.
+
+**Búho**
+- **Festeja** (salto con confeti) cada vez que se marca una tarea (`HomeViewModel.celebrate`).
+- **Te apunta**: reloj naranja que late a su lado y dice la tarea cuando la hora límite está cerca
+  (`RoutineStore.urgentNow`).
+- **Corona** con 7 días seguidos al 100 % (la bufanda sigue a los 3).
+- **Mantener pulsado** → menú: Respirar, Siguiente tarea, ¿Cómo estás?
+- Globo en modo juego y **frases de unas cinco palabras** (`OwlBrain.say` y `cta` acortados).
+
+**Otras pantallas**
+- «¿Me aporta?»: Lexend/Rubik, «¿Te aporta?», botones con relieve (No coral, Sí neutro, Seguir y
+  Abrir verdes, Mis tareas azul) y menos texto.
+- Foco Core (Reportes y resto): los colores de estado son los de acción (verde, naranja, coral).
+- Pantallas Java (Estadísticas, Ajustes, Registro…) vía `Design`: letra Rubik/Lexend, botón
+  principal verde con relieve, campos de 16 dp. Temas XML con Lexend por defecto. Píldora del
+  cronómetro en Rubik.

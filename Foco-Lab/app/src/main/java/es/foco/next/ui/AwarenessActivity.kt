@@ -120,6 +120,10 @@ class AwarenessActivity : ComponentActivity() {
         val productive = AwarenessStore.randomProductive(this, pkg)
         val productiveLabel = productive?.let { AwarenessStore.label(this, it) }
         setContent {
+            // v41: letra del modo juego en toda la ventana (los títulos piden Rubik aparte).
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.compose.material3.LocalTextStyle provides androidx.compose.ui.text.TextStyle(fontFamily = Lexend)
+            ) {
             AwarenessScreen(
                 label = label,
                 sessionMs = sessionMs,
@@ -137,6 +141,7 @@ class AwarenessActivity : ComponentActivity() {
                 onAlternative = { what -> alternative(what) },
                 onHome = { goHome() },
             )
+            }
         }
     }
 
@@ -287,12 +292,9 @@ private fun Card(modifier: Modifier = Modifier, content: @Composable () -> Unit)
 }
 
 @Composable
-private fun Big(text: String, bg: Color, ink: Color, border: Color? = null, enabled: Boolean = true, onClick: () -> Unit) {
-    var m = Modifier.fillMaxWidth().padding(top = 10.dp).clip(RoundedCornerShape(18.dp)).background(if (enabled) bg else bg.copy(alpha = .4f))
-    if (border != null) m = m.border(1.dp, if (enabled) border else border.copy(alpha = .4f), RoundedCornerShape(18.dp))
-    Box(m.clickable(enabled = enabled, onClick = onClick).padding(vertical = 17.dp), contentAlignment = Alignment.Center) {
-        Text(text, color = if (enabled) ink else ink.copy(alpha = .45f), fontSize = 17.sp, fontWeight = FontWeight.Bold)
-    }
+private fun Big(text: String, act: Act, enabled: Boolean = true, onClick: () -> Unit) {
+    // v41: botón del modo juego (relieve y color de acción).
+    GameButton(text, act, Modifier.fillMaxWidth().padding(top = 10.dp), enabled = enabled, height = 56.dp, onClick = onClick)
 }
 
 @Composable
@@ -325,13 +327,13 @@ private fun Ask(
                 modifier = Modifier.clip(RoundedCornerShape(99.dp)).background(Color(0x1AFFFFFF)).padding(horizontal = 14.dp, vertical = 6.dp),
             )
             if (sinceNo >= 0) {
-                Text("Volviste", color = Color.White, fontSize = 46.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(top = 14.dp))
+                Text("Volviste", color = Color.White, fontSize = 46.sp, fontWeight = FontWeight.ExtraBold, fontFamily = Rubik, modifier = Modifier.padding(top = 14.dp))
                 Text(
                     "Hace ${if (sinceNo < 1) "menos de 1" else sinceNo} min elegiste salir de $label.",
                     color = AwSoft, fontSize = 14.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 24.dp),
                 )
             } else {
-                Text(Awareness.duration(sessionMs), color = Color.White, fontSize = 54.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(top = 14.dp))
+                Text(Awareness.duration(sessionMs), color = Color.White, fontSize = 58.sp, fontWeight = FontWeight.Black, fontFamily = Rubik, modifier = Modifier.padding(top = 14.dp))
                 Text(
                     "seguidos en $label" + if (todayMs > 0) " · hoy ${Awareness.duration(todayMs)}" else "",
                     color = AwSoft, fontSize = 14.sp,
@@ -356,12 +358,12 @@ private fun Ask(
             OwlBadge(54)
             Spacer(Modifier.height(10.dp))
             Text(
-                if (sinceNo >= 0) "Lo que vas a ver,\n¿te aporta?" else "Lo que veo ahora,\n¿me aporta?",
-                color = AwInk, fontSize = 22.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center,
+                "¿Te aporta?",
+                color = AwInk, fontSize = 26.sp, fontWeight = FontWeight.Black, fontFamily = Rubik, textAlign = TextAlign.Center,
             )
-            Text("Sin culpa: solo decide tú.", color = AwSoft, fontSize = 13.5.sp, modifier = Modifier.padding(top = 8.dp, bottom = 8.dp))
-            Big("No, ya está", AwCoral, Color.White, onClick = onNo)
-            Big("Sí, me aporta", AwGreenBg, AwGreenInk, border = AwGreenLine, onClick = onYes)
+            Spacer(Modifier.height(8.dp))
+            Big("No, ya está", Act.STOP, onClick = onNo)
+            Big("Sí, me aporta", Act.GHOST, onClick = onYes)
             MusicRow("Música tranquila")
         }
     }
@@ -375,7 +377,7 @@ private fun Note(extendMin: Long, onYes: (Awareness.Kind, String) -> Unit, onNo:
     val ok = words >= Awareness.MIN_WORDS
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.Center) {
         Card {
-            Text("¿Qué te aporta?", color = AwInk, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text("¿Qué te aporta?", color = AwInk, fontSize = 21.sp, fontWeight = FontWeight.ExtraBold, fontFamily = Rubik)
             Text(
                 "Escríbelo con tus palabras. Se guarda en tu informe.",
                 color = AwSoft, fontSize = 13.5.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp, bottom = 12.dp),
@@ -436,7 +438,7 @@ private fun Note(extendMin: Long, onYes: (Awareness.Kind, String) -> Unit, onNo:
                 )
             }
             Spacer(Modifier.height(6.dp))
-            Big("Seguir $extendMin min", AwGreenBg, AwGreenInk, border = AwGreenLine, enabled = ok) { onYes(kind, text) }
+            Big("Seguir $extendMin′", Act.GO, enabled = ok) { onYes(kind, text) }
             Text(
                 "Mejor lo dejo",
                 color = Color(0xFFFFB3A8),
@@ -466,11 +468,10 @@ private fun Done(
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
         Column(Modifier.fillMaxWidth().padding(top = 70.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             OwlBadge(70)
-            Text("Buena decisión.", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 12.dp))
-            Text("Recuperaste tiempo. Sigue sonando tu música.", color = Color(0xFFCFE9DA), fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp))
+            Text("Buena decisión", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Black, fontFamily = Rubik, modifier = Modifier.padding(top = 12.dp))
         }
         Card {
-            Text("¿Qué te apetece ahora?", color = AwSoft, fontSize = 13.5.sp, modifier = Modifier.padding(bottom = 10.dp))
+            Text("¿Y ahora?", color = AwSoft, fontSize = 14.sp, modifier = Modifier.padding(bottom = 10.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 for ((key, icon, name) in listOf(Triple("caminar", "🚶", "Caminar\ncon música"), Triple("leer", "📖", "Leer"), Triple("cocinar", "🍳", "Cocinar"))) {
                     Column(
@@ -482,11 +483,11 @@ private fun Done(
                     }
                 }
             }
-            if (productiveLabel != null) Big("Abrir $productiveLabel", AwGreenBg, AwGreenInk, border = AwGreenLine, onClick = onProductive)
-            Big("Ver mis tareas de hoy", AwChip, AwInk, onClick = onTasks)
+            if (productiveLabel != null) Big("Abrir $productiveLabel", Act.GO, onClick = onProductive)
+            Big("Mis tareas", Act.DONE, onClick = onTasks)
             Text(
-                "+1 decisión consciente hoy · llevas $decisions",
-                color = AwGreenInk, fontSize = 13.sp, modifier = Modifier.padding(top = 12.dp),
+                "+1 decisión consciente · llevas $decisions",
+                color = Act.GO.face, fontSize = 13.sp, modifier = Modifier.padding(top = 12.dp),
             )
             MusicRow("Música tranquila · ${Awareness.MUSIC_MS / Awareness.MIN} min")
         }

@@ -80,50 +80,53 @@ public final class OwlBrain {
         return options[Math.floorMod(idx, options.length)];
     }
 
-    /** Lo que dice el búho. {@code bro}: tono cercano ("bro") o neutro. */
+    /**
+     * Lo que dice el búho. {@code bro}: tono cercano ("bro") o neutro. v41: frases de unas cinco
+     * palabras (modo juego); lo demás lo dice el botón.
+     */
     public static String say(Mode m, Facts f, int idx, boolean bro) {
         String b = bro ? ", bro" : "";
         switch (m) {
             case OCIO:
                 // Cuidado: preocupado y tierno, nunca regaño. Pregunta y propone; tú decides.
                 return pick(new String[] {
-                    "Oye" + b + ", llevas un buen rato en el móvil. ¿Cómo estás? Si quieres, te acompaño a otra cosa.",
-                    "Descansar está bien" + b + ". Cuando te apetezca, cambiamos de chip juntos.",
-                    "Estoy aquí" + b + ". ¿Un reto corto, leer un poco o caminar cinco minutos?",
+                    "¿Cómo estás" + b + "? Te acompaño.",
+                    "Descansar está bien" + b + ".",
+                    "¿Reto, leer o caminar?",
                 }, idx);
             case LIBRO:
                 return pick(new String[] {
-                    "Mira" + b + ", tienes " + f.reader + " a un toque. ¿Cinco minutos de lectura?",
-                    "Cinco páginas hoy valen más que una hora de vídeos cortos.",
+                    "¿Cinco minutos de " + f.reader + "?",
+                    "Cinco páginas" + b + ". ¿Vamos?",
                 }, idx);
             case JUEGO:
                 // Entrenar la mente no da minutos (v26): el ocio solo lo abren las tareas reales.
                 return pick(new String[] {
-                    "¿Agilizamos la mente" + b + "? " + f.game + " (nivel " + f.gameLevel + ") dura un par de minutos.",
-                    "Reto rápido listo: " + f.game + ". Dos minutos y tu cabeza despierta.",
+                    "¿Un reto rápido" + b + "?",
+                    f.game + ": dos minutos.",
                 }, idx);
             case BIBLIA:
                 String[] v = VERSES[Math.floorMod(idx, VERSES.length)];
-                return v[0] + " (" + v[1] + ")" + (f.bible.isEmpty() ? "" : " Ábrelo en " + f.bible + ".");
+                return v[0] + " (" + v[1] + ")";
             case LEVANTATE:
                 return pick(new String[] {
-                    "¡Hey" + b + "! Llevas " + f.productiveRunMin + " min seguidos. Levántate, agua y estira un minuto.",
-                    "Tu espalda pide un respiro" + b + ". De pie 60 segundos y mira lejos por la ventana.",
+                    "¡Levántate" + b + "! Agua y estira.",
+                    "De pie un minuto" + b + ".",
                 }, idx);
             case NOCHE:
                 return pick(new String[] {
-                    "Hoy invertiste " + f.investedMin + " min. Descansa" + b + "; el ocio vuelve a las " + es.foco.next.core.AbsoluteRules.nightEnd() + ":00.",
-                    "Día cerrado. Mañana, un poco de lo mismo basta.",
+                    "Descansa" + b + ". Ocio a las " + es.foco.next.core.AbsoluteRules.nightEnd() + ":00.",
+                    "Día cerrado. Buen trabajo.",
                 }, idx);
             case DESPERTAR:
-                return "Buenos días" + b + ". Primero tu rutina de la mañana; el día empieza ahí.";
+                return "Buenos días" + b + ". ¡A la rutina!";
             default:
                 return pick(new String[] {
                     f.investedMin > 0
-                            ? "Todo en orden" + b + ". Llevas " + f.investedMin + " min invertidos hoy."
-                            : "Todo en orden" + b + ". Cuando quieras, empieza por algo pequeño.",
-                    "Buen ritmo. Tu mente agradece el silencio.",
-                    "Tus tareas reales abren tu hora libre. Sin prisa, una a una.",
+                            ? "Todo en orden" + b + ". " + f.investedMin + "′ invertidos."
+                            : "Todo en orden" + b + ".",
+                    "Buen ritmo" + b + ".",
+                    "Tareas reales, hora libre.",
                 }, idx);
         }
     }
@@ -132,7 +135,7 @@ public final class OwlBrain {
     public static String cta(Mode m, Facts f) {
         switch (m) {
             case OCIO:
-                return "Vamos a otra cosa";
+                return "Otra cosa";
             case LIBRO:
                 return "Abrir " + f.reader;
             case JUEGO:
@@ -140,13 +143,13 @@ public final class OwlBrain {
             case BIBLIA:
                 return f.bible.isEmpty() ? "" : "Abrir " + f.bible;
             case LEVANTATE:
-                return "¡Ya me levanté!";
+                return "¡Hecho!";
             case DESPERTAR:
-                return "Abrir Foco Core";
+                return "Mis tareas";
             case NOCHE:
                 return "";
             default:
-                return "Ver sugerencia";
+                return "Ver idea";
         }
     }
 }

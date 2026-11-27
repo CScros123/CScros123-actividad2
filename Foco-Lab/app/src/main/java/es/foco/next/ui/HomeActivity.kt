@@ -436,6 +436,10 @@ class HomeActivity : ComponentActivity(), HomeActions {
 
     override fun chooseMoodAgain() = vm.askMoodAgain()
 
+    override fun breathe() {
+        showBreathe = true
+    }
+
     override fun owlBannerOpen(target: String) {
         when (target) {
             "reto" -> vm.quick?.let { openLab(it.game) }

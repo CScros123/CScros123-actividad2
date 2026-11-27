@@ -2,6 +2,7 @@ package es.foco.next.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -18,7 +19,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -39,6 +44,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -112,6 +118,14 @@ fun Owl(
     scarf: Boolean = false,
     /** v38: la luna creciente solo con cielo de noche (antes salía con cualquier tema oscuro, también a mediodía). */
     nightSky: Boolean = false,
+    /** v41: sube al marcar una tarea: salto con confeti. */
+    celebrateKey: Int = 0,
+    /** v41: hora límite cerca: reloj naranja a su lado. */
+    alert: Boolean = false,
+    /** v41: corona (7 días seguidos al 100 %). */
+    crown: Boolean = false,
+    /** v41: mantener pulsado (menú rápido). */
+    onHold: (() -> Unit)? = null,
 ) {
     val music = pose == Pose.LISTENING_MUSIC
     val away = pose == Pose.ANGRY_BACK
@@ -155,6 +169,16 @@ fun Owl(
         if (talkKey > 0) {
             talkUntil.floatValue = now() + 1.3f
             wake(4f)
+        }
+    }
+    // v41: festejo. Un salto con confeti cada vez que marcas una tarea (sin movimiento: nada).
+    val hop = remember { Animatable(0f) }
+    LaunchedEffect(celebrateKey) {
+        if (celebrateKey > 0 && motion && !sleeping) {
+            wake(3f)
+            hop.snapTo(0f)
+            hop.animateTo(1f, tween(1100))
+            hop.snapTo(0f)
         }
     }
     // Al cambiar de postura se anima unos segundos (el estiramiento dura lo que un estiramiento).
@@ -211,8 +235,16 @@ fun Owl(
     Canvas(
         modifier
             .semantics { contentDescription = "Búho de Foco. Tócalo para otra idea; arrástralo para girarlo." }
-            .pointerInput(Unit) {
-                detectTapGestures {
+            .pointerInput(onHold) {
+                detectTapGestures(
+                    onLongPress = {
+                        if (onHold != null) {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            wake(4f)
+                            onHold()
+                        }
+                    },
+                ) {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     if (awayNow.value) peekUntil.floatValue = now() + 5f
                     wake(if (awayNow.value) 9f else 6f)
@@ -255,11 +287,18 @@ fun Owl(
             }
             drawPath(crescent, Color(0xFFE8E2C8).copy(alpha = .5f))
         }
-        drawOwl(
-            mode, time.floatValue, yaw.floatValue, pitch.floatValue, lookX.floatValue, lookY.floatValue,
-            body.value, belly.value, iris.value, brow.value, lidTop.value, lidBottom.value, ear.value, tilt.value,
-            halo.value, talkUntil.floatValue, blink.floatValue, music, pose, scarf,
-        )
+        val jump = hop.value
+        val lift = sin(jump * PI.toFloat()) * size.height * .12f
+        translate(top = -lift) {
+            drawOwl(
+                mode, time.floatValue, yaw.floatValue, pitch.floatValue, lookX.floatValue, lookY.floatValue,
+                body.value, belly.value, iris.value, brow.value, lidTop.value, lidBottom.value, ear.value, tilt.value,
+                halo.value, talkUntil.floatValue, blink.floatValue, music, pose, scarf,
+            )
+            if (crown && !away) drawCrown()
+        }
+        if (jump > 0f) drawConfetti(jump)
+        if (alert && !sleeping) drawAlert(time.floatValue)
     }
 }
 
@@ -315,6 +354,63 @@ private fun DrawScope.zigzag(c: Offset, s: Float, col: Color, stroke: Float) {
 private fun lighten(c: Color, k: Float) = lerp(c, Color.White, k)
 
 private fun darken(c: Color, k: Float) = lerp(c, Color(0xFF1C2920), k)
+
+// ---------------- v41: caras del juego ----------------
+
+/** Misma escala y posición que drawOwl: para colocar la corona sobre la cabeza. */
+private fun DrawScope.owlUnit(): Float = min(size.width, size.height * 1.2f) / 4.1f
+
+/** Corona dorada entre los penachos (7 días seguidos al 100 %). */
+private fun DrawScope.drawCrown() {
+    val u = owlUnit()
+    val cx = size.width * .56f
+    val base = size.height * .86f - u * 2.55f
+    val w = u * .62f
+    val hgt = u * .36f
+    val p = Path().apply {
+        moveTo(cx - w / 2, base)
+        lineTo(cx - w / 2, base - hgt * .55f)
+        lineTo(cx - w / 4, base - hgt * .2f)
+        lineTo(cx, base - hgt)
+        lineTo(cx + w / 4, base - hgt * .2f)
+        lineTo(cx + w / 2, base - hgt * .55f)
+        lineTo(cx + w / 2, base)
+        close()
+    }
+    drawPath(p, Color(0xFFFFC93C))
+    drawPath(p, Color(0xFFC4911A), style = Stroke(u * .03f))
+    drawCircle(Color(0xFFFF6B5E), u * .045f, Offset(cx, base - hgt * .35f))
+}
+
+/** Confeti de los colores de acción al festejar (sube y cae). */
+private fun DrawScope.drawConfetti(p: Float) {
+    val u = owlUnit()
+    val cx = size.width * .56f
+    val top = size.height * .86f - u * 2.2f
+    val colors = listOf(Color(0xFF7BD84F), Color(0xFF4AA8FF), Color(0xFFFFC93C), Color(0xFFA77BFF), Color(0xFFFF9F43))
+    val fade = (1f - p).coerceIn(0f, 1f)
+    for (i in 0 until 14) {
+        val a = i / 14f * 2 * PI.toFloat()
+        val r = u * (.6f + 1.1f * p) * (0.7f + (i % 3) * .2f)
+        val x = cx + cos(a) * r
+        val y = top - sin(a) * r * .6f + p * p * u * 1.4f
+        rotate(i * 40f + p * 360f, Offset(x, y)) {
+            drawRect(colors[i % colors.size].copy(alpha = fade), Offset(x - u * .05f, y - u * .03f), Size(u * .1f, u * .06f))
+        }
+    }
+}
+
+/** Reloj naranja que late junto al búho: la hora límite está cerca. */
+private fun DrawScope.drawAlert(t: Float) {
+    val u = owlUnit()
+    val c = Offset(size.width * .2f, size.height * .3f)
+    val r = u * (.28f + .03f * sin(t * 4f))
+    drawCircle(Color(0xFFC26A14), r, Offset(c.x, c.y + u * .05f))
+    drawCircle(Color(0xFFFF9F43), r, c)
+    drawCircle(Color(0xFF331800), r * .68f, c, style = Stroke(u * .045f))
+    drawLine(Color(0xFF331800), c, Offset(c.x, c.y - r * .45f), u * .05f, StrokeCap.Round)
+    drawLine(Color(0xFF331800), c, Offset(c.x + r * .32f, c.y + r * .1f), u * .05f, StrokeCap.Round)
+}
 
 private fun DrawScope.drawOwl(
     mode: Mode, t: Float, yaw: Float, pitch: Float, lx: Float, ly: Float,
@@ -566,30 +662,26 @@ private fun DrawScope.wing(pivot: Offset, rx: Float, ry: Float, degrees: Float, 
 @Composable
 fun OwlSpeech(mode: Mode, text: String, info: String, cta: String, onNext: () -> Unit, onCta: () -> Unit) {
     val c = LocalHome.current
+    // v41: globo del búho en modo juego: insignia, mensaje grande y un solo botón verde.
     val accent by animateColorAsState(lerp(owlAccent(mode), c.text, if (c.moon) .0f else .1f), tween(600), label = "acento")
-    val shape = RoundedCornerShape(20.dp)
     Column(
-        Modifier.fillMaxWidth().clip(shape).background(c.card.copy(alpha = .96f))
-            .border(2.dp, accent.copy(alpha = .3f), shape).padding(12.dp)
+        Modifier.fillMaxWidth().clip(GameLarge).background(c.card.copy(alpha = .96f))
+            .border(2.dp, accent.copy(alpha = .3f), GameLarge).padding(14.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.clip(RoundedCornerShape(999.dp)).background(accent.copy(alpha = .14f)).padding(horizontal = 8.dp, vertical = 2.dp)) {
-                HomeText(mode.badge, 10.5.sp, if (c.moon) c.text else accent, FontWeight.Bold)
-            }
+            GameChip(mode.badge, if (c.moon) c.text else accent)
             Box(Modifier.weight(1f))
             Box(
-                Modifier.clip(RoundedCornerShape(999.dp)).background(lerp(c.card, c.accent, .1f)).clickable(onClick = onNext)
-                    .padding(horizontal = 10.dp, vertical = 3.dp)
-            ) { HomeText("Otra idea ↻", 11.sp, c.text, FontWeight.SemiBold) }
+                Modifier.clip(GameSmall).background(c.text.copy(alpha = .08f)).clickable(onClick = onNext)
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                    .semantics { contentDescription = "Otra idea" }
+            ) { Icon(Icons.Rounded.Refresh, null, tint = c.text, modifier = Modifier.size(18.dp)) }
         }
         AnimatedContent(text, transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(160)) }, label = "mensaje") { msg ->
-            Text(msg, Modifier.padding(top = 6.dp), color = c.text, fontSize = 12.5.sp, fontWeight = FontWeight.Medium, lineHeight = 17.sp)
+            GameText(msg, 15.sp, c.text, FontWeight.Medium, Modifier.padding(top = 8.dp), maxLines = 3)
         }
-        Row(Modifier.padding(top = 8.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            HomeText(info, 11.sp, c.muted, modifier = Modifier.weight(1f))
-            if (cta.isNotEmpty())
-                Text("$cta →", Modifier.clip(RoundedCornerShape(8.dp)).clickable(onClick = onCta).padding(horizontal = 4.dp, vertical = 2.dp),
-                    color = if (c.moon) c.text else accent, fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
-        }
+        if (info.isNotEmpty()) GameText(info, 11.5.sp, c.muted, FontWeight.Normal, Modifier.padding(top = 6.dp), maxLines = 1)
+        if (cta.isNotEmpty())
+            GameButton(cta, Act.GO, Modifier.padding(top = 10.dp).fillMaxWidth(), height = 42.dp, onClick = onCta)
     }
 }

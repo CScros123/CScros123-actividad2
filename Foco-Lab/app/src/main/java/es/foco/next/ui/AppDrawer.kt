@@ -180,7 +180,12 @@ fun AppDrawer(
                     contentType = { _, r -> if (r is Row_.AppRow) 1 else 0 },
                 ) { _, r ->
                     when (r) {
-                        is Row_.Header -> HomeText(r.section.title, 12.5.sp, c.accent, FontWeight.SemiBold, Modifier.padding(start = 4.dp, top = 10.dp))
+                        // v41: cada grupo con su color de acción (ocio naranja, bloqueadas coral, el resto verde).
+                        is Row_.Header -> HomeText(
+                            r.section.title.uppercase(), 12.sp,
+                            when (r.section) { Section.OCIO -> Act.TIME.face; Section.BLOQUEADA -> Act.STOP.face; else -> Act.GO.face },
+                            FontWeight.Bold, Modifier.padding(start = 4.dp, top = 12.dp),
+                        )
                         is Row_.AppRow -> AppRowView(r.app, vm.iconOf(r.app), usage[r.app.pkg] ?: 0L, vm.night, { onOpen(r.app) }, vm.careMode, vm.showNumbers) { if (canUninstall(r.app.pkg)) menu = r.app }
                     }
                 }
@@ -278,9 +283,9 @@ private fun AppRowView(
     val blocked = a.section == Section.BLOQUEADA
     val grey = remember { ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) }) }
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
+        Modifier.fillMaxWidth().clip(GameMid)
             .background(c.raised(.55f))
-            .border(1.dp, lerp(c.card, c.accent, .1f), RoundedCornerShape(16.dp))
+            .border(1.dp, if (friction) Act.TIME.face.copy(alpha = .35f) else lerp(c.card, c.accent, .1f), GameMid)
             .combinedClickable(onClick = onClick, onLongClick = {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 onLongClick()
@@ -299,15 +304,11 @@ private fun AppRowView(
         when {
             // De noche el ocio está cerrado (Regla 2): se dice, en vez de invitar a intentarlo.
             friction && night ->
-                Box(Modifier.clip(RoundedCornerShape(999.dp)).background(lerp(c.card, c.muted, .15f)).padding(horizontal = 8.dp, vertical = 2.dp)) {
-                    HomeText("Cerrado hasta las ${es.foco.next.core.AbsoluteRules.nightEnd()}:00", 10.5.sp, c.muted, FontWeight.SemiBold)
-                }
+                GameChip("${es.foco.next.core.AbsoluteRules.nightEnd()}:00", c.muted, icon = Icons.Rounded.Lock)
             // Cuidado: la etiqueta dice cómo funciona el ocio en el modo actual, sin alarma.
             friction && mode != es.foco.next.core.care.CareMode.Modo.CUIDADO ->
-                Box(Modifier.clip(RoundedCornerShape(999.dp)).background(lerp(c.card, c.accent, .1f)).padding(horizontal = 8.dp, vertical = 2.dp)) {
-                    HomeText(if (mode == es.foco.next.core.care.CareMode.Modo.ENFOQUE) "Hora libre" else "5 min/hora", 10.5.sp, c.accent, FontWeight.SemiBold)
-                }
-            blocked -> Icon(Icons.Rounded.Lock, "Bloqueo total", tint = c.muted, modifier = Modifier.size(16.dp))
+                GameChip(if (mode == es.foco.next.core.care.CareMode.Modo.ENFOQUE) "Hora libre" else "5′/h", Act.TIME.face)
+            blocked -> Icon(Icons.Rounded.Lock, "Bloqueo total", tint = Act.STOP.face, modifier = Modifier.size(18.dp))
         }
     }
 }

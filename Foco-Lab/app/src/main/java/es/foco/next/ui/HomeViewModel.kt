@@ -441,9 +441,27 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
     var coreTick by mutableStateOf(0)
         private set
 
+    // v41: el marcador del inicio y las caras del búho.
+    /** Sube cada vez que marcas una tarea: el búho festeja (salto y confeti). */
+    var celebrate by mutableStateOf(0)
+        private set
+    var streak by mutableStateOf(0)
+        private set
+    var couponCount by mutableStateOf(0)
+        private set
+    /** Hora límite cerca: {tarea, texto}. El búho apunta y lo dice. */
+    var urgent by mutableStateOf<Array<String>?>(null)
+        private set
+
     fun refreshCore() {
         unlocks = es.foco.next.runtime.RewardStore.unlocked(ctx)
+        val before = core
         core = runCatching { coreSummary(ctx) }.getOrNull()
+        val after = core
+        if (before != null && after != null && after.done > before.done) celebrate++
+        streak = runCatching { es.foco.next.runtime.RewardStore.streak(ctx) }.getOrDefault(0)
+        couponCount = runCatching { es.foco.next.runtime.RewardStore.coupons(ctx).size }.getOrDefault(0)
+        urgent = es.foco.next.runtime.RoutineStore.urgentNow(ctx)
         coreTick++
     }
 

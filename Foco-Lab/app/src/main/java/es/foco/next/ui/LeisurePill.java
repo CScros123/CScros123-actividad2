@@ -75,7 +75,7 @@ public final class LeisurePill {
         view = new TextView(service);
         view.setTextColor(0xFFF6F7FB);
         view.setTextSize(13);
-        view.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL));
+        view.setTypeface(Design.font(view.getContext(), es.foco.next.R.font.rubik_extrabold, "sans-serif-medium")); // v41
         int h = Design.dp(service, 12), v = Design.dp(service, 6);
         view.setPadding(h, v, h, v);
         view.setContentDescription("Tiempo de ocio restante");

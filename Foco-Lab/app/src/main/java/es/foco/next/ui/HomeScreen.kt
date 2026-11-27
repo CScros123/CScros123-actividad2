@@ -43,6 +43,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material.icons.rounded.ConfirmationNumber
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Insights
+import androidx.compose.material.icons.rounded.LocalFireDepartment
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
@@ -131,6 +138,8 @@ interface HomeActions {
     fun toggleTaskTimer(block: String, index: Int)
     fun photoTask(block: String, index: Int)
     fun editEvents()
+    /** v41: respirar (menú del búho). */
+    fun breathe()
 }
 
 /**
@@ -255,13 +264,25 @@ private fun CenterPanel(vm: HomeViewModel, a: HomeActions, openDrawer: (Boolean)
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Header(vm, a)
+        // v41: avisos que no corren prisa (plan del domingo, Foco como inicio, resumen de la noche,
+        // NextDNS, cuánto estuvo apagado) van a la campana en vez de apilarse como tarjetas.
+        var inboxOpen by remember { mutableStateOf(false) }
+        val e = vm.estado
+        val inbox = listOfNotNull(
+            if (vm.planDue) "plan" else null,
+            if (vm.system.accessibility && vm.gapNotice != null) "hueco" else null,
+            if (!vm.system.homeRole) "inicio" else null,
+            if (vm.estadoActual == HomeState.Estado.NOCHE && e != null) "noche" else null,
+            if (vm.dnsLine != null) "dns" else null,
+        )
+        HudRow(vm, inbox.size, inboxOpen) { inboxOpen = !inboxOpen }
         // El búho es la voz de Foco: su último mensaje, como banner, al volver al inicio.
         vm.owlBanner?.let { b ->
             OwlBanner(b[0], b[1], b[2], onOpen = { a.owlBannerOpen(b[2]); vm.closeBanner() }, onClose = vm::closeBanner)
         }
         // Rutina obligatoria de ahora: lo primero, con lo que falta y el tiempo estimado.
         // Foco Core: un solo widget para tareas 2+2, penalización, hora libre y dinero.
-        vm.core?.let { s -> CoreWidget(s, a::openCore, a::startFreeHour) }
+        vm.core?.let { s -> CoreWidget(s, a::openCore, a::startFreeHour, vm.urgent) }
         // Cuenta atrás del widget: se refresca cada minuto con el inicio a la vista.
         androidx.compose.runtime.LaunchedEffect(Unit) {
             while (true) {
@@ -273,17 +294,28 @@ private fun CenterPanel(vm: HomeViewModel, a: HomeActions, openDrawer: (Boolean)
         }
         // Gasto del día: lo que queda hoy y una idea para lo que se debe (sin regañar).
         // (El dinero vive ahora dentro del widget de Foco Core.)
-        // Domingo: el búho invita a planificar la semana (una vez).
-        if (vm.planDue) PlanCard(a::planWeek)
-        // El búho avisa con calma si Foco está apagado, o cuánto tiempo lo estuvo.
+        // Foco apagado sí se ve siempre: sin él no protege nada.
         if (!vm.system.accessibility)
             OwlNotice(es.foco.next.core.home.OwlCare.OFF_TEXT, "Encenderme", { a.openPermission("accessibility") })
-        else vm.gapNotice?.let { OwlNotice(it, "De nada, búho", vm::closeGap, vm::closeGap) }
-        val e = vm.estado
-        if (!vm.system.homeRole) RoleCard(a::requestRole)
-        when (vm.estadoActual) {
-            HomeState.Estado.NOCHE -> if (e != null) NightCard(e)
-            else -> {}
+        androidx.compose.animation.AnimatedVisibility(inboxOpen && inbox.isNotEmpty()) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Domingo: el búho invita a planificar la semana (una vez).
+                if (vm.planDue) PlanCard(a::planWeek)
+                // Cuánto tiempo estuvo apagado Foco.
+                if (vm.system.accessibility) vm.gapNotice?.let { OwlNotice(it, "De nada, búho", vm::closeGap, vm::closeGap) }
+                if (!vm.system.homeRole) RoleCard(a::requestRole)
+                if (vm.estadoActual == HomeState.Estado.NOCHE && e != null) NightCard(e)
+                // NextDNS: el búho cuenta lo que el escudo frenó hoy.
+                vm.dnsLine?.let { line ->
+                    HomeCard {
+                        Column {
+                            HomeText(line, 13.5.sp, weight = FontWeight.Medium)
+                            if (vm.dnsTop.isNotEmpty())
+                                HomeText("También: " + vm.dnsTop.joinToString(" · "), 11.5.sp, LocalHome.current.muted, modifier = Modifier.padding(top = 4.dp))
+                        }
+                    }
+                }
+            }
         }
         // Cuidado: la pregunta de ánimo, la primera vez que se abre Foco en el día.
         if (vm.askMood)
@@ -295,20 +327,32 @@ private fun CenterPanel(vm: HomeViewModel, a: HomeActions, openDrawer: (Boolean)
                 onCare = a::moodFromCard,
                 onSkip = a::skipMood,
             )
-        // NextDNS: el búho cuenta lo que el escudo frenó hoy (solo con clave de API y si hubo algo).
-        vm.dnsLine?.let { line ->
-            HomeCard {
-                Column {
-                    HomeText(line, 13.5.sp, weight = FontWeight.Medium)
-                    if (vm.dnsTop.isNotEmpty())
-                        HomeText("También: " + vm.dnsTop.joinToString(" · "), 11.5.sp, LocalHome.current.muted, modifier = Modifier.padding(top = 4.dp))
-                }
-            }
-        }
         // Minimalista: el reto rápido vive en el panel «Hacer» (ya estaba allí); aquí, lo justo.
         ProtectionBar(vm.system, a::openIntent, a::setDnd, a::fixDns)
         Spacer(Modifier.height(4.dp))
     }
+    }
+}
+
+/**
+ * v41: marcador del inicio (modo juego): racha, barra del día, cupones y la campana con los avisos
+ * que no corren prisa.
+ */
+@Composable
+private fun HudRow(vm: HomeViewModel, inboxCount: Int, inboxOpen: Boolean, onBell: () -> Unit) {
+    val s = vm.core
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        GameStat(Icons.Rounded.LocalFireDepartment, "${vm.streak}", Act.TIME.face)
+        Spacer(Modifier.width(8.dp))
+        GameBar(if (s == null || s.total == 0) 0f else s.done / s.total.toFloat(), Modifier.weight(1f))
+        Spacer(Modifier.width(8.dp))
+        GameStat(Icons.Rounded.ConfirmationNumber, "${vm.couponCount}", Act.PRIZE.face)
+        if (inboxCount > 0) {
+            Spacer(Modifier.width(8.dp))
+            Box(Modifier.clip(GameSmall).clickable(onClick = onBell).semantics { contentDescription = "Avisos: $inboxCount" }) {
+                GameStat(if (inboxOpen) Icons.Rounded.NotificationsActive else Icons.Rounded.Notifications, "$inboxCount", Act.STOP.face)
+            }
+        }
     }
 }
 
@@ -340,7 +384,8 @@ private fun Header(vm: HomeViewModel, a: HomeActions) {
             )
         }.padding(top = 4.dp, bottom = 6.dp)
     ) {
-        Text(now.format(DateTimeFormatter.ofPattern("H:mm")), color = c.text, fontSize = 46.sp, fontWeight = FontWeight.Light, letterSpacing = (-1.4).sp, lineHeight = 48.sp)
+        // v41: reloj del modo juego (Rubik, fuerte).
+        Text(now.format(DateTimeFormatter.ofPattern("H:mm")), color = c.text, fontSize = 50.sp, fontWeight = FontWeight.Black, fontFamily = Rubik, letterSpacing = (-1.4).sp, lineHeight = 52.sp)
         Text(
             LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", Locale("es"))),
             color = lerp(c.text, c.muted, .5f), fontSize = 12.5.sp, modifier = Modifier.padding(top = 4.dp),
@@ -377,6 +422,9 @@ private fun Header(vm: HomeViewModel, a: HomeActions) {
         }
     }
     val sleeping = pose == es.foco.next.core.home.OwlState.Pose.SLEEPING
+    // v41: mantener pulsado el búho abre su menú rápido.
+    var owlMenu by remember { mutableStateOf(false) }
+    Box {
     Owl(
         if (sleeping) es.foco.next.core.home.OwlBrain.Mode.NOCHE else mode,
         vm.owlTalk,
@@ -390,13 +438,24 @@ private fun Header(vm: HomeViewModel, a: HomeActions) {
         scarf = "buho_bufanda" in vm.unlocks,
         // v40: con foto de fondo la luna ya está en la foto: el búho no dibuja otra.
         nightSky = vm.photo == null && (if (vm.themesOn) vm.theme.nightSky() else c0.moon),
+        celebrateKey = vm.celebrate,
+        alert = vm.urgent != null,
+        crown = vm.streak >= 7,
+        onHold = { owlMenu = true },
     )
+    androidx.compose.material3.DropdownMenu(owlMenu, onDismissRequest = { owlMenu = false }) {
+        androidx.compose.material3.DropdownMenuItem(text = { GameText("Respirar", 15.sp, weight = FontWeight.Bold) }, onClick = { owlMenu = false; a.breathe() })
+        androidx.compose.material3.DropdownMenuItem(text = { GameText("Siguiente tarea", 15.sp, weight = FontWeight.Bold) }, onClick = { owlMenu = false; a.openCore() })
+        androidx.compose.material3.DropdownMenuItem(text = { GameText("¿Cómo estás?", 15.sp, weight = FontWeight.Bold) }, onClick = { owlMenu = false; a.chooseMoodAgain() })
+    }
+    }
     }
     // Minimalista: si el búho ya trae un mensaje (banner), no repite su burbuja.
     if (vm.owlBubble && vm.owlBanner == null)
         OwlSpeech(
             mode,
-            vm.owlText(mode),
+            // v41: con la hora límite cerca, el búho lo dice (y apunta con su reloj naranja).
+            vm.urgent?.let { "${it[0]}: ${it[1]}" } ?: vm.owlText(mode),
             // La frase de "lo bueno de hoy" vive solo en la tarjeta Hoy; aquí, métricas compactas.
             vm.owlMetrics,
             vm.owlCta(mode),
@@ -498,10 +557,13 @@ private fun Footer(vm: HomeViewModel, a: HomeActions, openDrawer: (Boolean) -> U
                     }
                     return@forEachIndexed
                 }
+                // v41: ficha de juego con relieve (borde inferior oscuro); dorada si se ganó.
                 Box(
-                    Modifier.weight(1f).aspectRatio(1f).clip(shape)
-                        .background(c.onHill.copy(alpha = .15f))
-                        .border(if (gold) 1.5.dp else 1.dp, if (gold) GOLD_DOCK else c.onHill.copy(alpha = .25f), shape)
+                    Modifier.weight(1f).aspectRatio(1f)
+                        .background(Color.Black.copy(alpha = .35f), shape).padding(bottom = 4.dp)
+                        .clip(shape)
+                        .background(lerp(c.card, c.onHill, .12f).copy(alpha = .92f))
+                        .border(if (gold) 2.dp else 1.dp, if (gold) GOLD_DOCK else c.onHill.copy(alpha = .18f), shape)
                         .then(tap),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -562,22 +624,27 @@ private fun Footer(vm: HomeViewModel, a: HomeActions, openDrawer: (Boolean) -> U
             Spacer(Modifier.width(10.dp))
             Text("Buscar una app…", color = c.muted, fontSize = 14.sp)
         }
-        // Solo los tres puntos: tocar uno lleva a su panel (las apps se abren con el buscador o
-        // deslizando hacia arriba). Cada punto tiene 32 dp de zona táctil aunque se vea pequeño.
-        Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+        // v41: pestañas de juego (icono y nombre) en vez de tres puntos. Se sigue deslizando igual.
+        Row(
+            Modifier.fillMaxWidth().padding(top = 8.dp).clip(GameMid).background(Color.Black.copy(alpha = .25f)).padding(4.dp),
+            horizontalArrangement = Arrangement.SpaceAround,
+        ) {
             for (i in 0..2) {
                 val on = i == page
-                val dot by androidx.compose.animation.core.animateDpAsState(if (on) 8.dp else 5.dp, androidx.compose.animation.core.spring(dampingRatio = .55f), label = "punto")
-                Box(
-                    Modifier.size(32.dp).clip(CircleShape)
+                val icon = when (i) { 0 -> Icons.Rounded.Insights; 1 -> Icons.Rounded.Home; else -> Icons.Rounded.Bolt }
+                Column(
+                    Modifier.weight(1f).clip(GameSmall)
+                        .background(if (on) c.card.copy(alpha = .95f) else Color.Transparent)
                         .clickable(enabled = !on) {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             goTo(i)
                         }
+                        .padding(vertical = 6.dp)
                         .semantics { contentDescription = PAGE_NAMES[i] + if (on) " (aquí)" else "" },
-                    contentAlignment = Alignment.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Box(Modifier.size(dot).clip(CircleShape).background(c.onHill.copy(alpha = if (on) .95f else .45f)))
+                    Icon(icon, null, tint = if (on) Act.GO.face else c.onHill.copy(alpha = .7f), modifier = Modifier.size(20.dp))
+                    GameText(PAGE_NAMES[i], 10.5.sp, if (on) Act.GO.face else c.onHill.copy(alpha = .7f), FontWeight.ExtraBold, maxLines = 1)
                 }
             }
         }

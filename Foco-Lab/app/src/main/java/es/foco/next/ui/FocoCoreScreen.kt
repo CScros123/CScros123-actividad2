@@ -164,45 +164,52 @@ fun coreSummary(ctx: android.content.Context): CoreSummary {
 
 /** Widget de Foco Core en Inicio: 4 estados, un toque abre la pantalla completa. */
 @Composable
-fun CoreWidget(s: CoreSummary, onOpen: () -> Unit, onFree: () -> Unit) {
+fun CoreWidget(s: CoreSummary, onOpen: () -> Unit, onFree: () -> Unit, urgent: Array<String>? = null) {
     val c = LocalHome.current
+    // v41: la misión del inicio (modo juego): una etiqueta, la tarea en grande y un solo botón.
+    val (tag, tagColor, title) = when (s.state) {
+        FocoCore.State.NO_PLAN -> Triple("PLAN", Act.TIME.face, "Anota 2 tareas de hoy")
+        FocoCore.State.RUNNING -> Triple("SIGUIENTE", Act.GO.face, s.next ?: "—")
+        FocoCore.State.PENALTY -> Triple("OCIO EN PAUSA · ${s.penaltyMin}′", Act.STOP.face, "Termina ${s.penaltyTask}")
+        FocoCore.State.COMPLETE ->
+            Triple(
+                "TODO HECHO",
+                Act.GO.face,
+                when {
+                    s.freeLeftMin > 0 -> "Ocio libre · ${s.freeLeftMin}′"
+                    s.freeUsed -> "Buen día"
+                    else -> "1 h libre ganada"
+                },
+            )
+    }
     HomeCard(Modifier.clickable(onClick = onOpen)) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(androidx.compose.ui.res.painterResource(es.foco.next.R.drawable.owl_face), null, Modifier.size(40.dp))
-                Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                    when (s.state) {
-                        FocoCore.State.NO_PLAN -> {
-                            HomeText("Anota tus pendientes de hoy", 15.sp, weight = FontWeight.Bold)
-                            HomeText("Con 2 tareas o más, Foco Core se pone en marcha.", 12.5.sp, c.muted)
-                        }
-                        FocoCore.State.RUNNING -> {
-                            HomeText("Siguiente: ${s.next ?: "—"}" + if (s.nextWindow.isNotEmpty()) " · antes de ${s.nextWindow}" else "", 15.sp, weight = FontWeight.Bold)
-                            HomeText("${s.done}/${s.total} hechas · terminas ~${s.finish}", 12.5.sp, c.muted)
-                        }
-                        FocoCore.State.PENALTY -> {
-                            HomeText("Ocio en pausa · ${s.penaltyMin} min", 15.sp, Terracotta, FontWeight.Bold)
-                            HomeText("Se pasó la hora de ${s.penaltyTask}. Terminarla sigue contando.", 12.5.sp, c.muted)
-                        }
-                        FocoCore.State.COMPLETE -> {
-                            HomeText("Todo hecho hoy ✓", 15.sp, weight = FontWeight.Bold)
-                            HomeText(
-                                when {
-                                    s.freeLeftMin > 0 -> "Ocio libre · quedan ${s.freeLeftMin} min"
-                                    s.freeUsed -> "Hora libre usada. Buen día."
-                                    else -> "Te ganaste 1 h de ocio libre."
-                                },
-                                12.5.sp, c.muted,
-                            )
-                        }
-                    }
-                    if (s.money != null) HomeText("💵 " + s.money, 12.5.sp, if (s.moneyOver) Terracotta else c.text, if (s.moneyOver) FontWeight.SemiBold else FontWeight.Normal)
+                Column(Modifier.weight(1f)) {
+                    GameText(tag, 11.sp, tagColor, FontWeight.Bold)
+                    GameText(title, 19.sp, c.text, FontWeight.ExtraBold, Modifier.padding(top = 2.dp), maxLines = 2)
                 }
-                HomeText("›", 20.sp, c.muted)
+                if (s.total > 0) GameText("${s.done}/${s.total}", 15.sp, c.muted, FontWeight.ExtraBold, Modifier.padding(start = 10.dp))
             }
-            if (s.state == FocoCore.State.COMPLETE && !s.freeUsed && s.freeLeftMin <= 0) {
-                Spacer(Modifier.height(10.dp))
-                PrimaryButton("Activar 1 h de ocio libre", onClick = onFree)
+            val warn = urgent?.get(1) ?: if (s.state == FocoCore.State.RUNNING && s.nextWindow.isNotEmpty()) "Antes de las ${s.nextWindow}" else null
+            if (warn != null)
+                Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Schedule, null, tint = Act.TIME.face, modifier = Modifier.size(15.dp))
+                    GameText(warn, 12.5.sp, Act.TIME.face, FontWeight.Bold, Modifier.padding(start = 6.dp), maxLines = 2)
+                }
+            if (s.money != null)
+                GameText("Dinero: " + s.money, 12.5.sp, if (s.moneyOver) Act.STOP.face else c.muted, FontWeight.Medium, Modifier.padding(top = 6.dp))
+            Spacer(Modifier.height(12.dp))
+            when {
+                s.state == FocoCore.State.COMPLETE && !s.freeUsed && s.freeLeftMin <= 0 ->
+                    GameButton("Activar 1 h libre", Act.GO, Modifier.fillMaxWidth(), icon = Icons.Rounded.PlayArrow, onClick = onFree)
+                s.state == FocoCore.State.RUNNING ->
+                    GameButton("Vamos", Act.GO, Modifier.fillMaxWidth(), icon = Icons.Rounded.PlayArrow, onClick = onOpen)
+                s.state == FocoCore.State.NO_PLAN ->
+                    GameButton("Anotar", Act.GO, Modifier.fillMaxWidth(), icon = Icons.Rounded.Add, onClick = onOpen)
+                s.state == FocoCore.State.PENALTY ->
+                    GameButton("Ver tareas", Act.GHOST, Modifier.fillMaxWidth(), onClick = onOpen)
+                else -> {}
             }
         }
     }
@@ -223,9 +230,11 @@ fun coreColors(): CoreColors {
     val c = LocalHome.current
     val dark = c.darkCard
     val anim = tween<Color>(700)
-    val ok by animateColorAsState(lerp(if (dark) Color(0xFF6FCF97) else Color(0xFF2F8F5B), c.accent, .18f), anim, label = "ok")
-    val warn by animateColorAsState(lerp(if (dark) Color(0xFFE8B45A) else Color(0xFFB7791F), c.accent, .10f), anim, label = "warn")
-    val bad by animateColorAsState(if (dark) Color(0xFFE07A5F) else Terracotta, anim, label = "bad")
+    // v41: los estados usan los colores de acción del modo juego (verde, naranja, coral), los mismos
+    // en todos los temas; sobre tema claro se oscurecen un poco para leerse.
+    val ok by animateColorAsState(if (dark) Act.GO.face else Act.GO.edge, anim, label = "ok")
+    val warn by animateColorAsState(if (dark) Act.TIME.face else Act.TIME.edge, anim, label = "warn")
+    val bad by animateColorAsState(if (dark) Act.STOP.face else Act.STOP.edge, anim, label = "bad")
     val sheet by animateColorAsState(c.raised(.5f), anim, label = "sheet")
     val lum = .2126f * c.accent.red + .7152f * c.accent.green + .0722f * c.accent.blue
     return CoreColors(ok, warn, bad, c.text.copy(alpha = .12f), sheet, if (lum > .55f) Color(0xFF0B1624) else Color.White)
@@ -940,7 +949,7 @@ private fun ProgressCard(tick: Int, k: CoreColors, motion: Boolean) {
                 }
             }
         }
-        HomeText("Semana perfecta: $perfect de 7 días · con fotos y sin atajos ganas 2 cupones especiales.", 12.sp, c.muted, modifier = Modifier.padding(top = 10.dp))
+        HomeText("Semana perfecta: $perfect/7 · con fotos → 2 cupones", 12.sp, c.muted, modifier = Modifier.padding(top = 10.dp))
     }
 }
 
