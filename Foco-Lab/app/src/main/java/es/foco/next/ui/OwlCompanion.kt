@@ -110,6 +110,8 @@ fun Owl(
     dark: Boolean = false,
     pose: Pose = Pose.CALM,
     scarf: Boolean = false,
+    /** v38: la luna creciente solo con cielo de noche (antes salía con cualquier tema oscuro, también a mediodía). */
+    nightSky: Boolean = false,
 ) {
     val music = pose == Pose.LISTENING_MUSIC
     val away = pose == Pose.ANGRY_BACK
@@ -239,6 +241,9 @@ fun Owl(
                 Brush.radialGradient(listOf(Color.White.copy(alpha = .07f), Color.Transparent), Offset(size.width * .56f, size.height * .5f), m * .6f),
                 m * .6f, Offset(size.width * .56f, size.height * .5f),
             )
+        }
+        if (dark && (nightSky || sleeping)) {
+            val m = min(size.width, size.height)
             val mr = m * .075f
             val mc = Offset(size.width * .13f, size.height * .16f)
             val crescent = Path().apply {

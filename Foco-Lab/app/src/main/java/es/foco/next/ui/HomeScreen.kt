@@ -388,6 +388,7 @@ private fun Header(vm: HomeViewModel, a: HomeActions) {
         dark = c0.moon || c0.darkCard,
         pose = pose,
         scarf = "buho_bufanda" in vm.unlocks,
+        nightSky = if (vm.themesOn) vm.theme.nightSky() else c0.moon,
     )
     }
     // Minimalista: si el búho ya trae un mensaje (banner), no repite su burbuja.

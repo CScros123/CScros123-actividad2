@@ -537,3 +537,24 @@ subdominios: my.nextdns.io, help…) se cierran siempre, como Telegram: sin modo
 que lo salte. Registro: `intento_panel_nextdns`. Foco sigue leyendo las estadísticas con la clave de
 la API (no pasa por el navegador). Refuerzo recomendado, hecho desde otro dispositivo: añadir
 `my.nextdns.io` a la Denylist del perfil. Reglas en `Categories.dnsPanelApp/dnsPanelDomain`.
+
+## v38: fondos solo por la hora (nada de luna a mediodía)
+
+El fondo automático ahora sigue **solo la hora**, para que el cielo cuadre con el momento del día.
+Lo que haces (productivo, Enfoque) ya no cambia el fondo: eso lo expresa el búho.
+
+| Hora | Fondo |
+|---|---|
+| 05:00–08:00 | Café del Alba (Horizonte si ya hiciste un reto) |
+| 08:00–11:00 | Dunas o Cascada (días alternos) |
+| 11:00–15:30 | **Pradera de Mediodía** (nuevo) |
+| 15:30–18:00 | **Tarde Dorada** (nuevo) |
+| 18:00–19:30 | Ruta (o Mar en días alternos, si lo ganaste) |
+| 19:30 hasta la noche | Luna de Ocaso |
+| Noche | Cumbre (o Aurora en días alternos, si la ganaste) |
+
+Los dos fondos nuevos se generaron con el mismo estilo de capas (`theme_pradera.webp`,
+`theme_tarde.webp`, ~15 KB). Quien tenía un tema fijado a mano pasa una vez a automático
+(`theme_auto_v38`). La luna creciente que el búho dibujaba con cualquier tema oscuro (también a
+mediodía) ahora solo sale con cielo de noche (`PhotoTheme.nightSky()`) o cuando duerme. Prueba:
+`nuncaUnCieloDeNocheDeDia`.

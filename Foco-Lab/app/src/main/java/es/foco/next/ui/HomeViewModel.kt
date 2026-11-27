@@ -106,7 +106,14 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
     // ---- Temas fotográficos (prototipo S23) ----
     var themesOn by mutableStateOf(prefs().getBoolean("themes_on", true))
         private set
-    var themeChoice by mutableStateOf(prefs().getString("theme", "AUTO") ?: "AUTO")
+    // v38: todo automático. Quien había fijado un tema a mano pasa una vez a automático (el fondo
+    // sigue a la hora); después puede volver a elegir uno si quiere.
+    var themeChoice by mutableStateOf(
+        prefs().let { p ->
+            if (!p.getBoolean("theme_auto_v38", false)) p.edit().putString("theme", "AUTO").putBoolean("theme_auto_v38", true).apply()
+            p.getString("theme", "AUTO") ?: "AUTO"
+        }
+    )
         private set
     var theme by mutableStateOf(es.foco.next.core.home.PhotoTheme.CASCADA)
         private set
@@ -134,6 +141,9 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
             productive = estadoActual == HomeState.Estado.PRODUCTIVO
             focus = careMode == es.foco.next.core.care.CareMode.Modo.ENFOQUE
             retosHoy = estado?.retosHoy ?: 0
+            dayOfYear = now.dayOfYear
+            aurora = "fondo_aurora" in unlocks
+            mar = "fondo_mar" in unlocks
         }
         val t = es.foco.next.core.home.PhotoTheme.choose(themeChoice, f)
         if (t != theme) theme = t
@@ -160,6 +170,8 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
         when (key) {
             "cafe" -> es.foco.next.R.drawable.theme_cafe
             "cascada" -> es.foco.next.R.drawable.theme_cascada
+            "pradera" -> es.foco.next.R.drawable.theme_pradera
+            "tarde" -> es.foco.next.R.drawable.theme_tarde
             "dunas" -> es.foco.next.R.drawable.theme_dunas
             "ruta" -> es.foco.next.R.drawable.theme_ruta
             "horizonte" -> es.foco.next.R.drawable.theme_horizonte
