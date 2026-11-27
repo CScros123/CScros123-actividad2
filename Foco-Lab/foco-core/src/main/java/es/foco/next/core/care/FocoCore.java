@@ -12,10 +12,16 @@ import java.util.Locale;
 public final class FocoCore {
     private FocoCore() {}
 
-    public enum State { NO_PLAN, RUNNING, PENALTY, COMPLETE }
+    public enum State {
+        NO_PLAN,
+        RUNNING,
+        PENALTY,
+        COMPLETE
+    }
 
     /** Margen tras la hora límite antes de marcar incumplida. */
     public static final long GRACE_MS = 10 * 60_000L;
+
     public static final long PENALTY_MS = 60 * 60_000L;
     public static final long FREE_MS = 60 * 60_000L;
     public static final int MIN_TASKS = 2;
@@ -71,8 +77,10 @@ public final class FocoCore {
     // v36: aviso insistente antes de la hora límite (de una tarea o de toda la franja).
     /** Empieza a insistir estos minutos antes de la hora. */
     public static final int NAG_LEAD_MIN = 30;
+
     /** Cada cuánto insiste. */
     public static final long NAG_EVERY_MS = 5 * 60_000L;
+
     /** Horas límite por defecto de las franjas: mañana a las 9:00, tarde y noche a las 23:00. */
     public static final int MORNING_DEADLINE = 9 * 60, NIGHT_DEADLINE = 23 * 60;
 
@@ -137,7 +145,10 @@ public final class FocoCore {
         return t.getHour() + ":" + String.format(Locale.ROOT, "%02d", t.getMinute());
     }
 
-    /** Siguiente tarea: la que vence antes; si ninguna tiene hora, la primera pendiente. -1 si no hay. */
+    /**
+     * Siguiente tarea: la que vence antes; si ninguna tiene hora, la primera pendiente. -1 si no
+     * hay.
+     */
     public static int next(List<Routine.Task> tasks, java.util.Set<Integer> done) {
         int best = -1;
         for (int i = 0; i < tasks.size(); i++) {
@@ -155,11 +166,25 @@ public final class FocoCore {
     // ---------------- Análisis de la semana ----------------
 
     public static final class Day {
-        public final int morningTotal, morningDone, nightTotal, nightDone, eventTotal, eventDone, penalties;
+        public final int morningTotal,
+                morningDone,
+                nightTotal,
+                nightDone,
+                eventTotal,
+                eventDone,
+                penalties;
         public final long spent, allowance;
 
-        public Day(int morningTotal, int morningDone, int nightTotal, int nightDone, int eventTotal, int eventDone,
-                int penalties, long spent, long allowance) {
+        public Day(
+                int morningTotal,
+                int morningDone,
+                int nightTotal,
+                int nightDone,
+                int eventTotal,
+                int eventDone,
+                int penalties,
+                long spent,
+                long allowance) {
             this.morningTotal = morningTotal;
             this.morningDone = morningDone;
             this.nightTotal = nightTotal;
@@ -201,30 +226,53 @@ public final class FocoCore {
         }
         StringBuilder b = new StringBuilder();
         int all = pct(md + nd + ed, mt + nt + et);
-        if (all < 0) return "Esta semana no hubo tareas planificadas. El domingo es buen momento para anotar 2 por la mañana y 2 por la tarde.";
+        if (all < 0)
+            return "Esta semana no hubo tareas planificadas. El domingo es buen momento para anotar 2 por la mañana y 2 por la tarde.";
         b.append("Cumpliste el ").append(all).append(" % de lo planificado.");
         int pm = pct(md, mt), pn = pct(nd, nt);
         String hard = null;
         int hardPct = 101;
-        if (pm >= 0 && pm < hardPct) { hard = "la mañana"; hardPct = pm; }
-        if (pn >= 0 && pn < hardPct) { hard = "la tarde y noche"; hardPct = pn; }
-        if (hard != null && hardPct < 100) b.append(" La franja más difícil fue ").append(hard).append(" (").append(hardPct).append(" %).");
+        if (pm >= 0 && pm < hardPct) {
+            hard = "la mañana";
+            hardPct = pm;
+        }
+        if (pn >= 0 && pn < hardPct) {
+            hard = "la tarde y noche";
+            hardPct = pn;
+        }
+        if (hard != null && hardPct < 100)
+            b.append(" La franja más difícil fue ")
+                    .append(hard)
+                    .append(" (")
+                    .append(hardPct)
+                    .append(" %).");
         if (weekBudget > 0) {
             long bal = weekBudget - weekSpent;
-            b.append(bal >= 0 ? " Te sobraron " + Money.fmt(bal) + " del presupuesto." : " Te pasaste " + Money.fmt(-bal) + " del presupuesto.");
-        } else if (weekSpent > 0) b.append(" Anotaste ").append(Money.fmt(weekSpent)).append(" de gastos.");
+            b.append(
+                    bal >= 0
+                            ? " Te sobraron " + Money.fmt(bal) + " del presupuesto."
+                            : " Te pasaste " + Money.fmt(-bal) + " del presupuesto.");
+        } else if (weekSpent > 0)
+            b.append(" Anotaste ").append(Money.fmt(weekSpent)).append(" de gastos.");
         b.append("\n\nPara la próxima semana:");
         int tips = 0;
         if (hard != null && hardPct < 70) {
-            b.append("\n· En ").append(hard).append(" deja solo tareas fáciles o medias y pasa la difícil a la otra franja.");
+            b.append("\n· En ")
+                    .append(hard)
+                    .append(
+                            " deja solo tareas fáciles o medias y pasa la difícil a la otra franja.");
             tips++;
         }
         if (pen >= 3) {
-            b.append("\n· Tuviste ").append(pen).append(" bloqueos por horas límite: dales 30 min más de margen a las que vencen.");
+            b.append("\n· Tuviste ")
+                    .append(pen)
+                    .append(
+                            " bloqueos por horas límite: dales 30 min más de margen a las que vencen.");
             tips++;
         }
         if (weekBudget > 0 && weekSpent > weekBudget) {
-            b.append("\n· Anota el monto antes de entrar al banco y reparte el presupuesto el domingo.");
+            b.append(
+                    "\n· Anota el monto antes de entrar al banco y reparte el presupuesto el domingo.");
             tips++;
         } else if (weekBudget > 0 && weekSpent < weekBudget) {
             b.append("\n· Lo que sobró, apártalo para lo que debes o para algo que planifiques.");
@@ -234,7 +282,9 @@ public final class FocoCore {
             b.append("\n· Semana fuerte: sube un poco la dificultad de una tarea.");
             tips++;
         }
-        if (tips == 0) b.append("\n· Mantén el 2+2: dos tareas por la mañana y dos por la tarde, con su hora.");
+        if (tips == 0)
+            b.append(
+                    "\n· Mantén el 2+2: dos tareas por la mañana y dos por la tarde, con su hora.");
         return b.toString();
     }
 }

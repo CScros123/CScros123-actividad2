@@ -21,10 +21,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * v28: informe diario único de Foco (antes, Foco Inspector en una carpeta). v32 (R9): cada día es el
- * día lógico de Foco (de 04:00 a 04:00, como Foco Core, los premios y las evasiones); al cerrarse
- * (alarma de las 04:05, y al abrir Foco o reiniciar si se perdió) Foco guarda en
- * el teléfono un archivo de texto con todo lo del día, dentro del teléfono (plan, bloqueos, tiempos,
+ * v28: informe diario único de Foco (antes, Foco Inspector en una carpeta). v32 (R9): cada día es
+ * el día lógico de Foco (de 04:00 a 04:00, como Foco Core, los premios y las evasiones); al
+ * cerrarse (alarma de las 04:05, y al abrir Foco o reiniciar si se perdió) Foco guarda en el
+ * teléfono un archivo de texto con todo lo del día, dentro del teléfono (plan, bloqueos, tiempos,
  * retos de Lab, DNS) y fuera (tareas de Foco Core, pausas, hora libre, fotos y dinero). Se guardan
  * 90 días en {@code files/informes}; desde Foco › Estado se exportan los últimos 30 en un solo
  * archivo para analizarlos. Sin internet y sin el ánimo.
@@ -73,7 +73,8 @@ public final class Inspector {
         try {
             scheduleMidnight(c);
             LocalDate yesterday = RoutineStore.today().minusDays(1); // v32 (R9): día lógico
-            boolean missing = !file(c, yesterday).exists() && firstUse(c).isBefore(RoutineStore.today());
+            boolean missing =
+                    !file(c, yesterday).exists() && firstUse(c).isBefore(RoutineStore.today());
             if (!missing && !force) return;
             IO.execute(
                     () -> {
@@ -82,7 +83,9 @@ public final class Inspector {
                             if (force) save(c, RoutineStore.today());
                             prune(c);
                         } catch (Exception e) {
-                            prefs(c).edit().putString("error", e.getClass().getSimpleName()).apply();
+                            prefs(c).edit()
+                                    .putString("error", e.getClass().getSimpleName())
+                                    .apply();
                             android.util.Log.w("Foco", "Informe: no se pudo guardar", e);
                         }
                     });
@@ -128,11 +131,14 @@ public final class Inspector {
     }
 
     /**
-     * v32 (R6): las cuatro clases del ocio del día. El total sale del sistema (Acceso de uso) si hay
-     * permiso; si no, de lo que midió Foco. Premio, Cuidado y "fuera de condiciones" los mide la
-     * Accesibilidad; el resto es ocio sin excepción (dentro del límite).
+     * v32 (R6): las cuatro clases del ocio del día. El total sale del sistema (Acceso de uso) si
+     * hay permiso; si no, de lo que midió Foco. Premio, Cuidado y "fuera de condiciones" los mide
+     * la Accesibilidad; el resto es ocio sin excepción (dentro del límite).
      */
-    static String leisure(List<es.foco.next.log.LogDatabase.InspectorRow> rows, LocalDate day, boolean systemTotal) {
+    static String leisure(
+            List<es.foco.next.log.LogDatabase.InspectorRow> rows,
+            LocalDate day,
+            boolean systemTotal) {
         long ocio = 0, premio = 0, cuidado = 0, fuera = 0;
         for (es.foco.next.log.LogDatabase.InspectorRow r : rows) {
             if (!es.foco.next.log.InspectorLog.inLogicalDay(day, r.day, r.hour)) continue;
@@ -141,15 +147,30 @@ public final class Inspector {
             else if (es.foco.next.log.InspectorLog.OCIO_CUIDADO.equals(r.type)) cuidado += r.ms;
             else if (es.foco.next.log.InspectorLog.OCIO_FUERA.equals(r.type)) fuera += r.ms;
         }
-        long total = systemTotal ? Math.max(ocio, premio + cuidado + fuera) : ocio + premio + cuidado + fuera;
+        long total =
+                systemTotal
+                        ? Math.max(ocio, premio + cuidado + fuera)
+                        : ocio + premio + cuidado + fuera;
         long rest = Math.max(0, total - premio - cuidado - fuera);
         return "\n== OCIO (cuatro clases) ==\n"
-                + "fuente_del_total=" + (systemTotal ? "sistema" : "foco") + "\n"
-                + "ocio_total_min=" + total / 60_000 + "\n"
-                + "ocio_sin_excepcion_min=" + rest / 60_000 + "\n"
-                + "ocio_por_premio_min=" + premio / 60_000 + "\n"
-                + "ocio_en_cuidado_min=" + cuidado / 60_000 + "\n"
-                + "ocio_fuera_de_condiciones_min=" + fuera / 60_000 + "\n";
+                + "fuente_del_total="
+                + (systemTotal ? "sistema" : "foco")
+                + "\n"
+                + "ocio_total_min="
+                + total / 60_000
+                + "\n"
+                + "ocio_sin_excepcion_min="
+                + rest / 60_000
+                + "\n"
+                + "ocio_por_premio_min="
+                + premio / 60_000
+                + "\n"
+                + "ocio_en_cuidado_min="
+                + cuidado / 60_000
+                + "\n"
+                + "ocio_fuera_de_condiciones_min="
+                + fuera / 60_000
+                + "\n";
     }
 
     /** El primer día con Foco instalado no tiene "ayer". */
@@ -164,8 +185,8 @@ public final class Inspector {
     }
 
     /**
-     * Alarma inexacta a las 04:05 (v32: cierre del día lógico) hacia {@link DailyReminder}, que llama
-     * a {@link #maybeWrite}.
+     * Alarma inexacta a las 04:05 (v32: cierre del día lógico) hacia {@link DailyReminder}, que
+     * llama a {@link #maybeWrite}.
      */
     private static void scheduleMidnight(Context c) {
         try {
@@ -219,7 +240,11 @@ public final class Inspector {
             String n = f.getName();
             if (!n.endsWith(".txt") || n.length() != 14) continue;
             try {
-                o.put(n.substring(0, 10), new String(java.nio.file.Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8));
+                o.put(
+                        n.substring(0, 10),
+                        new String(
+                                java.nio.file.Files.readAllBytes(f.toPath()),
+                                StandardCharsets.UTF_8));
             } catch (Exception ignored) {
             }
         }
@@ -250,7 +275,10 @@ public final class Inspector {
             File f = file(c, today.minusDays(i));
             if (!f.exists()) continue;
             try {
-                s.append(new String(java.nio.file.Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8))
+                s.append(
+                                new String(
+                                        java.nio.file.Files.readAllBytes(f.toPath()),
+                                        StandardCharsets.UTF_8))
                         .append("\n\n");
             } catch (Exception ignored) {
             }
@@ -261,8 +289,13 @@ public final class Inspector {
     /** Informe de un día: dentro del teléfono y fuera, en texto plano. Hilo de fondo. */
     static String report(Context c, LocalDate day) {
         StringBuilder s = new StringBuilder();
-        s.append("INFORME DE FOCO · ").append(day)
-                .append(" (día de Foco: ").append(day).append(" 04:00 → ").append(day.plusDays(1)).append(" 04:00)\n");
+        s.append("INFORME DE FOCO · ")
+                .append(day)
+                .append(" (día de Foco: ")
+                .append(day)
+                .append(" 04:00 → ")
+                .append(day.plusDays(1))
+                .append(" 04:00)\n");
         s.append("generado=").append(LocalDateTime.now().withNano(0)).append('\n');
         try {
             String v = c.getPackageManager().getPackageInfo(c.getPackageName(), 0).versionName;
@@ -283,26 +316,40 @@ public final class Inspector {
                     Set<Integer> missed = RoutineStore.blockMissed(c, b, day);
                     s.append("[").append(b.toLowerCase());
                     int limit = RoutineStore.blockDeadline(c, b); // v36
-                    if (limit >= 0) s.append(" · hasta las ").append(limit / 60).append(':').append(limit % 60 < 10 ? "0" : "").append(limit % 60);
+                    if (limit >= 0)
+                        s.append(" · hasta las ")
+                                .append(limit / 60)
+                                .append(':')
+                                .append(limit % 60 < 10 ? "0" : "")
+                                .append(limit % 60);
                     s.append("]\n");
                     for (int i = 0; i < tasks.size(); i++) {
                         Routine.Task task = tasks.get(i);
                         String mark =
                                 done.contains(i) && missed.contains(i)
                                         ? "hecha_tarde"
-                                        : done.contains(i) ? "hecha" : missed.contains(i) ? "incumplida" : "pendiente";
-                        s.append("- ").append(task.label).append(" · ").append(task.minutes).append(" min");
+                                        : done.contains(i)
+                                                ? "hecha"
+                                                : missed.contains(i) ? "incumplida" : "pendiente";
+                        s.append("- ")
+                                .append(task.label)
+                                .append(" · ")
+                                .append(task.minutes)
+                                .append(" min");
                         if (task.window >= 0) s.append(" · límite ").append(task.windowText());
                         s.append(" · ").append(mark);
                         // v36: evidencia y «¿cómo lo hiciste?» (opcionales; solo en el teléfono).
                         if (RoutineStore.hasPhoto(c, b, i, day)) s.append(" · con foto");
                         s.append('\n');
                         String how = RoutineStore.note(c, b, i, day);
-                        if (!how.isEmpty()) s.append("    cómo: ").append(how.replace('\n', ' ')).append('\n');
+                        if (!how.isEmpty())
+                            s.append("    cómo: ").append(how.replace('\n', ' ')).append('\n');
                     }
                 }
                 s.append("pausas_por_tareas=").append(RoutineStore.penalties(c, day)).append('\n');
-                s.append("fotos_de_evidencia=").append(RoutineStore.photos(c, day).size()).append('\n');
+                s.append("fotos_de_evidencia=")
+                        .append(RoutineStore.photos(c, day).size())
+                        .append('\n');
             }
         } catch (RuntimeException e) {
             s.append("foco_core_no_disponible\n");
@@ -310,11 +357,18 @@ public final class Inspector {
         try {
             long budget = MoneyStore.budget(c);
             List<Money.Entry> entries = MoneyStore.entries(c);
-            s.append("gasto_del_dia=").append(Money.fmt(Money.spent(entries, day, day))).append('\n');
+            s.append("gasto_del_dia=")
+                    .append(Money.fmt(Money.spent(entries, day, day)))
+                    .append('\n');
             if (budget > 0) {
-                s.append("permitido_del_dia=").append(Money.fmt(Money.dailyAllowance(budget, entries, day))).append('\n');
-                s.append("gasto_de_la_semana=").append(Money.fmt(Money.spentWeek(entries, day)))
-                        .append(" de ").append(Money.fmt(budget)).append('\n');
+                s.append("permitido_del_dia=")
+                        .append(Money.fmt(Money.dailyAllowance(budget, entries, day)))
+                        .append('\n');
+                s.append("gasto_de_la_semana=")
+                        .append(Money.fmt(Money.spentWeek(entries, day)))
+                        .append(" de ")
+                        .append(Money.fmt(budget))
+                        .append('\n');
             }
             long debt = MoneyStore.debt(c);
             if (debt > 0) s.append("deuda=").append(Money.fmt(debt)).append('\n');
@@ -336,29 +390,53 @@ public final class Inspector {
             s.append("decisiones_no=").append(AwarenessStore.noCount(c, dd)).append('\n');
             s.append("decisiones_si_con_nota=").append(AwarenessStore.yesCount(c, dd)).append('\n');
             int[] w = AwarenessStore.worth(c, dd);
-            s.append("valio_la_pena=si:").append(w[0]).append(",mas_o_menos:").append(w[1]).append(",no:").append(w[2]).append('\n');
-            for (es.foco.next.core.care.Awareness.Worth v : es.foco.next.core.care.Awareness.Worth.values()) {
+            s.append("valio_la_pena=si:")
+                    .append(w[0])
+                    .append(",mas_o_menos:")
+                    .append(w[1])
+                    .append(",no:")
+                    .append(w[2])
+                    .append('\n');
+            for (es.foco.next.core.care.Awareness.Worth v :
+                    es.foco.next.core.care.Awareness.Worth.values()) {
                 String apps = AwarenessStore.worthApps(c, dd, v);
                 if (apps.isEmpty()) continue;
                 java.util.Map<String, Integer> byApp = new java.util.LinkedHashMap<>();
-                for (String p : apps.split(",")) byApp.merge(AwarenessStore.label(c, p), 1, Integer::sum);
-                s.append("valio_").append(v.name().toLowerCase()).append("_en=").append(byApp).append('\n');
+                for (String p : apps.split(","))
+                    byApp.merge(AwarenessStore.label(c, p), 1, Integer::sum);
+                s.append("valio_")
+                        .append(v.name().toLowerCase())
+                        .append("_en=")
+                        .append(byApp)
+                        .append('\n');
             }
             for (String[] n : AwarenessStore.notes(c, dd))
-                s.append("- nota ").append(n[0]).append(" · ").append(n[1]).append(" · ").append(n[2]).append(" · ")
-                        .append(n[3].replace('\n', ' ')).append('\n');
+                s.append("- nota ")
+                        .append(n[0])
+                        .append(" · ")
+                        .append(n[1])
+                        .append(" · ")
+                        .append(n[2])
+                        .append(" · ")
+                        .append(n[3].replace('\n', ' '))
+                        .append('\n');
         } catch (RuntimeException ignored) {
         }
 
         s.append("\n== DENTRO DEL TELÉFONO ==\n");
         Repository r = Repository.get(c);
         AppConfig config = r.config();
-        // v32 (R9): lo que hubo ese día (fotografía tomada durante el día), no solo el estado de ahora.
+        // v32 (R9): lo que hubo ese día (fotografía tomada durante el día), no solo el estado de
+        // ahora.
         s.append("modos_del_dia=").append(seen(c, day, "modos")).append('\n');
         s.append("weekend_lock_del_dia=").append(seen(c, day, "weekend")).append('\n');
-        s.append("modo_al_cerrar=").append(es.foco.next.core.care.CareMode.label(CareStore.mode(c))).append('\n');
+        s.append("modo_al_cerrar=")
+                .append(es.foco.next.core.care.CareMode.label(CareStore.mode(c)))
+                .append('\n');
         s.append("plan_activado=").append(config.enabled).append('\n');
-        s.append("accesibilidad_conectada=").append(FocusAccessibilityService.connected()).append('\n');
+        s.append("accesibilidad_conectada=")
+                .append(FocusAccessibilityService.connected())
+                .append('\n');
         s.append("apps_de_ocio=").append(config.watchedApps.size()).append('\n');
         try {
             RuleStore rules = RuleStore.get(c);
@@ -372,14 +450,23 @@ public final class Inspector {
 
         s.append("acceso_de_uso=").append(es.foco.next.log.UsageContrast.allowed(c)).append('\n');
         try {
-            s.append("dns=").append(es.foco.next.core.DnsGuard.providerLabel(DnsMonitor.provider(c))).append('\n');
+            s.append("dns=")
+                    .append(es.foco.next.core.DnsGuard.providerLabel(DnsMonitor.provider(c)))
+                    .append('\n');
         } catch (RuntimeException ignored) {
         }
         try {
             NextDnsSync.Snapshot n = NextDnsSync.snapshot(c);
             if (n.at > 0
-                    && java.time.Instant.ofEpochMilli(n.at).atZone(ZoneId.systemDefault()).toLocalDate().equals(day))
-                s.append("nextdns_bloqueadas=").append(n.blocked).append(" de ").append(n.total).append('\n');
+                    && java.time.Instant.ofEpochMilli(n.at)
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalDate()
+                            .equals(day))
+                s.append("nextdns_bloqueadas=")
+                        .append(n.blocked)
+                        .append(" de ")
+                        .append(n.total)
+                        .append('\n');
         } catch (RuntimeException ignored) {
         }
         // Retos de Lab y uso real por app: el mismo registro que "Exportar mis 7 días · CSV".
@@ -392,7 +479,8 @@ public final class Inspector {
                         c,
                         db -> {
                             List<es.foco.next.log.LogDatabase.InspectorRow> rows =
-                                    es.foco.next.log.InspectorLog.rows(c, db, day.plusDays(1), 2, config);
+                                    es.foco.next.log.InspectorLog.rows(
+                                            c, db, day.plusDays(1), 2, config);
                             return leisure(rows, day, systemTotal)
                                     + "\nREGISTRO DEL DÍA (CSV: tiempos, bloqueos, retos de Lab)\n"
                                     + es.foco.next.log.InspectorLog.csv(
@@ -400,14 +488,18 @@ public final class Inspector {
                                             day.toString(),
                                             p -> {
                                                 try {
-                                                    return pm.getApplicationLabel(pm.getApplicationInfo(p, 0)).toString();
+                                                    return pm.getApplicationLabel(
+                                                                    pm.getApplicationInfo(p, 0))
+                                                            .toString();
                                                 } catch (Exception e) {
                                                     return p;
                                                 }
                                             },
                                             rows,
                                             false,
-                                            (d, h) -> es.foco.next.log.InspectorLog.inLogicalDay(day, d, h));
+                                            (d, h) ->
+                                                    es.foco.next.log.InspectorLog.inLogicalDay(
+                                                            day, d, h));
                         },
                         15_000);
         s.append(csv == null ? "\nREGISTRO DEL DÍA\nno_disponible\n" : csv);

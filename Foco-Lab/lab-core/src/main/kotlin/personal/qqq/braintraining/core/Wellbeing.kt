@@ -6,11 +6,16 @@ import java.time.ZoneId
 
 /**
  * Check-in de energía (un toque, sin obligación). Con batería baja Lab no exige lo mismo: el plan
- * del día se reduce a un solo reto corto. Nunca bloquea nada: el resto de juegos
- * sigue a mano, la última palabra es tuya.
+ * del día se reduce a un solo reto corto. Nunca bloquea nada: el resto de juegos sigue a mano, la
+ * última palabra es tuya.
  */
 enum class Energy(val label: String, val hint: String, val planSize: Int, val timed: Boolean) {
-    LOW("Baja", "Solo un reto corto; los juegos sin cronómetro siguen a mano. Descansar también cuenta.", 1, false),
+    LOW(
+        "Baja",
+        "Solo un reto corto; los juegos sin cronómetro siguen a mano. Descansar también cuenta.",
+        1,
+        false,
+    ),
     NORMAL("Normal", "Tu plan de siempre.", Int.MAX_VALUE, true),
     HIGH("Alta", "Tu plan de siempre; si te apetece, prueba un nivel más.", Int.MAX_VALUE, true);
 

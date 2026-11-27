@@ -17,9 +17,9 @@ import java.util.List;
  *
  * <ul>
  *   <li>NOCHE de 21:00 a 07:00, o con la hora automática apagada (como la Regla 2).
- *   <li>DESPERTAR: desde el primer desbloqueo después de las 05:00 hasta las 07:00 o hasta completar
- *       el reto de despertar. Gana a NOCHE solo en esa franja; las reglas siguen siendo las de
- *       noche (sin ocio, sin banco).
+ *   <li>DESPERTAR: desde el primer desbloqueo después de las 05:00 hasta las 07:00 o hasta
+ *       completar el reto de despertar. Gana a NOCHE solo en esa franja; las reglas siguen siendo
+ *       las de noche (sin ocio, sin banco).
  *   <li>DISTRAIDO: 5 min o más de ocio o 3 intentos bloqueados.
  *   <li>PRODUCTIVO: 10 min o más de uso productivo o retos y 0 de ocio.
  *   <li>NEUTRO: todo lo demás.
@@ -161,8 +161,8 @@ public final class HomeState {
     }
 
     /**
-     * @param firstUnlockAfterFive hora (epoch ms) del primer desbloqueo de hoy después de las 05:00,
-     *     o -1
+     * @param firstUnlockAfterFive hora (epoch ms) del primer desbloqueo de hoy después de las
+     *     05:00, o -1
      * @param wakeDone el reto de despertar de hoy ya se completó
      */
     public static Snapshot step(

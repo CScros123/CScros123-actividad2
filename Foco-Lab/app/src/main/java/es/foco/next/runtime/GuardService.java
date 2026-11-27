@@ -254,13 +254,15 @@ public final class GuardService extends Service {
             return true;
         // v32 (R5): las reglas de ocio para las que el respaldo sí tiene datos (noche, puerta de
         // Foco Core en Enfoque y Weekend Lock, rutina y pausa por tareas), con la misma tabla de
-        // excepciones que la Accesibilidad (LeisurePolicy). Webs, secciones y DNS no se pueden ver aquí.
+        // excepciones que la Accesibilidad (LeisurePolicy). Webs, secciones y DNS no se pueden ver
+        // aquí.
         try {
             if (es.foco.next.core.FocusEngine.watched(c, pkg)
                     && (c.enabled || es.foco.next.core.AbsoluteRules.social(pkg))) {
                 CareStore.install(this); // v32 (R13)
                 boolean night =
-                        es.foco.next.core.AbsoluteRules.night(java.time.LocalDateTime.now(), AppKinds.autoTime(this));
+                        es.foco.next.core.AbsoluteRules.night(
+                                java.time.LocalDateTime.now(), AppKinds.autoTime(this));
                 es.foco.next.core.care.CareMode.Modo modo = CareStore.mode(this);
                 boolean grant = RewardStore.grantActive(this, pkg);
                 es.foco.next.core.LeisurePolicy.Pass pass =

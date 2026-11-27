@@ -168,8 +168,9 @@ public final class DnsMonitor {
             String expected = provider(c);
             if (server != null
                     && !server.isEmpty()
-                    && !(expected.isEmpty() ? DnsGuard.nextDns(server) : DnsGuard.sameHost(server, expected)))
-                return "dns_privado_cambiado";
+                    && !(expected.isEmpty()
+                            ? DnsGuard.nextDns(server)
+                            : DnsGuard.sameHost(server, expected))) return "dns_privado_cambiado";
             if (p.isPrivateDnsActive() && (server == null || server.isEmpty()))
                 return "dns_privado_automatico";
             if (!p.isPrivateDnsActive()) return "dns_privado_apagado";
@@ -209,10 +210,19 @@ public final class DnsMonitor {
         SharedPreferences p = prefs(c);
         // Cambio pedido con el candado del modo estricto: se aplica solo al cumplirse las 24 h.
         String pending = p.getString("pendingProvider", "");
-        if (!pending.isEmpty() && System.currentTimeMillis() >= p.getLong("pendingAt", Long.MAX_VALUE)) {
-            p.edit().putString(KEY_PROVIDER, DnsGuard.provider(pending)).remove("pendingProvider").remove("pendingAt").apply();
+        if (!pending.isEmpty()
+                && System.currentTimeMillis() >= p.getLong("pendingAt", Long.MAX_VALUE)) {
+            p.edit()
+                    .putString(KEY_PROVIDER, DnsGuard.provider(pending))
+                    .remove("pendingProvider")
+                    .remove("pendingAt")
+                    .apply();
             es.foco.next.log.InspectorLog.event(
-                    c, es.foco.next.log.InspectorLog.INCIDENTE, "", 0, "dns_proveedor_cambiado",
+                    c,
+                    es.foco.next.log.InspectorLog.INCIDENTE,
+                    "",
+                    0,
+                    "dns_proveedor_cambiado",
                     "inc|dnsprov|" + System.currentTimeMillis() / 60_000);
         }
         String current = DnsGuard.provider(p.getString(KEY_PROVIDER, DnsGuard.DEFAULT_PROVIDER));

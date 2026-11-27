@@ -9,8 +9,8 @@ import java.util.Map;
 
 /**
  * Etapa 6: acompañamiento. Sustituye la fricción por mensajes cortos, con datos reales, sin culpa.
- * Puro: disparadores, límites, rotación y banco de mensajes. Quien muestra el mensaje (Android) solo
- * pregunta {@link #allowed} y {@link #pick}.
+ * Puro: disparadores, límites, rotación y banco de mensajes. Quien muestra el mensaje (Android)
+ * solo pregunta {@link #allowed} y {@link #pick}.
  */
 public final class Companion {
     private Companion() {}
@@ -43,7 +43,9 @@ public final class Companion {
         LEISURE_OVER(Category.RECORDATORIO, true),
         /** Modo CUIDADO: una sugerencia suave como mucho cada 2 h (lo limita quien llama). */
         CARE_SUGGESTION(Category.CUIDADO, false),
-        /** 6 aperturas de ocio en 2 min (OwlCare.restless; el límite de 30 min lo pone quien llama). */
+        /**
+         * 6 aperturas de ocio en 2 min (OwlCare.restless; el límite de 30 min lo pone quien llama).
+         */
         RESTLESS(Category.INQUIETUD, false),
         /** Resumen de la noche: el único permitido de noche. */
         NIGHT_SUMMARY(Category.REFLEXION, false);
@@ -86,8 +88,8 @@ public final class Companion {
         if (night) return t == Trigger.NIGHT_SUMMARY;
         if (t == Trigger.NIGHT_SUMMARY) return false;
         if (t.inLeisure) {
-            if (b.lastLeisureReminder >= 0 && now - b.lastLeisureReminder < LEISURE_REMINDER_EVERY_MS)
-                return false;
+            if (b.lastLeisureReminder >= 0
+                    && now - b.lastLeisureReminder < LEISURE_REMINDER_EVERY_MS) return false;
             int lastHour = 0;
             for (long at : b.leisureRemindersLastHour) if (now - at < 60 * 60_000L) lastHour++;
             return lastHour < LEISURE_REMINDERS_PER_HOUR;
@@ -99,7 +101,8 @@ public final class Companion {
      * Elige un mensaje de la categoría que no se haya mostrado en los últimos 3 días. Si todos se
      * mostraron, el más antiguo. {@code lastShown}: id → día ISO en que se mostró por última vez.
      */
-    public static Message pick(Category c, Map<String, String> lastShown, LocalDate today, long seed) {
+    public static Message pick(
+            Category c, Map<String, String> lastShown, LocalDate today, long seed) {
         List<Message> pool = of(c);
         List<Message> fresh = new ArrayList<>();
         for (Message m : pool) {
@@ -118,7 +121,8 @@ public final class Companion {
 
     /** Rellena {min_invertidos}, {proximo_paso} y {juego}. */
     public static String fill(String text, long investedMin, String nextStep, String game) {
-        String step = nextStep == null || nextStep.trim().isEmpty() ? "tu próximo paso" : nextStep.trim();
+        String step =
+                nextStep == null || nextStep.trim().isEmpty() ? "tu próximo paso" : nextStep.trim();
         String g = game == null || game.trim().isEmpty() ? "un reto de Cognitive Lab" : game.trim();
         return text.replace("{min_invertidos}", String.valueOf(Math.max(0, investedMin)))
                 .replace("{proximo_paso}", step)

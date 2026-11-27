@@ -18,19 +18,26 @@ final class DnsSettings {
         DnsGuard.State now = DnsMonitor.snapshot(a);
         String host = DnsMonitor.provider(a);
         boolean armed = DnsMonitor.armed(a);
-        boolean dnsOk = DnsGuard.compliant(new DnsGuard.State(true, now.network, now.privateDnsActive, now.server, host));
+        boolean dnsOk =
+                DnsGuard.compliant(
+                        new DnsGuard.State(
+                                true, now.network, now.privateDnsActive, now.server, host));
         LinearLayout card = Design.card(body, "Filtro DNS: NextDNS");
         Design.note(card, status(now, host));
         Design.note(card, "Proveedor: " + DnsGuard.providerLabel(host) + ".");
         String pending = DnsMonitor.pendingProvider(a);
         if (DnsGuard.automatic(host)) {
             // Automático elegido por ti: Foco no exige DNS. Volver a NextDNS endurece: al momento.
-            Design.note(card, "Elegiste automático tras un fallo de NextDNS: ahora no hay filtro DNS. Cuando NextDNS vuelva, regresa aquí.");
+            Design.note(
+                    card,
+                    "Elegiste automático tras un fallo de NextDNS: ahora no hay filtro DNS. Cuando NextDNS vuelva, regresa aquí.");
             card.addView(Design.button(a, "Volver a NextDNS", true, () -> backToNextDns(a)));
             return card;
         }
         // Sin perfil, o el teléfono usa otro perfil de NextDNS: se puede adoptar.
-        if (now.privateDnsActive && DnsGuard.nextDns(now.server) && !DnsGuard.sameHost(now.server, host)) {
+        if (now.privateDnsActive
+                && DnsGuard.nextDns(now.server)
+                && !DnsGuard.sameHost(now.server, host)) {
             String nd = DnsGuard.normalize(now.server);
             card.addView(
                     Design.button(
@@ -53,8 +60,16 @@ final class DnsSettings {
             String when =
                     java.time.Instant.ofEpochMilli(DnsMonitor.pendingAt(a))
                             .atZone(java.time.ZoneId.systemDefault())
-                            .format(java.time.format.DateTimeFormatter.ofPattern("EEEE H:mm", new java.util.Locale("es")));
-            Design.note(card, "Cambio pedido: " + DnsGuard.providerLabel(pending) + " desde el " + when + ".");
+                            .format(
+                                    java.time.format.DateTimeFormatter.ofPattern(
+                                            "EEEE H:mm", new java.util.Locale("es")));
+            Design.note(
+                    card,
+                    "Cambio pedido: "
+                            + DnsGuard.providerLabel(pending)
+                            + " desde el "
+                            + when
+                            + ".");
             card.addView(
                     Design.button(
                             a,
@@ -67,7 +82,8 @@ final class DnsSettings {
         }
         // Estadísticas automáticas: con la clave de API, Foco lee lo bloqueado hoy (cada 30 min).
         if (DnsGuard.nextDns(host) || DnsGuard.nextDns(pending)) {
-            es.foco.next.runtime.NextDnsSync.Snapshot snap = es.foco.next.runtime.NextDnsSync.snapshot(a);
+            es.foco.next.runtime.NextDnsSync.Snapshot snap =
+                    es.foco.next.runtime.NextDnsSync.snapshot(a);
             boolean key = es.foco.next.runtime.NextDnsSync.hasKey(a);
             if (key)
                 Design.note(
@@ -75,29 +91,43 @@ final class DnsSettings {
                         snap.error != null
                                 ? snap.error
                                 : snap.at > 0
-                                        ? "Estadísticas de hoy: " + snap.blocked + " bloqueadas de " + snap.total + " consultas."
+                                        ? "Estadísticas de hoy: "
+                                                + snap.blocked
+                                                + " bloqueadas de "
+                                                + snap.total
+                                                + " consultas."
                                         : "Estadísticas: leyendo…");
             card.addView(
                     Design.button(
                             a,
-                            key ? "Estadísticas automáticas · cambiar clave" : "Ver estadísticas automáticas",
+                            key
+                                    ? "Estadísticas automáticas · cambiar clave"
+                                    : "Ver estadísticas automáticas",
                             !key,
                             () -> askApiKey(a, key)));
         }
         card.addView(
                 Design.button(
                         a,
-                        DnsGuard.nextDns(host) ? "Cambiar de perfil de NextDNS" : "Escribir mi perfil de NextDNS",
+                        DnsGuard.nextDns(host)
+                                ? "Cambiar de perfil de NextDNS"
+                                : "Escribir mi perfil de NextDNS",
                         !DnsGuard.nextDns(host),
                         () -> askNextDns(a)));
         if (DnsGuard.nextDns(host) && !DnsGuard.automatic(pending))
-            card.addView(Design.button(a, "NextDNS falla: pasar a automático en 24 h", false, () -> askAutomatic(a)));
+            card.addView(
+                    Design.button(
+                            a,
+                            "NextDNS falla: pasar a automático en 24 h",
+                            false,
+                            () -> askAutomatic(a)));
         Design.gap(card, 8);
         card.addView(Design.text(a, (dnsOk ? "✓ " : "1. ") + "DNS privado de Android", 17, true));
         Design.note(
                 card,
                 "Ajustes › Conexiones › Más ajustes de conexión › DNS privado › Nombre de host del proveedor. Pega:");
-        String shown = host.isEmpty() ? "TU-ID.dns.nextdns.io (my.nextdns.io › Configuración)" : host;
+        String shown =
+                host.isEmpty() ? "TU-ID.dns.nextdns.io (my.nextdns.io › Configuración)" : host;
         card.addView(Design.text(a, shown, 18, true));
         card.addView(
                 Design.button(
@@ -166,7 +196,12 @@ final class DnsSettings {
                             DnsGuard.State s = DnsMonitor.snapshot(a);
                             if (!(s.network
                                     && DnsGuard.compliant(
-                                            new DnsGuard.State(true, true, s.privateDnsActive, s.server, host)))) {
+                                            new DnsGuard.State(
+                                                    true,
+                                                    true,
+                                                    s.privateDnsActive,
+                                                    s.server,
+                                                    host)))) {
                                 a.message(
                                         "Primero vuelve a activar el DNS privado con "
                                                 + DnsGuard.providerLabel(host)
@@ -187,7 +222,8 @@ final class DnsSettings {
      * las 24 h. También se abre desde el aviso del búho.
      */
     static void askAutomatic(MainActivity a) {
-        if (DnsGuard.automatic(DnsMonitor.provider(a)) || DnsGuard.automatic(DnsMonitor.pendingProvider(a))) {
+        if (DnsGuard.automatic(DnsMonitor.provider(a))
+                || DnsGuard.automatic(DnsMonitor.pendingProvider(a))) {
             a.message("Automático ya está pedido o activo.");
             return;
         }
@@ -201,7 +237,10 @@ final class DnsSettings {
                         (d, w) -> {
                             DnsMonitor.requestAutomatic(a);
                             a.render();
-                            a.message("Pedido. Automático llega el " + whenText(a) + ". Puedes anularlo en Ajustes.");
+                            a.message(
+                                    "Pedido. Automático llega el "
+                                            + whenText(a)
+                                            + ". Puedes anularlo en Ajustes.");
                         })
                 .show();
     }
@@ -217,13 +256,20 @@ final class DnsSettings {
         DnsMonitor.setProvider(a, last);
         FocusAccessibilityService.checkpoint();
         a.render();
-        a.message("De vuelta a NextDNS (" + DnsGuard.nextDnsProfile(last) + "). Pon " + last + " en DNS privado: tienes 60 s.");
+        a.message(
+                "De vuelta a NextDNS ("
+                        + DnsGuard.nextDnsProfile(last)
+                        + "). Pon "
+                        + last
+                        + " en DNS privado: tienes 60 s.");
     }
 
     private static String whenText(MainActivity a) {
         return java.time.Instant.ofEpochMilli(DnsMonitor.pendingAt(a))
                 .atZone(java.time.ZoneId.systemDefault())
-                .format(java.time.format.DateTimeFormatter.ofPattern("EEEE H:mm", new java.util.Locale("es")));
+                .format(
+                        java.time.format.DateTimeFormatter.ofPattern(
+                                "EEEE H:mm", new java.util.Locale("es")));
     }
 
     /** Clave de API de NextDNS (my.nextdns.io › Cuenta › API). Solo se usa con api.nextdns.io. */
@@ -231,7 +277,9 @@ final class DnsSettings {
         android.widget.EditText in = new android.widget.EditText(a);
         in.setHint("Clave de API");
         in.setSingleLine(true);
-        in.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        in.setInputType(
+                android.text.InputType.TYPE_CLASS_TEXT
+                        | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
         android.app.AlertDialog.Builder b =
                 new android.app.AlertDialog.Builder(a)
                         .setTitle("Estadísticas de NextDNS")
@@ -243,16 +291,20 @@ final class DnsSettings {
                                 (d, w) -> {
                                     String k = in.getText().toString().trim();
                                     if (!es.foco.next.core.NextDnsStats.validKey(k)) {
-                                        a.message("Esa clave no parece válida: solo letras y números, sin espacios.");
+                                        a.message(
+                                                "Esa clave no parece válida: solo letras y números, sin espacios.");
                                         return;
                                     }
                                     es.foco.next.runtime.NextDnsSync.setKey(a, k);
-                                    // Una sola vez: al llegar la primera lectura se repinta la página.
+                                    // Una sola vez: al llegar la primera lectura se repinta la
+                                    // página.
                                     Runnable[] once = new Runnable[1];
-                                    once[0] = () -> {
-                                        es.foco.next.runtime.NextDnsSync.removeListener(once[0]);
-                                        a.runOnUiThread(a::render);
-                                    };
+                                    once[0] =
+                                            () -> {
+                                                es.foco.next.runtime.NextDnsSync.removeListener(
+                                                        once[0]);
+                                                a.runOnUiThread(a::render);
+                                            };
                                     es.foco.next.runtime.NextDnsSync.addListener(once[0]);
                                     es.foco.next.runtime.NextDnsSync.refresh(a, true);
                                     a.render();
@@ -269,8 +321,8 @@ final class DnsSettings {
     }
 
     /**
-     * Con el candado del modo estricto, cambiar de proveedor podría aflojar el filtro: no se prohíbe,
-     * se aplaza 24 h (como todo lo que afloja). Devuelve true si quedó pedido.
+     * Con el candado del modo estricto, cambiar de proveedor podría aflojar el filtro: no se
+     * prohíbe, se aplaza 24 h (como todo lo que afloja). Devuelve true si quedó pedido.
      */
     private static boolean lockedChange(MainActivity a, String host) {
         if (!es.foco.next.runtime.StrictAdmin.lockActive(a)) return false;
@@ -278,11 +330,18 @@ final class DnsSettings {
         String when =
                 java.time.Instant.ofEpochMilli(DnsMonitor.pendingAt(a))
                         .atZone(java.time.ZoneId.systemDefault())
-                        .format(java.time.format.DateTimeFormatter.ofPattern("EEEE H:mm", new java.util.Locale("es")));
+                        .format(
+                                java.time.format.DateTimeFormatter.ofPattern(
+                                        "EEEE H:mm", new java.util.Locale("es")));
         a.render();
         a.message(
-                "Modo estricto: el cambio a " + DnsGuard.providerLabel(host) + " se aplica el " + when
-                        + ". Hasta entonces deja el DNS privado como está; después pon " + host + ".");
+                "Modo estricto: el cambio a "
+                        + DnsGuard.providerLabel(host)
+                        + " se aplica el "
+                        + when
+                        + ". Hasta entonces deja el DNS privado como está; después pon "
+                        + host
+                        + ".");
         return true;
     }
 
@@ -300,7 +359,8 @@ final class DnsSettings {
                         (d, w) -> {
                             String h = nextDnsHost(in.getText().toString());
                             if (h == null) {
-                                a.message("No es un perfil de NextDNS válido. Ejemplo: 96916b o 96916b.dns.nextdns.io");
+                                a.message(
+                                        "No es un perfil de NextDNS válido. Ejemplo: 96916b o 96916b.dns.nextdns.io");
                                 return;
                             }
                             String cur = DnsMonitor.provider(a);
@@ -309,7 +369,9 @@ final class DnsSettings {
                             FocusAccessibilityService.checkpoint();
                             a.render();
                             a.message(
-                                    "Listo. Ahora pulsa «Copiar y abrir DNS privado» y pega " + h + ". Tienes 60 s.");
+                                    "Listo. Ahora pulsa «Copiar y abrir DNS privado» y pega "
+                                            + h
+                                            + ". Tienes 60 s.");
                         })
                 .show();
     }
@@ -317,7 +379,8 @@ final class DnsSettings {
     /** "96916b", "96916b.dns.nextdns.io", "https://dns.nextdns.io/96916b" → host exacto, o null. */
     static String nextDnsHost(String raw) {
         String t = DnsGuard.normalize(raw);
-        if (t.startsWith("https://dns.nextdns.io/")) t = t.substring("https://dns.nextdns.io/".length());
+        if (t.startsWith("https://dns.nextdns.io/"))
+            t = t.substring("https://dns.nextdns.io/".length());
         if (t.startsWith("tls://")) t = t.substring(6);
         int slash = t.indexOf('/');
         if (slash >= 0) t = t.substring(0, slash);

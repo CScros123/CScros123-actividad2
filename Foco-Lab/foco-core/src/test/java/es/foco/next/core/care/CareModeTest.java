@@ -37,22 +37,32 @@ public class CareModeTest {
         assertFalse(CareMode.blocksAtLimit(CareMode.Modo.NORMAL));
         assertFalse(CareMode.usesBank(CareMode.Modo.NORMAL));
         long now = at(15, 0).toInstant().toEpochMilli();
-        // Límite de Companion (el que usa el notificador): 3 en la última hora y nunca dos en 5 min.
+        // Límite de Companion (el que usa el notificador): 3 en la última hora y nunca dos en 5
+        // min.
         Companion.Budget b = new Companion.Budget();
         assertTrue(Companion.allowed(Companion.Trigger.LEISURE_OVER, b, now, false, false, false));
-        b.leisureRemindersLastHour.addAll(Arrays.asList(now - 50 * MIN, now - 30 * MIN, now - 10 * MIN));
+        b.leisureRemindersLastHour.addAll(
+                Arrays.asList(now - 50 * MIN, now - 30 * MIN, now - 10 * MIN));
         b.lastLeisureReminder = now - 10 * MIN;
         assertFalse(Companion.allowed(Companion.Trigger.LEISURE_OVER, b, now, false, false, false));
         // Pasada la hora del primero, cabe otro.
-        assertTrue(Companion.allowed(Companion.Trigger.LEISURE_OVER, b, now + 11 * MIN, false, false, false));
+        assertTrue(
+                Companion.allowed(
+                        Companion.Trigger.LEISURE_OVER, b, now + 11 * MIN, false, false, false));
         // El mismo límite en CareMode.
-        assertFalse(CareMode.normalReminderAllowed(now, Arrays.asList(now - 50 * MIN, now - 30 * MIN, now - 10 * MIN)));
-        assertTrue(CareMode.normalReminderAllowed(now, Arrays.asList(now - 70 * MIN, now - 30 * MIN, now - 10 * MIN)));
+        assertFalse(
+                CareMode.normalReminderAllowed(
+                        now, Arrays.asList(now - 50 * MIN, now - 30 * MIN, now - 10 * MIN)));
+        assertTrue(
+                CareMode.normalReminderAllowed(
+                        now, Arrays.asList(now - 70 * MIN, now - 30 * MIN, now - 10 * MIN)));
     }
 
     @Test
     public void enfoqueDeUnaHoraNoVuelveANormalAntesPeroSiACuidado() {
-        CareMode.Change ch = CareMode.toFocus(CareMode.State.inicial(), CareMode.Duracion.UNA_HORA, at(15, 0), 21);
+        CareMode.Change ch =
+                CareMode.toFocus(
+                        CareMode.State.inicial(), CareMode.Duracion.UNA_HORA, at(15, 0), 21);
         assertNotNull(ch);
         CareMode.State s = ch.next;
         long t0 = at(15, 0).toInstant().toEpochMilli();
@@ -81,7 +91,8 @@ public class CareModeTest {
         // De día, en CUIDADO, TikTok no se cuenta ni se limita.
         assertEquals(
                 CareMode.Leisure.NOT_COUNTED,
-                CareMode.leisure(CareMode.Modo.CUIDADO, AbsoluteRules.night(t.withHour(16), true), true));
+                CareMode.leisure(
+                        CareMode.Modo.CUIDADO, AbsoluteRules.night(t.withHour(16), true), true));
         // Telegram, siempre.
         assertTrue(CareMode.alwaysBlocked("org.telegram.messenger"));
     }
@@ -102,7 +113,10 @@ public class CareModeTest {
         NightHours.Setting mixed = NightHours.request(s, new NightHours(20, 6), today);
         assertEquals(new NightHours(21, 7), NightHours.effective(mixed, today));
         // Fuera de límites: sin cambios.
-        assertEquals(new NightHours(21, 7), NightHours.effective(NightHours.request(s, new NightHours(2, 7), today), today.plusDays(2)));
+        assertEquals(
+                new NightHours(21, 7),
+                NightHours.effective(
+                        NightHours.request(s, new NightHours(2, 7), today), today.plusDays(2)));
         // AbsoluteRules usa el horario vigente.
         AbsoluteRules.useNight(20, 7);
         assertTrue(AbsoluteRules.esNocheAbsoluta(LocalDateTime.of(2026, 11, 23, 20, 30)));
@@ -116,14 +130,31 @@ public class CareModeTest {
     public void enfoqueHastaLaNocheYAmpliar() {
         assertEquals(-1, CareMode.focusEnd(CareMode.Duracion.HASTA_LA_NOCHE, at(20, 50), 21));
         assertTrue(CareMode.focusEnd(CareMode.Duracion.HASTA_LA_NOCHE, at(10, 0), 21) > 0);
-        assertNull(CareMode.toFocus(CareMode.State.inicial(), CareMode.Duracion.HASTA_LA_NOCHE, at(22, 0), 21));
-        CareMode.State s = CareMode.toFocus(CareMode.State.inicial(), CareMode.Duracion.DOS_HORAS, at(15, 0), 21).next;
+        assertNull(
+                CareMode.toFocus(
+                        CareMode.State.inicial(), CareMode.Duracion.HASTA_LA_NOCHE, at(22, 0), 21));
+        CareMode.State s =
+                CareMode.toFocus(
+                                CareMode.State.inicial(),
+                                CareMode.Duracion.DOS_HORAS,
+                                at(15, 0),
+                                21)
+                        .next;
         // Pedir 1 h dentro de un Enfoque de 2 h no lo acorta.
         CareMode.State s2 = CareMode.toFocus(s, CareMode.Duracion.UNA_HORA, at(15, 10), 21).next;
         assertEquals(s.enfoqueHasta, s2.enfoqueHasta);
         // Desde CUIDADO, al vencer vuelve a CUIDADO.
-        CareMode.State fromCare = CareMode.toFocus(new CareMode.State(CareMode.Modo.CUIDADO, CareMode.Modo.CUIDADO, -1), CareMode.Duracion.UNA_HORA, at(15, 0), 21).next;
-        assertEquals(CareMode.Modo.CUIDADO, CareMode.effective(fromCare, at(16, 1).toInstant().toEpochMilli()));
+        CareMode.State fromCare =
+                CareMode.toFocus(
+                                new CareMode.State(
+                                        CareMode.Modo.CUIDADO, CareMode.Modo.CUIDADO, -1),
+                                CareMode.Duracion.UNA_HORA,
+                                at(15, 0),
+                                21)
+                        .next;
+        assertEquals(
+                CareMode.Modo.CUIDADO,
+                CareMode.effective(fromCare, at(16, 1).toInstant().toEpochMilli()));
     }
 
     @Test
@@ -180,7 +211,10 @@ public class CareModeTest {
     @Test
     public void cuidadoDesdeEnfoqueVuelveAlEnfoqueSiLeQueda() {
         long t0 = at(15, 0).toInstant().toEpochMilli();
-        CareMode.State focus = CareMode.toFocus(CareMode.State.inicial(), CareMode.Duracion.UNA_HORA, at(15, 0), 21).next;
+        CareMode.State focus =
+                CareMode.toFocus(
+                                CareMode.State.inicial(), CareMode.Duracion.UNA_HORA, at(15, 0), 21)
+                        .next;
         CareMode.State care = CareMode.toCare(focus, 15, t0 + 10 * MIN, 0, false, "elegido").next;
         assertEquals(CareMode.Modo.CUIDADO, CareMode.effective(care, t0 + 20 * MIN));
         // Desde un Cuidado que vuelve a un Enfoque activo no se puede saltar a Normal.
@@ -196,23 +230,35 @@ public class CareModeTest {
     @Test
     public void topeDiarioDeDosHorasSalvoAnimoBajo() {
         long t0 = at(15, 0).toInstant().toEpochMilli();
-        assertNull(CareMode.toCare(CareMode.State.inicial(), 15, t0, 2 * 60 * MIN, false, "elegido"));
-        assertNotNull(CareMode.toCare(CareMode.State.inicial(), 15, t0, 2 * 60 * MIN, true, "animo_bajo"));
+        assertNull(
+                CareMode.toCare(CareMode.State.inicial(), 15, t0, 2 * 60 * MIN, false, "elegido"));
+        assertNotNull(
+                CareMode.toCare(
+                        CareMode.State.inicial(), 15, t0, 2 * 60 * MIN, true, "animo_bajo"));
         // Quedan 10 min del tope: se conceden 10 aunque pida 1 h.
-        CareMode.State s = CareMode.toCare(CareMode.State.inicial(), 60, t0, 110 * MIN, false, "elegido").next;
+        CareMode.State s =
+                CareMode.toCare(CareMode.State.inicial(), 60, t0, 110 * MIN, false, "elegido").next;
         assertEquals(10, CareMode.careMinutesLeft(s, t0));
         assertEquals(2 * 60 * MIN, CareMode.careBudgetLeftMs(0, false));
         // v32: con el ánimo bajo, 3 h (antes sin tope).
         assertEquals(60 * MIN, CareMode.careBudgetLeftMs(2 * 60 * MIN, true));
         assertEquals(0, CareMode.careBudgetLeftMs(5 * 60 * MIN, true));
-        assertNull(CareMode.toCare(CareMode.State.inicial(), 15, t0, 3 * 60 * MIN, true, "animo_bajo"));
+        assertNull(
+                CareMode.toCare(
+                        CareMode.State.inicial(), 15, t0, 3 * 60 * MIN, true, "animo_bajo"));
     }
 
     @Test
     public void pieDelBuhoConMetricasCompactas() {
-        assertEquals("3 hábitos hoy · 5 min/h disponibles", CareMode.owlLine(3, CareMode.Modo.NORMAL, false, 7, 5, true));
-        assertEquals("1 hábito hoy · ocio con tu hora libre de Foco Core", CareMode.owlLine(1, CareMode.Modo.ENFOQUE, false, 7, 2, true));
-        assertEquals("empieza con algo pequeño · ocio cerrado hasta las 7:00", CareMode.owlLine(0, CareMode.Modo.NORMAL, true, 7, 0, true));
+        assertEquals(
+                "3 hábitos hoy · 5 min/h disponibles",
+                CareMode.owlLine(3, CareMode.Modo.NORMAL, false, 7, 5, true));
+        assertEquals(
+                "1 hábito hoy · ocio con tu hora libre de Foco Core",
+                CareMode.owlLine(1, CareMode.Modo.ENFOQUE, false, 7, 2, true));
+        assertEquals(
+                "empieza con algo pequeño · ocio cerrado hasta las 7:00",
+                CareMode.owlLine(0, CareMode.Modo.NORMAL, true, 7, 0, true));
         String hidden = CareMode.owlLine(2, CareMode.Modo.CUIDADO, false, 7, 5, false);
         assertFalse(hidden, hidden.matches(".*\\d.*"));
     }
@@ -223,7 +269,12 @@ public class CareModeTest {
             assertTrue(c + " tiene al menos 8", Companion.of(c).size() >= 8);
             for (Companion.Message m : Companion.of(c)) {
                 String t = m.text.toLowerCase();
-                assertFalse(m.text, t.contains("fallaste") || t.contains("perdiste") || t.contains("otra vez") || t.contains("sin saldo"));
+                assertFalse(
+                        m.text,
+                        t.contains("fallaste")
+                                || t.contains("perdiste")
+                                || t.contains("otra vez")
+                                || t.contains("sin saldo"));
             }
         }
         // De noche, en llamada o en No molestar: nada (salvo el resumen de la noche).

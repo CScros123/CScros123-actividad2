@@ -62,9 +62,16 @@ public class RewardsTest {
     public void streakAndUnlocks() {
         assertEquals(3, Rewards.streak(Arrays.asList(true, false, true, true, true)));
         assertEquals(0, Rewards.streak(Arrays.asList(true, false)));
-        assertEquals(Arrays.asList("buho_bufanda", "fondo_aurora"), Rewards.newUnlocks(7, new HashSet<>()));
-        assertTrue(Rewards.newUnlocks(7, new HashSet<>(Arrays.asList("buho_bufanda", "fondo_aurora"))).isEmpty());
-        assertEquals(14, Rewards.nextMilestone(new HashSet<>(Arrays.asList("buho_bufanda", "fondo_aurora")))[0]);
+        assertEquals(
+                Arrays.asList("buho_bufanda", "fondo_aurora"),
+                Rewards.newUnlocks(7, new HashSet<>()));
+        assertTrue(
+                Rewards.newUnlocks(7, new HashSet<>(Arrays.asList("buho_bufanda", "fondo_aurora")))
+                        .isEmpty());
+        assertEquals(
+                14,
+                Rewards.nextMilestone(new HashSet<>(Arrays.asList("buho_bufanda", "fondo_aurora")))[
+                        0]);
         assertTrue(Rewards.bonusAt(7));
         assertFalse(Rewards.bonusAt(6));
     }

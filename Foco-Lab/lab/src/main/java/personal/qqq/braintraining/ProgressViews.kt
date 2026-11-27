@@ -549,7 +549,8 @@ fun EnergyCheckIn(vm: BrainViewModel) {
                     colors =
                         if (vm.energy == e)
                             ButtonDefaults.outlinedButtonColors(
-                                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = .16f)
+                                containerColor =
+                                    MaterialTheme.colorScheme.primary.copy(alpha = .16f)
                             )
                         else ButtonDefaults.outlinedButtonColors(),
                 ) {

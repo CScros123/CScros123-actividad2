@@ -1,8 +1,8 @@
 package es.foco.next.core.care;
 
 /**
- * Cronómetro de las apps vigiladas: una píldora pequeña con los minutos de ocio que quedan.
- * Medir sin vigilar: minutos redondeados hacia arriba, nunca segundos; el último minuto se dice con
+ * Cronómetro de las apps vigiladas: una píldora pequeña con los minutos de ocio que quedan. Medir
+ * sin vigilar: minutos redondeados hacia arriba, nunca segundos; el último minuto se dice con
  * palabras. Pasado el límite en modo Normal (sin bloqueo), cuánto falta para otros 5. Puro.
  */
 public final class LeisureTimer {

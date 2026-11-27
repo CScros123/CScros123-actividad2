@@ -544,23 +544,18 @@ private fun Collection(vm: BrainViewModel, w: Wallet) {
     Panel {
         Text("Aspecto (libre, sin ganar nada)", style = MaterialTheme.typography.titleMedium)
         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Rewards.cosmetics
-                    .forEach { c ->
-                        val on = c.id == w.skin || c.id == w.accent || c.id == w.theme
-                        FilterChip(
-                            on,
-                            { vm.equip(c.id) },
-                            label = { Text(c.title.substringAfter(' ')) },
-                            leadingIcon = {
-                                Box(
-                                    Modifier.size(12.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(c.color))
-                                )
-                            },
-                        )
-                    }
+            Rewards.cosmetics.forEach { c ->
+                val on = c.id == w.skin || c.id == w.accent || c.id == w.theme
+                FilterChip(
+                    on,
+                    { vm.equip(c.id) },
+                    label = { Text(c.title.substringAfter(' ')) },
+                    leadingIcon = {
+                        Box(Modifier.size(12.dp).clip(CircleShape).background(Color(c.color)))
+                    },
+                )
             }
+        }
         Rewards.phrases
             .filterIndexed { i, _ -> i in w.phrases }
             .forEach {

@@ -74,7 +74,8 @@ public final class InspectorLog {
             OCIO_PREMIO = "ocio_premio",
             OCIO_CUIDADO = "ocio_cuidado",
             OCIO_FUERA = "ocio_fuera",
-            // v33: «¿me aporta?» (detalle: no / si;tipo) y «¿valió la pena?» (si / mas_o_menos / no).
+            // v33: «¿me aporta?» (detalle: no / si;tipo) y «¿valió la pena?» (si / mas_o_menos /
+            // no).
             CONCIENCIA = "decision_consciente",
             VALIO = "valio_la_pena";
 
@@ -154,7 +155,8 @@ public final class InspectorLog {
                                         d,
                                         onceKey,
                                         false);
-                        // v32 (R3): un intento de evasión cuenta una vez por hecho (respeta onceKey).
+                        // v32 (R3): un intento de evasión cuenta una vez por hecho (respeta
+                        // onceKey).
                         if (added) evasion(c, type, detail);
                         return Boolean.TRUE;
                     },
@@ -169,7 +171,8 @@ public final class InspectorLog {
     /** v31: los intentos de evasión cuentan contra la semana perfecta (v32: solo si se guardó). */
     private static void evasion(Context c, String type, String detail) {
         if (INCIDENTE.equals(type)) es.foco.next.runtime.RewardStore.markEvasion(c, detail);
-        else if (LAUNCHER_CAMBIADO.equals(type) || VPN.equals(type)) es.foco.next.runtime.RewardStore.markEvasion(c, type);
+        else if (LAUNCHER_CAMBIADO.equals(type) || VPN.equals(type))
+            es.foco.next.runtime.RewardStore.markEvasion(c, type);
     }
 
     public static void event(
@@ -228,7 +231,8 @@ public final class InspectorLog {
                         for (JSONObject o : items) {
                             String type = o.optString("type"), id = o.optString("id");
                             long wall = o.optLong("ts", System.currentTimeMillis());
-                            ZonedDateTime t = Instant.ofEpochMilli(wall).atZone(ZoneId.systemDefault());
+                            ZonedDateTime t =
+                                    Instant.ofEpochMilli(wall).atZone(ZoneId.systemDefault());
                             db.addInspector(
                                     wall,
                                     t.toLocalDate().toString(),
@@ -247,7 +251,8 @@ public final class InspectorLog {
                     ok -> {
                         // Solo se vacía si Lab no añadió nada mientras tanto; si añadió, se volverá
                         // a leer (sin duplicar).
-                        if (raw.equals(p.getString(LAB_KEY, null))) p.edit().remove(LAB_KEY).apply();
+                        if (raw.equals(p.getString(LAB_KEY, null)))
+                            p.edit().remove(LAB_KEY).apply();
                         for (JSONObject o : items) {
                             String id = o.optString("id");
                             es.foco.next.runtime.HomeHub.onEvent(
@@ -396,12 +401,13 @@ public final class InspectorLog {
 
     /**
      * v32 (R9): ¿esa hora natural pertenece al día lógico {@code d}? El día de Foco va de las 04:00
-     * de d a las 04:00 del día siguiente (como Foco Core, {@code Routine.logicalDay}). Las filas sin
-     * hora cuentan en su fecha.
+     * de d a las 04:00 del día siguiente (como Foco Core, {@code Routine.logicalDay}). Las filas
+     * sin hora cuentan en su fecha.
      */
     public static boolean inLogicalDay(java.time.LocalDate d, String day, int hour) {
         if (hour < 0) return d.toString().equals(day);
-        return (d.toString().equals(day) && hour >= 4) || (d.plusDays(1).toString().equals(day) && hour < 4);
+        return (d.toString().equals(day) && hour >= 4)
+                || (d.plusDays(1).toString().equals(day) && hour < 4);
     }
 
     /** Con {@code keep} (día, hora) solo salen esas filas; null = todas. */
@@ -414,9 +420,11 @@ public final class InspectorLog {
             java.util.function.BiPredicate<String, Integer> keep) {
         StringBuilder csv = new StringBuilder(HEADER).append("\r\n");
         for (LogDatabase.InspectorRow r : db.inspectorDays(fromDay))
-            if ((includeMood || !ANIMO.equals(r.type)) && (keep == null || keep.test(r.day, r.hour))) row(csv, r, label);
+            if ((includeMood || !ANIMO.equals(r.type))
+                    && (keep == null || keep.test(r.day, r.hour))) row(csv, r, label);
         for (LogDatabase.InspectorRow r : measured)
-            if ((includeMood || !ANIMO.equals(r.type)) && (keep == null || keep.test(r.day, r.hour))) row(csv, r, label);
+            if ((includeMood || !ANIMO.equals(r.type))
+                    && (keep == null || keep.test(r.day, r.hour))) row(csv, r, label);
         // Bloqueos e intentos: salen del registro de bloqueos (cada evento es una vez; nunca suman
         // segundos).
         Map<String, LogDatabase.InspectorRow> blocks = new LinkedHashMap<>();

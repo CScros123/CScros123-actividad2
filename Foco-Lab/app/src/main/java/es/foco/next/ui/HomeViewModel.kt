@@ -7,7 +7,6 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.wifi.WifiInfo
-import android.provider.Settings
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -44,7 +43,9 @@ data class DayBar(val day: LocalDate, val investedMin: Long, val ocioMin: Long)
 /** Estado del sistema para la barra de protección. */
 data class SystemState(
     val dnsOk: Boolean = false,
-    /** El teléfono ya usa el proveedor pedido con el candado; Foco lo adopta a esta hora ("" si no). */
+    /**
+     * El teléfono ya usa el proveedor pedido con el candado; Foco lo adopta a esta hora ("" si no).
+     */
     val dnsWaiting: String = "",
     val accessibility: Boolean = false,
     val autoTime: Boolean = true,
@@ -57,48 +58,73 @@ data class SystemState(
     val dndAccess: Boolean = false,
     val usageAccess: Boolean = false,
     val notifications: Boolean = false,
-
 )
 
 /** Qué se puede esperar al abrir ocio ahora (para la Aduana; el que decide es el servicio). */
-data class LeisureOutlook(val night: Boolean, val hiddenHere: Boolean, val text: String, val focus: Boolean = true)
+data class LeisureOutlook(
+    val night: Boolean,
+    val hiddenHere: Boolean,
+    val text: String,
+    val focus: Boolean = true,
+)
 
 /**
  * Estado de Foco Home para Compose. Lee de HomeHub (EstadoActual), del plan, de UsageStats (con
  * permiso) y del registro. Todo lo pesado va en un hilo propio; nunca lanza.
  */
 class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener {
-    private val io = Executors.newSingleThreadExecutor { r -> Thread(r, "foco-home-vm").apply { isDaemon = true } }
-    private val ctx: Context get() = getApplication()
+    private val io =
+        Executors.newSingleThreadExecutor { r ->
+            Thread(r, "foco-home-vm").apply { isDaemon = true }
+        }
+    private val ctx: Context
+        get() = getApplication()
 
     var estado by mutableStateOf<HomeHub.EstadoActual?>(HomeHub.last())
         private set
+
     var apps by mutableStateOf<List<HomeApps.App>>(emptyList())
         private set
+
     var usageToday by mutableStateOf<Map<String, Long>>(emptyMap())
         private set
+
     var quick by mutableStateOf<QuickInfo?>(null)
         private set
+
     var week by mutableStateOf<List<DayBar>>(emptyList())
         private set
+
     var dock by mutableStateOf(loadDock())
         private set
-    var variant by mutableStateOf(CompanionMood.Variant.of(prefs().getString("companion", "BONSAI")))
+
+    var variant by
+        mutableStateOf(CompanionMood.Variant.of(prefs().getString("companion", "BONSAI")))
         private set
+
     // Hasta la primera lectura se supone todo bien: sin avisos que aparecen y desaparecen.
     var system by mutableStateOf(SystemState(accessibility = true, homeRole = true))
         private set
-    /** Iconos ya convertidos (fuera del hilo principal): el cajón y el dock no convierten al hacer scroll. */
+
+    /**
+     * Iconos ya convertidos (fuera del hilo principal): el cajón y el dock no convierten al hacer
+     * scroll.
+     */
     var icons by mutableStateOf<Map<String, androidx.compose.ui.graphics.ImageBitmap>>(emptyMap())
         private set
+
     var nextStep by mutableStateOf("")
         private set
+
     // Preferencias del panel izquierdo.
     var reduceMotion by mutableStateOf(ambient().getBoolean("reduce", false))
         private set
+
     var saving by mutableStateOf(ambient().getBoolean("saving", false))
         private set
-    // Gestos siempre encendidos (auditoría v25): doble toque bloquea, abajo notificaciones, arriba apps.
+
+    // Gestos siempre encendidos (auditoría v25): doble toque bloquea, abajo notificaciones, arriba
+    // apps.
     val gestureLock = true
     val gestureNotifications = true
     val gestureDrawer = true
@@ -106,25 +132,32 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
     // ---- Temas fotográficos (prototipo S23) ----
     var themesOn by mutableStateOf(prefs().getBoolean("themes_on", true))
         private set
+
     // v38: todo automático. Quien había fijado un tema a mano pasa una vez a automático (el fondo
     // sigue a la hora); después puede volver a elegir uno si quiere.
-    var themeChoice by mutableStateOf(
-        prefs().let { p ->
-            if (!p.getBoolean("theme_auto_v38", false)) p.edit().putString("theme", "AUTO").putBoolean("theme_auto_v38", true).apply()
-            p.getString("theme", "AUTO") ?: "AUTO"
-        }
-    )
+    var themeChoice by
+        mutableStateOf(
+            prefs().let { p ->
+                if (!p.getBoolean("theme_auto_v38", false))
+                    p.edit().putString("theme", "AUTO").putBoolean("theme_auto_v38", true).apply()
+                p.getString("theme", "AUTO") ?: "AUTO"
+            }
+        )
         private set
+
     var theme by mutableStateOf(es.foco.next.core.home.PhotoTheme.CASCADA)
         private set
+
     /** Foto del tema ya decodificada a tamaño de pantalla (fuera del hilo principal), o null. */
     var photo by mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null)
         private set
+
     /** v27: la foto del tema también va a la pantalla de bloqueo, siempre (automático). */
     val lockSync = true
     /** Iconos del dock con color suavizado para combinar con la foto. */
     var dockBlend by mutableStateOf(prefs().getBoolean("dock_blend", true))
         private set
+
     private var photoKey: String? = "-"
 
     /** Barra de estado con iconos oscuros (cielo claro). */
@@ -134,17 +167,18 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
     /** Elige el tema (automático o el tuyo) y carga su foto solo si cambió. Barato. */
     fun syncTheme() {
         val now = LocalDateTime.now()
-        val f = es.foco.next.core.home.PhotoTheme.Facts().apply {
-            hour = now.hour
-            minute = now.minute
-            night = AbsoluteRules.night(now, AppKinds.autoTime(ctx))
-            productive = estadoActual == HomeState.Estado.PRODUCTIVO
-            focus = careMode == es.foco.next.core.care.CareMode.Modo.ENFOQUE
-            retosHoy = estado?.retosHoy ?: 0
-            dayOfYear = now.dayOfYear
-            aurora = "fondo_aurora" in unlocks
-            mar = "fondo_mar" in unlocks
-        }
+        val f =
+            es.foco.next.core.home.PhotoTheme.Facts().apply {
+                hour = now.hour
+                minute = now.minute
+                night = AbsoluteRules.night(now, AppKinds.autoTime(ctx))
+                productive = estadoActual == HomeState.Estado.PRODUCTIVO
+                focus = careMode == es.foco.next.core.care.CareMode.Modo.ENFOQUE
+                retosHoy = estado?.retosHoy ?: 0
+                dayOfYear = now.dayOfYear
+                aurora = "fondo_aurora" in unlocks
+                mar = "fondo_mar" in unlocks
+            }
         val t = es.foco.next.core.home.PhotoTheme.choose(themeChoice, f)
         if (t != theme) theme = t
         val key = if (themesOn) t.photo else null
@@ -189,11 +223,15 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
         val o = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
         android.graphics.BitmapFactory.decodeResource(r, res, o)
         var sample = 1
-        while (o.outWidth / (sample * 2) >= dm.widthPixels && o.outHeight / (sample * 2) >= dm.heightPixels) sample *= 2
-        val opts = android.graphics.BitmapFactory.Options().apply {
-            inSampleSize = sample
-            inPreferredConfig = android.graphics.Bitmap.Config.RGB_565
-        }
+        while (
+            o.outWidth / (sample * 2) >= dm.widthPixels &&
+                o.outHeight / (sample * 2) >= dm.heightPixels
+        ) sample *= 2
+        val opts =
+            android.graphics.BitmapFactory.Options().apply {
+                inSampleSize = sample
+                inPreferredConfig = android.graphics.Bitmap.Config.RGB_565
+            }
         val b = android.graphics.BitmapFactory.decodeResource(r, res, opts) ?: return null
         b.prepareToDraw()
         return b.asImageBitmap()
@@ -204,7 +242,8 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
         if (prefs().getString("theme_lock_applied", "") == key) return
         runCatching {
             ctx.resources.openRawResource(res).use {
-                android.app.WallpaperManager.getInstance(ctx).setStream(it, null, true, android.app.WallpaperManager.FLAG_LOCK)
+                android.app.WallpaperManager.getInstance(ctx)
+                    .setStream(it, null, true, android.app.WallpaperManager.FLAG_LOCK)
             }
             prefs().edit().putString("theme_lock_applied", key).apply()
         }
@@ -215,7 +254,6 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
         themeChoice = choice
         syncTheme()
     }
-
 
     // ---- El búho, voz de Foco: banner del último mensaje ----
     var owlBanner by mutableStateOf<Array<String>?>(null)
@@ -243,22 +281,30 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
     // ---- De control a cuidado ----
     var careMode by mutableStateOf(es.foco.next.runtime.CareStore.mode(app))
         private set
+
     var focusLeft by mutableStateOf(0L)
         private set
+
     /** Minutos que quedan del Cuidado actual y del tope diario de Cuidado. */
     var careLeft by mutableStateOf(0L)
         private set
+
     var careBudgetMin by mutableStateOf(Long.MAX_VALUE)
         private set
+
     var showNumbers by mutableStateOf(true)
         private set
+
     /** La pregunta de ánimo del día está pendiente (primera vez que se abre Foco hoy). */
     var askMood by mutableStateOf(false)
         private set
+
     var nightLabel by mutableStateOf("21:00 a 07:00")
         private set
+
     var nightPending by mutableStateOf("")
         private set
+
     /** "Hoy leíste y practicaste idiomas": lo bueno de hoy, sin números. */
     var goodToday by mutableStateOf("")
         private set
@@ -270,11 +316,21 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
         careMode = es.foco.next.runtime.CareStore.mode(c)
         focusLeft = es.foco.next.runtime.CareStore.focusMinutesLeft(c)
         careLeft = es.foco.next.runtime.CareStore.careMinutesLeft(c)
-        careBudgetMin = es.foco.next.runtime.CareStore.careBudgetLeft(c).let { if (it == Long.MAX_VALUE) it else it / 60_000 }
+        careBudgetMin =
+            es.foco.next.runtime.CareStore.careBudgetLeft(c).let {
+                if (it == Long.MAX_VALUE) it else it / 60_000
+            }
         showNumbers = es.foco.next.core.care.CareMode.showNumbers(careMode, false)
         nightLabel = n.label()
         val st = es.foco.next.runtime.CareStore.nightSetting(c)
-        nightPending = if (st.pending != null && st.pendingFrom != null && st.pendingFrom.isAfter(LocalDate.now())) st.pending.label() else ""
+        nightPending =
+            if (
+                st.pending != null &&
+                    st.pendingFrom != null &&
+                    st.pendingFrom.isAfter(LocalDate.now())
+            )
+                st.pending.label()
+            else ""
         goodToday = goodPhrase()
         syncTheme()
     }
@@ -285,18 +341,30 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
 
     private fun owlLine(habits: Int): String =
         runCatching {
-            val c = ctx
-            val r = Repository.get(c)
-            val now = LocalDateTime.now()
-            val auto = AppKinds.autoTime(c)
-            val st = es.foco.next.core.LeisureStatus.of(
-                now, auto, r.enabled(), FocusAccessibilityService.connected(), r.liveUsed(), r.locked(), r.remaining(),
-            )
-            es.foco.next.core.care.CareMode.owlLine(
-                habits, careMode, st.night, AbsoluteRules.nightEnd(), (st.availableMs + 59_999) / 60_000,
-                showNumbers,
-            )
-        }.getOrDefault("")
+                val c = ctx
+                val r = Repository.get(c)
+                val now = LocalDateTime.now()
+                val auto = AppKinds.autoTime(c)
+                val st =
+                    es.foco.next.core.LeisureStatus.of(
+                        now,
+                        auto,
+                        r.enabled(),
+                        FocusAccessibilityService.connected(),
+                        r.liveUsed(),
+                        r.locked(),
+                        r.remaining(),
+                    )
+                es.foco.next.core.care.CareMode.owlLine(
+                    habits,
+                    careMode,
+                    st.night,
+                    AbsoluteRules.nightEnd(),
+                    (st.availableMs + 59_999) / 60_000,
+                    showNumbers,
+                )
+            }
+            .getOrDefault("")
 
     private fun goodPhrase(): String {
         val kinds = HashSet<es.foco.next.core.care.GoodApps.Kind>()
@@ -304,7 +372,12 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
         for ((pkg, ms) in usageToday) {
             if (ms < 60_000) continue
             val a = byPkg[pkg]
-            if (a != null && (a.section == HomeSections.Section.OCIO || a.section == HomeSections.Section.BLOQUEADA)) continue
+            if (
+                a != null &&
+                    (a.section == HomeSections.Section.OCIO ||
+                        a.section == HomeSections.Section.BLOQUEADA)
+            )
+                continue
             if (a == null && !es.foco.next.core.care.GoodApps.good(pkg)) continue
             es.foco.next.core.care.GoodApps.kind(pkg, a?.label)?.let { kinds.add(it) }
         }
@@ -329,8 +402,10 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
     /** Posición en "Otra idea ↻" y variante del texto; [owlTalk] hace hablar al búho. */
     var owlStep by mutableStateOf(0)
         private set
+
     var owlTalk by mutableStateOf(0)
         private set
+
     private var prodRunMin by mutableStateOf(0L)
     private var ocioWinMin by mutableStateOf(0L)
     private var lastAuto: es.foco.next.core.home.OwlBrain.Mode? = null
@@ -342,6 +417,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
 
     var owlPose by mutableStateOf(es.foco.next.core.home.OwlState.Pose.CALM)
         private set
+
     private var musicLive = false
     private var idlePose = es.foco.next.core.home.OwlState.randomIdle(Math.random())
     private val audio = app.getSystemService(android.media.AudioManager::class.java)
@@ -349,27 +425,33 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
 
     // Música al instante: el sistema avisa en cuanto un reproductor empieza, pausa o para (sin
     // consultas periódicas y sin permisos). Ver docs: por qué no MediaSessionManager.
-    private val playback = object : android.media.AudioManager.AudioPlaybackCallback() {
-        override fun onPlaybackConfigChanged(configs: MutableList<android.media.AudioPlaybackConfiguration>?) {
-            musicLive = runCatching { audio?.isMusicActive == true }.getOrDefault(false)
-            refreshOwl()
+    private val playback =
+        object : android.media.AudioManager.AudioPlaybackCallback() {
+            override fun onPlaybackConfigChanged(
+                configs: MutableList<android.media.AudioPlaybackConfiguration>?
+            ) {
+                musicLive = runCatching { audio?.isMusicActive == true }.getOrDefault(false)
+                refreshOwl()
+            }
         }
-    }
 
     fun refreshOwl() {
         val c = ctx
-        owlPose = es.foco.next.core.home.OwlState.resolve(
-            es.foco.next.core.AbsoluteRules.esNocheAbsoluta(java.time.LocalDateTime.now()),
-            musicLive,
-            es.foco.next.runtime.OwlWatch.recentCat(c),
-            es.foco.next.runtime.OwlWatch.recentAt(c),
-            es.foco.next.runtime.OwlWatch.recentOver(c),
-            System.currentTimeMillis(),
-            idlePose,
-        )
+        owlPose =
+            es.foco.next.core.home.OwlState.resolve(
+                es.foco.next.core.AbsoluteRules.esNocheAbsoluta(java.time.LocalDateTime.now()),
+                musicLive,
+                es.foco.next.runtime.OwlWatch.recentCat(c),
+                es.foco.next.runtime.OwlWatch.recentAt(c),
+                es.foco.next.runtime.OwlWatch.recentOver(c),
+                System.currentTimeMillis(),
+                idlePose,
+            )
     }
 
-    /** Pantalla encendida o cada pocos minutos: otra postura tranquila al azar (solo cuenta de día). */
+    /**
+     * Pantalla encendida o cada pocos minutos: otra postura tranquila al azar (solo cuenta de día).
+     */
     fun reshuffleOwl() {
         var next = es.foco.next.core.home.OwlState.randomIdle(Math.random())
         if (next == idlePose) next = es.foco.next.core.home.OwlState.randomIdle(Math.random())
@@ -381,6 +463,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
 
     var dnsLine by mutableStateOf<String?>(null)
         private set
+
     var dnsTop by mutableStateOf<List<String>>(emptyList())
         private set
 
@@ -393,12 +476,18 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
         }
         val s = es.foco.next.runtime.NextDnsSync.snapshot(c)
         dnsLine = es.foco.next.core.NextDnsStats.owlLine(s.blocked, s.top, showNumbers)
-        dnsTop = s.top.drop(1).take(3).map { if (showNumbers) "${it.domain} · ${it.queries}" else it.domain }
+        dnsTop =
+            s.top.drop(1).take(3).map {
+                if (showNumbers) "${it.domain} · ${it.queries}" else it.domain
+            }
     }
 
     private val dnsListener = Runnable { owlMain.post { refreshDns() } }
 
-    /** Al volver al inicio: ahora y otra vez en un momento (la Accesibilidad guarda la app al salir). */
+    /**
+     * Al volver al inicio: ahora y otra vez en un momento (la Accesibilidad guarda la app al
+     * salir).
+     */
     fun owlOnResume() {
         refreshMoney()
         refreshRoutine()
@@ -419,25 +508,33 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
 
     var routineKind by mutableStateOf<es.foco.next.core.care.Routine.Kind?>(null)
         private set
+
     var routineTasks by mutableStateOf<List<es.foco.next.core.care.Routine.Task>>(emptyList())
         private set
+
     var routineDone by mutableStateOf<Set<Int>>(emptySet())
         private set
+
     var routinesOn by mutableStateOf(true)
         private set
+
     var routinesOffFrom by mutableStateOf("")
         private set
+
     var planDue by mutableStateOf(false)
         private set
+
     var moneyLine by mutableStateOf<String?>(null)
         private set
 
     // ---------------- Foco Core ----------------
     var core by mutableStateOf<CoreSummary?>(null)
         private set
+
     /** v31: lo desbloqueado con la constancia (bufanda del búho, fondos, dock dorado). */
     var unlocks by mutableStateOf<Set<String>>(emptySet())
         private set
+
     var coreTick by mutableStateOf(0)
         private set
 
@@ -445,10 +542,13 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
     /** Sube cada vez que marcas una tarea: el búho festeja (salto y confeti). */
     var celebrate by mutableStateOf(0)
         private set
+
     var streak by mutableStateOf(0)
         private set
+
     var couponCount by mutableStateOf(0)
         private set
+
     /** Hora límite cerca: {tarea, texto}. El búho apunta y lo dice. */
     var urgent by mutableStateOf<Array<String>?>(null)
         private set
@@ -460,7 +560,8 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
         val after = core
         if (before != null && after != null && after.done > before.done) celebrate++
         streak = runCatching { es.foco.next.runtime.RewardStore.streak(ctx) }.getOrDefault(0)
-        couponCount = runCatching { es.foco.next.runtime.RewardStore.coupons(ctx).size }.getOrDefault(0)
+        couponCount =
+            runCatching { es.foco.next.runtime.RewardStore.coupons(ctx).size }.getOrDefault(0)
         urgent = es.foco.next.runtime.RoutineStore.urgentNow(ctx)
         coreTick++
     }
@@ -522,10 +623,12 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
 
     private fun ambient() = ctx.getSharedPreferences("foco-ambient", Context.MODE_PRIVATE)
 
-
     private fun label(a: HomeApps.App) = HomeSections.fold(a.label)
 
-    /** App de lectura instalada (El Libro Total, Kindle, Libros…), si la hay. Se calcula al cargar apps. */
+    /**
+     * App de lectura instalada (El Libro Total, Kindle, Libros…), si la hay. Se calcula al cargar
+     * apps.
+     */
     var readerApp by mutableStateOf<HomeApps.App?>(null)
         private set
 
@@ -535,14 +638,24 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
 
     private fun findReader(list: List<HomeApps.App>): HomeApps.App? =
         list.firstOrNull { a ->
-            a.section != HomeSections.Section.OCIO && a.section != HomeSections.Section.BLOQUEADA &&
-                label(a).let { it.contains("libro total") || it.contains("kindle") || it.contains("lectura") || it == "libros" || it.contains("play libros") || it.contains("books") }
+            a.section != HomeSections.Section.OCIO &&
+                a.section != HomeSections.Section.BLOQUEADA &&
+                label(a).let {
+                    it.contains("libro total") ||
+                        it.contains("kindle") ||
+                        it.contains("lectura") ||
+                        it == "libros" ||
+                        it.contains("play libros") ||
+                        it.contains("books")
+                }
         }
 
     private fun findBible(list: List<HomeApps.App>): HomeApps.App? =
         list.firstOrNull { label(it).contains("biblia") || label(it).contains("bible") }
 
-    /** Si lo que pasa de verdad cambia, el búho vuelve a su modo automático (fuera del dibujado). */
+    /**
+     * Si lo que pasa de verdad cambia, el búho vuelve a su modo automático (fuera del dibujado).
+     */
     private fun syncOwl() {
         val auto = es.foco.next.core.home.OwlBrain.auto(owlFacts())
         if (auto != lastAuto) {
@@ -560,7 +673,10 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
         f.productiveRunMin = prodRunMin
         f.ocioWindowMin = ocioWinMin
         f.night = night
-        readerApp?.let { f.reader = it.label; f.readerProductive = it.section == HomeSections.Section.PRODUCTIVA }
+        readerApp?.let {
+            f.reader = it.label
+            f.readerProductive = it.section == HomeSections.Section.PRODUCTIVA
+        }
         bibleApp?.let { f.bible = it.label }
         quick?.let {
             f.game = it.title
@@ -577,17 +693,20 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
     }
 
     fun owlText(m: es.foco.next.core.home.OwlBrain.Mode) =
-        es.foco.next.core.home.OwlBrain.say(m, owlFacts(), owlStep / 2 + LocalDate.now().dayOfYear, owlBro)
+        es.foco.next.core.home.OwlBrain.say(
+            m,
+            owlFacts(),
+            owlStep / 2 + LocalDate.now().dayOfYear,
+            owlBro,
+        )
 
-    fun owlCta(m: es.foco.next.core.home.OwlBrain.Mode) = es.foco.next.core.home.OwlBrain.cta(m, owlFacts())
+    fun owlCta(m: es.foco.next.core.home.OwlBrain.Mode) =
+        es.foco.next.core.home.OwlBrain.cta(m, owlFacts())
 
     fun owlNext() {
         owlStep++
         owlTalk++
     }
-
-
-
 
     val estadoActual: HomeState.Estado
         get() = estado?.estado ?: HomeState.Estado.NEUTRO
@@ -622,7 +741,8 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
         refreshBanner()
         // La pregunta de ánimo se decide al volver al inicio (no al guardar: la tarjeta debe poder
         // mostrar la respuesta y la oferta de CUIDADO).
-        if (!es.foco.next.runtime.CareStore.moodAskedToday(ctx) && LocalDateTime.now().hour >= 5) askMood = true
+        if (!es.foco.next.runtime.CareStore.moodAskedToday(ctx) && LocalDateTime.now().hour >= 5)
+            askMood = true
         refreshSystem()
         val config = Repository.get(ctx).config()
         cfg = config
@@ -640,7 +760,9 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
             val newIcons = HashMap<String, androidx.compose.ui.graphics.ImageBitmap>()
             for (a in loaded) {
                 val key = a.pkg + "/" + a.component.className
-                val img = known[key] ?: a.icon?.let { d -> runCatching { drawableImage(d, px) }.getOrNull() }
+                val img =
+                    known[key]
+                        ?: a.icon?.let { d -> runCatching { drawableImage(d, px) }.getOrNull() }
                 if (img != null) newIcons[key] = img
             }
             postMain { icons = newIcons }
@@ -674,17 +796,20 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
     private fun usage(): Map<String, Long> =
         runCatching {
                 if (!UsageContrast.allowed(ctx)) return emptyMap()
-                val start = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                val start =
+                    LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
                 val usm = ctx.getSystemService(UsageStatsManager::class.java)
-                usm.queryAndAggregateUsageStats(start, System.currentTimeMillis())
-                    .mapValues { it.value.totalTimeInForeground }
+                usm.queryAndAggregateUsageStats(start, System.currentTimeMillis()).mapValues {
+                    it.value.totalTimeInForeground
+                }
             }
             .getOrDefault(emptyMap())
 
     /** Últimos 7 días desde el registro (mismo origen que el informe de Foco). */
     private fun loadWeek(config: es.foco.next.core.AppConfig) {
         val today = LocalDate.now()
-        // v32 (R6): con Acceso de uso el ocio total ya sale del sistema (incluye premios y Cuidado);
+        // v32 (R6): con Acceso de uso el ocio total ya sale del sistema (incluye premios y
+        // Cuidado);
         // sin él, se suman las clases que mide la Accesibilidad.
         val systemTotal = runCatching { UsageContrast.allowed(ctx) }.getOrDefault(false)
         BlockLog.query(
@@ -698,7 +823,8 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
                         InspectorLog.OCIO -> oc[r.day] = (oc[r.day] ?: 0) + r.ms
                         InspectorLog.OCIO_PREMIO,
                         InspectorLog.OCIO_CUIDADO,
-                        InspectorLog.OCIO_FUERA -> if (!systemTotal) oc[r.day] = (oc[r.day] ?: 0) + r.ms
+                        InspectorLog.OCIO_FUERA ->
+                            if (!systemTotal) oc[r.day] = (oc[r.day] ?: 0) + r.ms
                         InspectorLog.USO_PRODUCTIVO,
                         InspectorLog.ALTERNATIVA -> inv[r.day] = (inv[r.day] ?: 0) + r.ms
                     }
@@ -706,7 +832,11 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
                 week =
                     (6 downTo 0).map { back ->
                         val d = today.minusDays(back.toLong())
-                        DayBar(d, (inv[d.toString()] ?: 0) / 60_000, (oc[d.toString()] ?: 0) / 60_000)
+                        DayBar(
+                            d,
+                            (inv[d.toString()] ?: 0) / 60_000,
+                            (oc[d.toString()] ?: 0) / 60_000,
+                        )
                     }
             },
             null,
@@ -719,11 +849,13 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
         val caps = runCatching { cm.getNetworkCapabilities(cm.activeNetwork) }.getOrNull()
         val wifi =
             when {
-                caps == null || !caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> "Wi-Fi: no"
+                caps == null || !caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ->
+                    "Wi-Fi: no"
                 else -> {
                     val ssid = (caps.transportInfo as? WifiInfo)?.ssid?.replace("\"", "")
                     when {
-                        ssid != null && !ssid.contains("unknown ssid") && ssid.isNotEmpty() -> "Wi-Fi: $ssid"
+                        ssid != null && !ssid.contains("unknown ssid") && ssid.isNotEmpty() ->
+                            "Wi-Fi: $ssid"
                         else -> "Wi-Fi: sí"
                     }
                 }
@@ -757,7 +889,12 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
         val p = prefs()
         val raw = p.getString("dock5", null)
         val out =
-            if (raw == null) p.getString("dock", "").orEmpty().split(",").filter { it.isNotEmpty() }.toMutableList()
+            if (raw == null)
+                p.getString("dock", "")
+                    .orEmpty()
+                    .split(",")
+                    .filter { it.isNotEmpty() }
+                    .toMutableList()
             else raw.split(",").toMutableList()
         while (out.size < DOCK_SLOTS) out.add("")
         return out.take(DOCK_SLOTS)
@@ -812,17 +949,24 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
         val now = LocalDateTime.now()
         val auto = AppKinds.autoTime(c)
         if (AbsoluteRules.night(now, auto))
-            return LeisureOutlook(true, false, "Ocio cerrado hasta las ${AbsoluteRules.nightEnd()}:00")
+            return LeisureOutlook(
+                true,
+                false,
+                "Ocio cerrado hasta las ${AbsoluteRules.nightEnd()}:00",
+            )
         when (es.foco.next.runtime.CareStore.mode(c)) {
             es.foco.next.core.care.CareMode.Modo.CUIDADO ->
                 return LeisureOutlook(false, false, "Modo Cuidado · Sin límite hoy", focus = false)
             es.foco.next.core.care.CareMode.Modo.NORMAL ->
-                if (!Weekend.active(c)) return LeisureOutlook(
-                    false, false,
-                    if (es.foco.next.runtime.CareStore.normalCooldownMs(c) > 0) "Modo Normal · 5 min y 30 min de pausa"
-                    else "Modo Normal · Límite: 5 min/hora",
-                    focus = false,
-                )
+                if (!Weekend.active(c))
+                    return LeisureOutlook(
+                        false,
+                        false,
+                        if (es.foco.next.runtime.CareStore.normalCooldownMs(c) > 0)
+                            "Modo Normal · 5 min y 30 min de pausa"
+                        else "Modo Normal · Límite: 5 min/hora",
+                        focus = false,
+                    )
             else -> {}
         }
         // v26: en Enfoque y en el Weekend Lock el ocio se abre con la hora libre de Foco Core.
@@ -830,7 +974,8 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
         val text =
             when {
                 es.foco.next.runtime.RoutineStore.freeActive(c) -> "$who · Hora libre en marcha"
-                es.foco.next.runtime.RoutineStore.freeUsedToday(c) -> "$who · La hora libre de hoy ya se usó"
+                es.foco.next.runtime.RoutineStore.freeUsedToday(c) ->
+                    "$who · La hora libre de hoy ya se usó"
                 else -> "$who · Cumple tus tareas de hoy para abrir 1 h libre"
             }
         return LeisureOutlook(false, false, text)
@@ -850,9 +995,19 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
                     if (pending.isEmpty()) return ""
                     val cm = c.getSystemService(ConnectivityManager::class.java)
                     val lp = cm.getLinkProperties(cm.activeNetwork) ?: return ""
-                    if (!lp.isPrivateDnsActive || !DnsGuard.sameHost(lp.privateDnsServerName, pending)) return ""
-                    java.time.Instant.ofEpochMilli(DnsMonitor.pendingAt(c)).atZone(java.time.ZoneId.systemDefault())
-                        .format(java.time.format.DateTimeFormatter.ofPattern("EEEE H:mm", java.util.Locale("es")))
+                    if (
+                        !lp.isPrivateDnsActive ||
+                            !DnsGuard.sameHost(lp.privateDnsServerName, pending)
+                    )
+                        return ""
+                    java.time.Instant.ofEpochMilli(DnsMonitor.pendingAt(c))
+                        .atZone(java.time.ZoneId.systemDefault())
+                        .format(
+                            java.time.format.DateTimeFormatter.ofPattern(
+                                "EEEE H:mm",
+                                java.util.Locale("es"),
+                            )
+                        )
                 }
                 .getOrDefault("")
 
@@ -861,7 +1016,15 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
             runCatching {
                     val cm = c.getSystemService(ConnectivityManager::class.java)
                     val lp = cm.getLinkProperties(cm.activeNetwork) ?: return false
-                    DnsGuard.compliant(DnsGuard.State(true, true, lp.isPrivateDnsActive, lp.privateDnsServerName, DnsMonitor.provider(c)))
+                    DnsGuard.compliant(
+                        DnsGuard.State(
+                            true,
+                            true,
+                            lp.isPrivateDnsActive,
+                            lp.privateDnsServerName,
+                            DnsMonitor.provider(c),
+                        )
+                    )
                 }
                 .getOrDefault(false)
     }

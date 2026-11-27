@@ -50,15 +50,19 @@ public final class DnsAuto {
             return p != null
                     && es.foco.next.core.DnsGuard.compliant(
                             new es.foco.next.core.DnsGuard.State(
-                                    true, true, p.isPrivateDnsActive(),
-                                    p.getPrivateDnsServerName(), DnsMonitor.provider(c)));
+                                    true,
+                                    true,
+                                    p.isPrivateDnsActive(),
+                                    p.getPrivateDnsServerName(),
+                                    DnsMonitor.provider(c)));
         } catch (RuntimeException e) {
             return false;
         }
     }
 
     static boolean granted(Context c) {
-        return c.checkSelfPermission(Manifest.permission.WRITE_SECURE_SETTINGS) == PackageManager.PERMISSION_GRANTED;
+        return c.checkSelfPermission(Manifest.permission.WRITE_SECURE_SETTINGS)
+                == PackageManager.PERMISSION_GRANTED;
     }
 
     void start() {
@@ -89,7 +93,8 @@ public final class DnsAuto {
         running = false;
         main.removeCallbacks(check);
         try {
-            if (callback != null) c.getSystemService(ConnectivityManager.class).unregisterNetworkCallback(callback);
+            if (callback != null)
+                c.getSystemService(ConnectivityManager.class).unregisterNetworkCallback(callback);
         } catch (RuntimeException ignored) {
         }
         callback = null;
@@ -138,7 +143,10 @@ public final class DnsAuto {
                     if (!ok) log("fallo_resolucion:" + next.fails);
                     if (next.mode == DnsFallback.Mode.AUTOMATIC) {
                         String spec = Settings.Global.getString(r, SPEC);
-                        prefs().edit().putString("specifier", spec == null ? "" : spec).putBoolean("fallback", true).apply();
+                        prefs().edit()
+                                .putString("specifier", spec == null ? "" : spec)
+                                .putBoolean("fallback", true)
+                                .apply();
                         write("opportunistic", null);
                         log("automatico_10_min:" + spec);
                         askAboutAutomatic(now);
@@ -164,7 +172,8 @@ public final class DnsAuto {
         NetworkCapabilities caps = n == null ? null : cm.getNetworkCapabilities(n);
         if (caps == null
                 || !caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                || caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL)) return null;
+                || caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL))
+            return null;
         android.net.LinkProperties lp = cm.getLinkProperties(n);
         boolean dnsActive = lp != null && lp.isPrivateDnsActive();
         return dnsActive && caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED);
@@ -190,12 +199,18 @@ public final class DnsAuto {
         if (!DnsMonitor.pendingProvider(c).isEmpty()) return;
         p.edit().putLong("askedAt", now).apply();
         try {
-            if (c.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return;
-            if (es.foco.next.core.AbsoluteRules.esNocheAbsoluta(java.time.LocalDateTime.now())) return;
-            android.app.NotificationManager nm = c.getSystemService(android.app.NotificationManager.class);
-            if (nm == null || nm.getCurrentInterruptionFilter() > android.app.NotificationManager.INTERRUPTION_FILTER_ALL) return;
+            if (c.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) return;
+            if (es.foco.next.core.AbsoluteRules.esNocheAbsoluta(java.time.LocalDateTime.now()))
+                return;
+            android.app.NotificationManager nm =
+                    c.getSystemService(android.app.NotificationManager.class);
+            if (nm == null
+                    || nm.getCurrentInterruptionFilter()
+                            > android.app.NotificationManager.INTERRUPTION_FILTER_ALL) return;
             android.app.NotificationChannel ch =
-                    new android.app.NotificationChannel("foco-dns", "DNS", android.app.NotificationManager.IMPORTANCE_LOW);
+                    new android.app.NotificationChannel(
+                            "foco-dns", "DNS", android.app.NotificationManager.IMPORTANCE_LOW);
             ch.setSound(null, null);
             ch.enableVibration(false);
             nm.createNotificationChannel(ch);
@@ -203,18 +218,27 @@ public final class DnsAuto {
                     new android.content.Intent()
                             .setClassName(c, "es.foco.next.ui.MainActivity")
                             .putExtra(EXTRA_DNS_CHOICE, true)
-                            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK | android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                            .addFlags(
+                                    android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                                            | android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP);
             android.app.PendingIntent tap =
                     android.app.PendingIntent.getActivity(
-                            c, 7301, open, android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
+                            c,
+                            7301,
+                            open,
+                            android.app.PendingIntent.FLAG_UPDATE_CURRENT
+                                    | android.app.PendingIntent.FLAG_IMMUTABLE);
             nm.notify(
                     7301,
                     new android.app.Notification.Builder(c, "foco-dns")
                             .setSmallIcon(es.foco.next.R.drawable.ic_owl)
                             .setContentTitle("🦉 NextDNS no responde")
-                            .setContentText("Lo pausé 10 min y vuelvo a intentarlo. Toca para decidir: seguir esperando o pasar a automático en 24 h.")
-                            .setStyle(new android.app.Notification.BigTextStyle().bigText(
-                                    "Lo pausé 10 min y vuelvo a intentarlo. Toca para decidir: seguir esperando o pasar a automático (sin filtro) dentro de 24 h."))
+                            .setContentText(
+                                    "Lo pausé 10 min y vuelvo a intentarlo. Toca para decidir: seguir esperando o pasar a automático en 24 h.")
+                            .setStyle(
+                                    new android.app.Notification.BigTextStyle()
+                                            .bigText(
+                                                    "Lo pausé 10 min y vuelvo a intentarlo. Toca para decidir: seguir esperando o pasar a automático (sin filtro) dentro de 24 h."))
                             .setContentIntent(tap)
                             .setAutoCancel(true)
                             .build());
@@ -226,6 +250,7 @@ public final class DnsAuto {
     public static final String EXTRA_DNS_CHOICE = "es.foco.next.extra.DNS_CHOICE";
 
     private void log(String detail) {
-        InspectorLog.event(c, InspectorLog.DNS_AUTO, "", System.currentTimeMillis(), 0, 1, 0, detail, null);
+        InspectorLog.event(
+                c, InspectorLog.DNS_AUTO, "", System.currentTimeMillis(), 0, 1, 0, detail, null);
     }
 }

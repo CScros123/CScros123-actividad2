@@ -435,7 +435,9 @@ class BrainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun today(): LocalDate = LabDay.today(zone)
 
-    /** Check-in de energía de hoy (un toque; NORMAL si no se elige). Solo recorta el plan del día. */
+    /**
+     * Check-in de energía de hoy (un toque; NORMAL si no se elige). Solo recorta el plan del día.
+     */
     var energy by mutableStateOf(Energy.NORMAL)
         private set
 

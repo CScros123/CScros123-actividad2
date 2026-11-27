@@ -33,8 +33,10 @@ public final class FocusAccessibilityService extends AccessibilityService
     private final Set<String> homes = new HashSet<>();
     private AudioManager.OnModeChangedListener audioListener;
     private boolean registered, closed;
+
     /** Cronómetro de las apps vigiladas (píldora con los minutos que quedan). */
     private es.foco.next.ui.LeisurePill pill;
+
     private final Runnable boundary =
             () -> {
                 if (WebFilter.supported(foreground)) webCheck(foreground, true);
@@ -166,9 +168,9 @@ public final class FocusAccessibilityService extends AccessibilityService
 
     /**
      * Solo en Ajustes. Clasifica la pantalla (SettingsWatch, puro) con la clase y hasta 200 textos;
-     * no guarda nada de lo leído, solo el tipo de pantalla. Wi-Fi, Bluetooth, batería, sonido y VPN:
-     * registro. Fecha y hora: aviso + registro. DNS privado (si ya está bien puesto), Accesibilidad >
-     * Foco e Info de Foco: volver al inicio + incidente.
+     * no guarda nada de lo leído, solo el tipo de pantalla. Wi-Fi, Bluetooth, batería, sonido y
+     * VPN: registro. Fecha y hora: aviso + registro. DNS privado (si ya está bien puesto),
+     * Accesibilidad > Foco e Info de Foco: volver al inicio + incidente.
      */
     private boolean settingsWatch(String pkg, CharSequence cls) {
         if (!es.foco.next.core.home.SettingsWatch.SETTINGS_PKG.equals(pkg)) return false;
@@ -183,14 +185,17 @@ public final class FocusAccessibilityService extends AccessibilityService
                 }
             es.foco.next.core.home.SettingsWatch.Screen s =
                     es.foco.next.core.home.SettingsWatch.classify(
-                            cls == null ? "" : cls.toString(), texts, getString(es.foco.next.R.string.app_name));
+                            cls == null ? "" : cls.toString(),
+                            texts,
+                            getString(es.foco.next.R.string.app_name));
             if (s.action == null) return false;
             long now = SystemClock.elapsedRealtime();
             boolean fresh = !s.name().equals(settingsLast) || now - settingsAt > 60_000;
             settingsLast = s.name();
             if (fresh) settingsAt = now;
             String day = java.time.LocalDate.now().toString();
-            // El DNS privado solo se protege si YA está bien puesto (si no, hay que poder arreglarlo).
+            // El DNS privado solo se protege si YA está bien puesto (si no, hay que poder
+            // arreglarlo).
             boolean dnsOk = DnsAuto.dnsCompliant(this);
             // Cuidado: proteger Ajustes es endurecer. Solo en ENFOQUE o con el candado del modo
             // estricto (los dos los elige el usuario); en el resto, solo se registra.
@@ -203,17 +208,25 @@ public final class FocusAccessibilityService extends AccessibilityService
                 performGlobalAction(GLOBAL_ACTION_HOME);
                 toast("Foco protege esta pantalla de Ajustes.");
                 es.foco.next.log.InspectorLog.event(
-                        this, es.foco.next.log.InspectorLog.INCIDENTE, "", 0,
+                        this,
+                        es.foco.next.log.InspectorLog.INCIDENTE,
+                        "",
+                        0,
                         "ajustes_protegidos:" + s.name().toLowerCase(),
                         "inc|ajustes|" + s.name() + "|" + System.currentTimeMillis() / 60_000);
                 return true;
             }
             if (!fresh) return false;
             if (s.action == es.foco.next.core.home.SettingsWatch.Action.WARN)
-                toast("Fecha y hora: con la hora automática apagada, Foco trata el día como noche.");
+                toast(
+                        "Fecha y hora: con la hora automática apagada, Foco trata el día como noche.");
             es.foco.next.log.InspectorLog.event(
-                    this, es.foco.next.log.InspectorLog.AJUSTES, "", 0,
-                    s.name().toLowerCase(), "aj|" + day + "|" + s.name() + "|" + System.currentTimeMillis() / 60_000);
+                    this,
+                    es.foco.next.log.InspectorLog.AJUSTES,
+                    "",
+                    0,
+                    s.name().toLowerCase(),
+                    "aj|" + day + "|" + s.name() + "|" + System.currentTimeMillis() / 60_000);
         } catch (RuntimeException ignored) {
         }
         return false;
@@ -723,7 +736,6 @@ public final class FocusAccessibilityService extends AccessibilityService
     }
 
     /** Foco Home: tras conceder la ubicación o cambiar perfiles, vuelve a vigilar la red. */
-
     public static void checkpoint() {
         if (connected()) instance.evaluate(true);
     }
@@ -830,7 +842,8 @@ public final class FocusAccessibilityService extends AccessibilityService
         String current =
                 focusedPkg.isEmpty()
                         ? focusedPkg
-                        : ForegroundWindows.current(this, overlay.visible(), p -> FocusEngine.watched(watchCfg, p));
+                        : ForegroundWindows.current(
+                                this, overlay.visible(), p -> FocusEngine.watched(watchCfg, p));
         if (current.isEmpty()) {
             // Own overlay events aren't evidence that the underlying app has changed.
             if (pkg.equals(getPackageName()) && overlay.visible()) return;
@@ -867,7 +880,8 @@ public final class FocusAccessibilityService extends AccessibilityService
                         1);
         } catch (RuntimeException ignored) {
         }
-        // Inquietud: cada vez que se entra en una app de ocio (aunque Foco la cierre y se reintente).
+        // Inquietud: cada vez que se entra en una app de ocio (aunque Foco la cierre y se
+        // reintente).
         try {
             if (!pkg.isEmpty()
                     && !pkg.equals(foreground)
@@ -910,7 +924,8 @@ public final class FocusAccessibilityService extends AccessibilityService
             String verified =
                     hint != null
                             ? hint
-                            : ForegroundWindows.current(this, overlay.visible(), p -> FocusEngine.watched(c, p));
+                            : ForegroundWindows.current(
+                                    this, overlay.visible(), p -> FocusEngine.watched(c, p));
             // A timer can never extend a stale foreground observation onto another app.
             if (!verified.equals(foreground) && !bank.hide(c, foreground)) foreground = verified;
             long wall = WallClock.now();
@@ -962,8 +977,12 @@ public final class FocusAccessibilityService extends AccessibilityService
             CareStore.night(this); // horario de la noche de hoy (aflojar = desde mañana)
             es.foco.next.core.care.CareMode.Modo modo = CareStore.mode(this);
             boolean strict = es.foco.next.core.care.CareMode.blocksAtLimit(modo);
-            Inspector.noteDay(this, modo.name().toLowerCase(java.util.Locale.ROOT), Weekend.active(this)); // v32 (R9)
-            // v26: en Enfoque, y en el Weekend Lock salvo en Cuidado, el ocio solo se abre con la hora
+            Inspector.noteDay(
+                    this,
+                    modo.name().toLowerCase(java.util.Locale.ROOT),
+                    Weekend.active(this)); // v32 (R9)
+            // v26: en Enfoque, y en el Weekend Lock salvo en Cuidado, el ocio solo se abre con la
+            // hora
             // libre de Foco Core. Sin ella, cada ventana nueva queda sin saldo (noBalance).
             // v32 (R7): el Weekend Lock también cierra en Normal (no en Cuidado).
             in.gated = es.foco.next.core.LeisurePolicy.gated(modo, Weekend.active(this));
@@ -986,18 +1005,21 @@ public final class FocusAccessibilityService extends AccessibilityService
                     && FocusEngine.watched(c, foreground)
                     && AbsoluteRules.night(clock, autoTime)) {
                 night =
-                        autoTime && es.foco.next.core.home.OwlCare.earlyMorning(clock, AbsoluteRules.nightEnd())
+                        autoTime
+                                        && es.foco.next.core.home.OwlCare.earlyMorning(
+                                                clock, AbsoluteRules.nightEnd())
                                 // Despertar: de mañana, el búho saluda en vez de decir "noche".
-                                ? es.foco.next.core.home.OwlCare.earlyMorning(AbsoluteRules.nightEnd())
+                                ? es.foco.next.core.home.OwlCare.earlyMorning(
+                                        AbsoluteRules.nightEnd())
                                 : autoTime
-                                ? "Es de noche: de "
-                                        + AbsoluteRules.nightStart()
-                                        + ":00 a "
-                                        + AbsoluteRules.nightEnd()
-                                        + ":00 el ocio descansa, para que tú descanses. Vuelve a las "
-                                        + AbsoluteRules.nightEnd()
-                                        + ":00."
-                                : "La hora automática del teléfono está apagada. Foco no puede fiarse de la hora y cierra el ocio como de noche. Enciéndela en Ajustes > Fecha y hora.";
+                                        ? "Es de noche: de "
+                                                + AbsoluteRules.nightStart()
+                                                + ":00 a "
+                                                + AbsoluteRules.nightEnd()
+                                                + ":00 el ocio descansa, para que tú descanses. Vuelve a las "
+                                                + AbsoluteRules.nightEnd()
+                                                + ":00."
+                                        : "La hora automática del teléfono está apagada. Foco no puede fiarse de la hora y cierra el ocio como de noche. Enciéndela en Ajustes > Fecha y hora.";
                 in.interactive = false; // no cuenta, no abre ventana y no gasta saldo
                 LocalDate nightOf =
                         clock.getHour() < AbsoluteRules.nightEnd()
@@ -1018,19 +1040,25 @@ public final class FocusAccessibilityService extends AccessibilityService
             // Foco Core: con el 100 % hecho, 1 h de ocio sin el límite de 5 min/h (las reglas fijas
             // y la noche siguen: con noche no se llega aquí con ocio interactivo).
             RoutineStore.sweep(this); // horas límite: aviso y, pasado el margen, 1 h de pausa
-            // v32 (R5): la excepción que vale ahora y qué capas salta salen de LeisurePolicy (la misma
+            // v32 (R5): la excepción que vale ahora y qué capas salta salen de LeisurePolicy (la
+            // misma
             // tabla que usa GuardService). Hora libre: solo sin límite. Cupón: además tope, rutina,
-            // Aduana y bloqueos con nombre. Semana perfecta: todo salvo la noche. Cuidado: todo salvo
+            // Aduana y bloqueos con nombre. Semana perfecta: todo salvo la noche. Cuidado: todo
+            // salvo
             // la rutina.
             boolean watchedLeisure =
-                    in.interactive && !in.essential && !in.inCall && FocusEngine.watched(c, foreground);
+                    in.interactive
+                            && !in.essential
+                            && !in.inCall
+                            && FocusEngine.watched(c, foreground);
             boolean grant = watchedLeisure && RewardStore.grantActive(this, foreground);
             es.foco.next.core.LeisurePolicy.Pass pass =
                     !watchedLeisure
                             ? es.foco.next.core.LeisurePolicy.Pass.NONE
                             : es.foco.next.core.LeisurePolicy.pass(
                                     night != null,
-                                    es.foco.next.core.care.CareMode.leisure(modo, night != null, false)
+                                    es.foco.next.core.care.CareMode.leisure(
+                                                    modo, night != null, false)
                                             == es.foco.next.core.care.CareMode.Leisure.NOT_COUNTED,
                                     grant,
                                     grant && RewardStore.grantWeek(this),
@@ -1040,18 +1068,20 @@ public final class FocusAccessibilityService extends AccessibilityService
                             || pass == es.foco.next.core.LeisurePolicy.Pass.WEEK_COUPON;
             // Con un pase el motor de 5 min ni cuenta ni limita esa app (la medición de R6 sí).
             boolean careLeisure = pass != es.foco.next.core.LeisurePolicy.Pass.NONE;
-            // "open": la app se está usando y las capas siguientes la miran, salvo las que salta el pase.
+            // "open": la app se está usando y las capas siguientes la miran, salvo las que salta el
+            // pase.
             boolean open = in.interactive;
             if (careLeisure) in.interactive = false;
             // Supervisor: tope diario propio (TikTok) y franja estricta. Con cualquiera de los dos
             // la app no cuenta ni gasta saldo. Cuidado: solo en ENFOQUE.
             String stop =
                     strict
-                            && open
+                                    && open
                                     && !in.essential
                                     && !in.inCall
                                     && FocusEngine.watched(c, foreground)
-                                    && !es.foco.next.core.LeisurePolicy.skips(pass, es.foco.next.core.LeisurePolicy.Layer.SUPERVISOR)
+                                    && !es.foco.next.core.LeisurePolicy.skips(
+                                            pass, es.foco.next.core.LeisurePolicy.Layer.SUPERVISOR)
                             ? Supervisor.stop(this, repository, foreground, local.getHour())
                             : null;
             if (stop != null) {
@@ -1072,7 +1102,8 @@ public final class FocusAccessibilityService extends AccessibilityService
                             && net != null
                             && net.blocked()
                             && open
-                            && !es.foco.next.core.LeisurePolicy.skips(pass, es.foco.next.core.LeisurePolicy.Layer.DNS)
+                            && !es.foco.next.core.LeisurePolicy.skips(
+                                    pass, es.foco.next.core.LeisurePolicy.Layer.DNS)
                             && !in.essential
                             && !in.inCall
                             && !(repository.locked() && c.watchedApps.contains(foreground));
@@ -1087,8 +1118,11 @@ public final class FocusAccessibilityService extends AccessibilityService
                     strict // Cuidado: bloqueos con nombre, webs y secciones solo en ENFOQUE
                             && rules != null
                             && open
-                            && !es.foco.next.core.LeisurePolicy.skips(pass, es.foco.next.core.LeisurePolicy.Layer.WEB)
-                            && !in.essential && !in.inCall && !dnsPause;
+                            && !es.foco.next.core.LeisurePolicy.skips(
+                                    pass, es.foco.next.core.LeisurePolicy.Layer.WEB)
+                            && !in.essential
+                            && !in.inCall
+                            && !dnsPause;
             if (webEligible
                     && !WebFilter.supported(foreground)
                     && !foreground.equals(getPackageName())
@@ -1134,17 +1168,20 @@ public final class FocusAccessibilityService extends AccessibilityService
             if (ses != null
                     && ses.focusing(wall)
                     && open
-                    && !es.foco.next.core.LeisurePolicy.skips(pass, es.foco.next.core.LeisurePolicy.Layer.POMODORO)
+                    && !es.foco.next.core.LeisurePolicy.skips(
+                            pass, es.foco.next.core.LeisurePolicy.Layer.POMODORO)
                     && !in.essential
                     && !in.inCall
                     && !dnsPause
-                    && !(d.blocked && strict)) // NORMAL: el Pomodoro manda aunque se pasaran los 5 min
-                sesBlock = rules.sessionApps(c).contains(foreground);
+                    && !(d.blocked
+                            && strict)) // NORMAL: el Pomodoro manda aunque se pasaran los 5 min
+            sesBlock = rules.sessionApps(c).contains(foreground);
             if (rules != null) {
                 boolean eligible =
                         strict
                                 && open
-                                && !es.foco.next.core.LeisurePolicy.skips(pass, es.foco.next.core.LeisurePolicy.Layer.NAMED_RULES)
+                                && !es.foco.next.core.LeisurePolicy.skips(
+                                        pass, es.foco.next.core.LeisurePolicy.Layer.NAMED_RULES)
                                 && !in.essential
                                 && !in.inCall
                                 && !dnsPause
@@ -1160,7 +1197,9 @@ public final class FocusAccessibilityService extends AccessibilityService
                 rd = rules.decide(eligible ? foreground : "", wall, 0, in.elapsed, ex);
             }
             String routineGate =
-                    leisureApp && !es.foco.next.core.LeisurePolicy.skips(pass, es.foco.next.core.LeisurePolicy.Layer.ROUTINE)
+                    leisureApp
+                                    && !es.foco.next.core.LeisurePolicy.skips(
+                                            pass, es.foco.next.core.LeisurePolicy.Layer.ROUTINE)
                             ? RoutineStore.gate(this)
                             : null;
             RoutineStore.sync(this); // aviso fijo mientras falte la rutina de ahora
@@ -1177,23 +1216,27 @@ public final class FocusAccessibilityService extends AccessibilityService
                         c, 0, messageBlock("tope", stop + " " + Supervisor.proposal(this, c)));
             // Rutina obligatoria de mañana o de noche: el ocio espera, en cualquier modo.
             else if (routineGate != null) overlay.block(c, 0, messageBlock("rutina", routineGate));
-            // v32 (R5): con hora libre o cupón normal, el Pomodoro y los bloqueos con nombre siguen.
+            // v32 (R5): con hora libre o cupón normal, el Pomodoro y los bloqueos con nombre
+            // siguen.
             else if (careLeisure && sesBlock) overlay.block(c, 0, sessionBlock(ses, wall));
-            else if (careLeisure && rd != null && rd.blocked) overlay.block(c, 0, ruleBlock(rd, local));
+            else if (careLeisure && rd != null && rd.blocked)
+                overlay.block(c, 0, ruleBlock(rd, local));
             else if (!in.interactive || in.essential || in.inCall) overlay.dismiss();
             // Cuidado, modo NORMAL: pasar de los 5 min no bloquea. HomeHub manda el recordatorio
             // con propuesta (máximo 3 por hora) al medir ese ocio. v32 (R7): la puerta de Foco Core
             // (noBalance, p. ej. el Weekend Lock) sí cierra también en Normal.
-            else if ((remindOver = d.blocked
-                    && !d.noBalance
-                    && es.foco.next.core.care.CareMode.leisure(modo, false, true)
-                            == es.foco.next.core.care.CareMode.Leisure.REMIND)) {
+            else if ((remindOver =
+                    d.blocked
+                            && !d.noBalance
+                            && es.foco.next.core.care.CareMode.leisure(modo, false, true)
+                                    == es.foco.next.core.care.CareMode.Leisure.REMIND)) {
                 if (!overlay.warningVisible()) overlay.dismiss();
                 HomeHub.overLimit(this, foreground);
             }
             // Foco Home, Aduana: se cumplió el tiempo que elegiste (1, 3 o 5 min). Solo endurece.
             else if (strict
-                    && !es.foco.next.core.LeisurePolicy.skips(pass, es.foco.next.core.LeisurePolicy.Layer.ADUANA)
+                    && !es.foco.next.core.LeisurePolicy.skips(
+                            pass, es.foco.next.core.LeisurePolicy.Layer.ADUANA)
                     && AduanaStore.current(this).expired(foreground, wall))
                 overlay.block(
                         c,
@@ -1203,13 +1246,7 @@ public final class FocusAccessibilityService extends AccessibilityService
                                 "Elegiste "
                                         + AduanaStore.chosenMinutes(this)
                                         + " min y ya se cumplieron. Buen momento para seguir con lo tuyo."));
-            else if (d.noBalance)
-                overlay.block(
-                        c,
-                        0,
-                        messageBlock(
-                                "saldo",
-                                coreGateText()));
+            else if (d.noBalance) overlay.block(c, 0, messageBlock("saldo", coreGateText()));
             else if (d.blocked) overlay.block(c, d.left);
             else if (sesBlock) overlay.block(c, 0, sessionBlock(ses, wall));
             else if (rd != null && rd.blocked) overlay.block(c, 0, ruleBlock(rd, local));
@@ -1218,7 +1255,8 @@ public final class FocusAccessibilityService extends AccessibilityService
             // Cronómetro: solo sobre la app de ocio que cuenta (no en Cuidado, de noche ni con una
             // pausa delante). Minutos, nunca segundos.
             boolean over = d.blocked || d.noBalance;
-            OwlWatch.foreground(this, foreground, leisureApp, over); // el búho recuerda de dónde vuelves
+            OwlWatch.foreground(
+                    this, foreground, leisureApp, over); // el búho recuerda de dónde vuelves
             boolean pauseShown = overlay.visible() && !overlay.warningVisible();
             // v32 (R6): medir siempre el ocio real, también con premios, en Cuidado y al pasarse en
             // Normal (el motor de 5 min solo mide el ocio "dentro del límite").
@@ -1228,21 +1266,31 @@ public final class FocusAccessibilityService extends AccessibilityService
                                     ? es.foco.next.log.InspectorLog.OCIO_CUIDADO
                                     : es.foco.next.core.LeisurePolicy.reward(pass)
                                             ? es.foco.next.log.InspectorLog.OCIO_PREMIO
-                                            : remindOver ? es.foco.next.log.InspectorLog.OCIO_FUERA : null)
+                                            : remindOver
+                                                    ? es.foco.next.log.InspectorLog.OCIO_FUERA
+                                                    : null)
                             : null,
                     wall,
                     in.elapsed);
-            // v33: «¿Me aporta?» a los 15 min seguidos en una app de ocio (y cada 5 min tras un «sí»).
-            // v34: antes cuanto más ocio llevas hoy (10 min desde 1 h; 5 min y «sí» de 3 desde 2 h).
+            // v33: «¿Me aporta?» a los 15 min seguidos en una app de ocio (y cada 5 min tras un
+            // «sí»).
+            // v34: antes cuanto más ocio llevas hoy (10 min desde 1 h; 5 min y «sí» de 3 desde 2
+            // h).
             long awareDue =
                     awareness(
                             leisureApp && night == null && !pauseShown && DeviceState.awake(this),
                             in.elapsed);
             if (pill != null)
                 pill.show(
-                        leisureApp && night == null && !careLeisure && stop == null && !dnsPause
-                                        && webShown == null && !pauseShown
-                                ? es.foco.next.core.care.LeisureTimer.text(d.remainingBudget, d.left, over)
+                        leisureApp
+                                        && night == null
+                                        && !careLeisure
+                                        && stop == null
+                                        && !dnsPause
+                                        && webShown == null
+                                        && !pauseShown
+                                ? es.foco.next.core.care.LeisureTimer.text(
+                                        d.remainingBudget, d.left, over)
                                 : null,
                         es.foco.next.core.care.LeisureTimer.lastMinute(d.remainingBudget, over));
             long next = d.next;
@@ -1253,7 +1301,8 @@ public final class FocusAccessibilityService extends AccessibilityService
                 next = next > 0 ? Math.min(next, cl) : cl;
             }
             if (awareDue > 0) next = next > 0 ? Math.min(next, awareDue) : awareDue;
-            long aduana = strict ? AduanaStore.current(this).msLeft(foreground, wall) : 0; // Foco Home
+            long aduana =
+                    strict ? AduanaStore.current(this).msLeft(foreground, wall) : 0; // Foco Home
             if (aduana > 0) next = next > 0 ? Math.min(next, aduana) : aduana;
             if (stop != null || d.noBalance || night != null)
                 next = next > 0 ? Math.min(next, 60_000) : 60_000;
@@ -1312,7 +1361,8 @@ public final class FocusAccessibilityService extends AccessibilityService
                         "dns_apagado;causa=" + DnsMonitor.cause(this),
                         "inc|dns|" + in.day + "|" + (in.elapsed / 600_000));
             }
-            if (pass == es.foco.next.core.LeisurePolicy.Pass.CARE) HomeHub.careLeisure(this, foreground);
+            if (pass == es.foco.next.core.LeisurePolicy.Pass.CARE)
+                HomeHub.careLeisure(this, foreground);
             BlockLog.afterDecision(
                     this,
                     lockLog,
@@ -1340,7 +1390,9 @@ public final class FocusAccessibilityService extends AccessibilityService
     private long awSwipeAt = -1, awDueSince = -1;
     private final Runnable awCut = () -> evaluate(false);
 
-    /** v35: un cambio de video en la app de la sesión (deslizar). Barato: sale enseguida si no toca. */
+    /**
+     * v35: un cambio de video en la app de la sesión (deslizar). Barato: sale enseguida si no toca.
+     */
     private void awScroll(String pkg, AccessibilityEvent e) {
         try {
             if (awPkg.isEmpty() || !pkg.equals(awPkg)) return;
@@ -1350,7 +1402,8 @@ public final class FocusAccessibilityService extends AccessibilityService
             awIndex = idx;
             if (first) return; // la primera posición vista no es un cambio
             long now = SystemClock.elapsedRealtime();
-            if (awSwipeAt >= 0 && now - awSwipeAt < es.foco.next.core.care.Awareness.SWIPE_GAP_MS) return;
+            if (awSwipeAt >= 0 && now - awSwipeAt < es.foco.next.core.care.Awareness.SWIPE_GAP_MS)
+                return;
             awSwipeAt = now;
             awVideos++;
             if (awDueSince >= 0) { // ya tocaba: este es el corte
@@ -1368,17 +1421,23 @@ public final class FocusAccessibilityService extends AccessibilityService
     private long awareness(boolean on, long now) {
         try {
             String pkg = foreground;
-            // Al salir de una sesión (otra app, pantalla apagada…): «¿Valió la pena?» si fue larga y
+            // Al salir de una sesión (otra app, pantalla apagada…): «¿Valió la pena?» si fue larga
+            // y
             // no hubo pregunta. Volver en menos de 10 min sigue siendo la misma sesión.
             if (!awPkg.isEmpty() && (!on || !pkg.equals(awPkg))) {
                 if (!awAsked && awLast >= 0 && awStart >= 0) {
                     AwarenessStore.askWorth(this, awPkg, awLast - awStart);
                     awAsked = true; // una vez por sesión
                 }
-                if (!on && awLast >= 0 && now - awLast > es.foco.next.core.care.Awareness.SESSION_GAP_MS) awPkg = "";
+                if (!on
+                        && awLast >= 0
+                        && now - awLast > es.foco.next.core.care.Awareness.SESSION_GAP_MS)
+                    awPkg = "";
             }
             if (!on) return 0;
-            if (!pkg.equals(awPkg) || awLast < 0 || now - awLast > es.foco.next.core.care.Awareness.SESSION_GAP_MS) {
+            if (!pkg.equals(awPkg)
+                    || awLast < 0
+                    || now - awLast > es.foco.next.core.care.Awareness.SESSION_GAP_MS) {
                 awPkg = pkg;
                 awStart = now;
                 awAsked = false;
@@ -1406,10 +1465,12 @@ public final class FocusAccessibilityService extends AccessibilityService
             // v35: ya toca, pero se espera al siguiente video (o se agota la espera).
             if (awDueSince < 0) awDueSince = now;
             long grace = es.foco.next.core.care.Awareness.cutGraceMs(pkg, session, awVideos);
-            if (!es.foco.next.core.care.Awareness.cutNow(awSwipeAt >= awDueSince, awReopen, now - awDueSince, grace))
+            if (!es.foco.next.core.care.Awareness.cutNow(
+                    awSwipeAt >= awDueSince, awReopen, now - awDueSince, grace))
                 return Math.max(1_000, grace - (now - awDueSince));
             if (!AwarenessStore.canOpen()) return 20_000;
-            if (es.foco.next.ui.AwarenessActivity.open(this, pkg, session, awDayBefore + session, awVideos)) {
+            if (es.foco.next.ui.AwarenessActivity.open(
+                    this, pkg, session, awDayBefore + session, awVideos)) {
                 awAsked = true;
                 awReopen = false;
                 awDueSince = -1;
@@ -1506,10 +1567,12 @@ public final class FocusAccessibilityService extends AccessibilityService
             int[] t = RoutineStore.totals(this, RoutineStore.today());
             String who = Weekend.active(this) ? "Weekend Lock" : "Enfoque";
             if (RoutineStore.freeUsedToday(this))
-                return who + ": la hora libre de hoy ya se usó. Mañana, con tus tareas al 100 %, vuelve.";
+                return who
+                        + ": la hora libre de hoy ya se usó. Mañana, con tus tareas al 100 %, vuelve.";
             if (t[0] > 0 && t[1] >= t[0])
                 return "¡Tareas al 100 %! Activa tu hora de ocio libre desde el inicio.";
-            return who + ": el ocio se abre con tu hora libre de Foco Core. Llevas "
+            return who
+                    + ": el ocio se abre con tu hora libre de Foco Core. Llevas "
                     + t[1]
                     + " de "
                     + t[0]
@@ -1674,8 +1737,10 @@ public final class FocusAccessibilityService extends AccessibilityService
             dnsAuto.stop();
             dnsAuto = null;
         }
-        // Incidente de protección: el servicio se detiene. v32 (R3): aquí no se sabe si lo apagaste tú
-        // o lo paró el sistema (memoria, actualización de Foco): se apunta sin castigo. OwlWatch.check
+        // Incidente de protección: el servicio se detiene. v32 (R3): aquí no se sabe si lo apagaste
+        // tú
+        // o lo paró el sistema (memoria, actualización de Foco): se apunta sin castigo.
+        // OwlWatch.check
         // apunta la evasión solo si Foco aparece desactivado en los Ajustes de Android.
         try {
             es.foco.next.log.InspectorLog.event(

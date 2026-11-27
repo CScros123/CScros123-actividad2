@@ -124,12 +124,7 @@ fun NetsecHomeCard(vm: BrainViewModel, open: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Icon(
-                Icons.Rounded.Spa,
-                null,
-                Modifier.size(20.dp),
-                tint = Color(0xFF7CC6A4),
-            )
+            Icon(Icons.Rounded.Spa, null, Modifier.size(20.dp), tint = Color(0xFF7CC6A4))
             Text(
                 "${c.practicedDays} ${if(c.practicedDays==1)"día practicado" else "días practicados"} · ${c.message()}",
                 style = MaterialTheme.typography.labelLarge,

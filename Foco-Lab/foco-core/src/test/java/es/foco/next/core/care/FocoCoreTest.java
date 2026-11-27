@@ -40,7 +40,8 @@ public class FocoCoreTest {
         assertEquals(24 * 60 + 30, FocoCore.logicalMinute(LocalTime.of(0, 30)));
         assertEquals(10 * 60, FocoCore.logicalMinute(LocalTime.of(10, 0)));
         assertTrue(FocoCore.missedAt(t, false, FocoCore.logicalMinute(LocalTime.of(0, 30))));
-        assertFalse(FocoCore.missed(t, false, LocalTime.of(0, 30))); // la hora natural se equivocaba
+        assertFalse(
+                FocoCore.missed(t, false, LocalTime.of(0, 30))); // la hora natural se equivocaba
         assertTrue(FocoCore.warnDueAt(t, false, FocoCore.logicalMinute(LocalTime.of(23, 55))));
     }
 
@@ -55,13 +56,15 @@ public class FocoCoreTest {
     public void freeHourStopsAtNight() {
         LocalDateTime t = LocalDateTime.of(2026, 11, 23, 20, 30);
         assertEquals(30 * 60_000L, FocoCore.freeUntil(t, 0, 21));
-        assertEquals(FocoCore.FREE_MS, FocoCore.freeUntil(LocalDateTime.of(2026, 11, 23, 15, 0), 0, 21));
+        assertEquals(
+                FocoCore.FREE_MS, FocoCore.freeUntil(LocalDateTime.of(2026, 11, 23, 15, 0), 0, 21));
         assertEquals(0, FocoCore.freeUntil(LocalDateTime.of(2026, 11, 23, 21, 30), 0, 21));
     }
 
     @Test
     public void nextPrefersEarliestWindow() {
-        List<Routine.Task> t = Routine.parse("Leer · 10\nEstudiar · 60 · 10:30\nCorrer · 20 · 9:00");
+        List<Routine.Task> t =
+                Routine.parse("Leer · 10\nEstudiar · 60 · 10:30\nCorrer · 20 · 9:00");
         Set<Integer> done = new HashSet<>();
         assertEquals(2, FocoCore.next(t, done));
         done.add(2);
@@ -95,6 +98,7 @@ public class FocoCoreTest {
         // La noche: 0:30 es 24:30 en el día de Foco.
         assertEquals(24 * 60 + 30, FocoCore.logicalDeadline(30));
         assertEquals(FocoCore.NIGHT_DEADLINE, FocoCore.logicalDeadline(23 * 60));
-        assertEquals("Quedan 20 min (hasta las 0:30)", FocoCore.nagText(24 * 60 + 30, 24 * 60 + 10));
+        assertEquals(
+                "Quedan 20 min (hasta las 0:30)", FocoCore.nagText(24 * 60 + 30, 24 * 60 + 10));
     }
 }

@@ -15,7 +15,9 @@ public class LeisureTimerTest {
         assertEquals("🦉 otros 5 en 30 min", LeisureTimer.text(0, 30 * 60_000L, true));
         assertTrue(LeisureTimer.lastMinute(42_000, false));
         assertFalse(LeisureTimer.lastMinute(0, true));
-        for (String t : new String[] {LeisureTimer.text(61_000, 0, false), LeisureTimer.text(0, 90_000, true)})
-            assertFalse(t, t.contains(" s") || t.contains(":"));
+        for (String t :
+                new String[] {
+                    LeisureTimer.text(61_000, 0, false), LeisureTimer.text(0, 90_000, true)
+                }) assertFalse(t, t.contains(" s") || t.contains(":"));
     }
 }

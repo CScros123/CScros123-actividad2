@@ -53,22 +53,25 @@ import androidx.compose.ui.unit.sp
  */
 
 /** Rubik: títulos, números y botones (redonda y fuerte). */
-val Rubik = FontFamily(
-    Font(es.foco.next.R.font.rubik_medium, FontWeight.Medium),
-    Font(es.foco.next.R.font.rubik_bold, FontWeight.Bold),
-    Font(es.foco.next.R.font.rubik_extrabold, FontWeight.ExtraBold),
-    Font(es.foco.next.R.font.rubik_black, FontWeight.Black),
-)
+val Rubik =
+    FontFamily(
+        Font(es.foco.next.R.font.rubik_medium, FontWeight.Medium),
+        Font(es.foco.next.R.font.rubik_bold, FontWeight.Bold),
+        Font(es.foco.next.R.font.rubik_extrabold, FontWeight.ExtraBold),
+        Font(es.foco.next.R.font.rubik_black, FontWeight.Black),
+    )
 
 /** Lexend: texto corrido y tareas (pensada para leerse con menos esfuerzo). */
-val Lexend = FontFamily(
-    Font(es.foco.next.R.font.lexend_regular, FontWeight.Normal),
-    Font(es.foco.next.R.font.lexend_medium, FontWeight.Medium),
-    Font(es.foco.next.R.font.lexend_semibold, FontWeight.SemiBold),
-)
+val Lexend =
+    FontFamily(
+        Font(es.foco.next.R.font.lexend_regular, FontWeight.Normal),
+        Font(es.foco.next.R.font.lexend_medium, FontWeight.Medium),
+        Font(es.foco.next.R.font.lexend_semibold, FontWeight.SemiBold),
+    )
 
 /** Bold o más → Rubik; lo demás → Lexend. Así HomeText cambia toda la app de una vez. */
-fun familyFor(weight: FontWeight): FontFamily = if (weight.weight >= FontWeight.Bold.weight) Rubik else Lexend
+fun familyFor(weight: FontWeight): FontFamily =
+    if (weight.weight >= FontWeight.Bold.weight) Rubik else Lexend
 
 /** Los tres redondeos: chips y casillas · botones · tarjetas y hojas. */
 val GameSmall = RoundedCornerShape(10.dp)
@@ -112,8 +115,15 @@ fun GameText(
     maxLines: Int = Int.MAX_VALUE,
 ) {
     Text(
-        text, modifier, color = color, fontSize = size, fontWeight = weight, fontFamily = familyFor(weight),
-        lineHeight = size * 1.25f, maxLines = maxLines, overflow = TextOverflow.Ellipsis,
+        text,
+        modifier,
+        color = color,
+        fontSize = size,
+        fontWeight = weight,
+        fontFamily = familyFor(weight),
+        lineHeight = size * 1.25f,
+        maxLines = maxLines,
+        overflow = TextOverflow.Ellipsis,
     )
 }
 
@@ -134,15 +144,20 @@ fun GameButton(
     val haptic = LocalHapticFeedback.current
     val src = remember { MutableInteractionSource() }
     val pressed by src.collectIsPressedAsState()
-    val drop by animateDpAsState(if (pressed && enabled) GameDepth else 0.dp, tween(60), label = "hundir")
+    val drop by
+        animateDpAsState(if (pressed && enabled) GameDepth else 0.dp, tween(60), label = "hundir")
     val face = if (enabled) act.face else act.face.copy(alpha = .35f)
     val ink = if (enabled) act.ink else act.ink.copy(alpha = .6f)
     // El relieve va en el margen de abajo; el ancho lo pone quien lo usa (weight, width) o el
     // contenido, nunca toda la pantalla.
     Box(modifier.padding(bottom = GameDepth), propagateMinConstraints = true) {
-        if (enabled) Box(Modifier.matchParentSize().offset(y = GameDepth).clip(GameMid).background(act.edge))
+        if (enabled)
+            Box(Modifier.matchParentSize().offset(y = GameDepth).clip(GameMid).background(act.edge))
         Row(
-            Modifier.height(height).offset(y = drop).clip(GameMid).background(face)
+            Modifier.height(height)
+                .offset(y = drop)
+                .clip(GameMid)
+                .background(face)
                 .clickable(interactionSource = src, indication = null, enabled = enabled) {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     onClick()
@@ -160,11 +175,25 @@ fun GameButton(
 
 /** Casilla cuadrada que salta al marcarla. */
 @Composable
-fun GameCheck(done: Boolean, color: Color = Act.DONE.face, ink: Color = Act.DONE.ink, idle: Color = LocalHome.current.muted) {
-    val fill by animateColorAsState(if (done) color else Color.Transparent, tween(180), label = "casilla")
-    val pop by animateFloatAsState(if (done) 1f else .9f, spring(dampingRatio = .35f, stiffness = 600f), label = "salto")
+fun GameCheck(
+    done: Boolean,
+    color: Color = Act.DONE.face,
+    ink: Color = Act.DONE.ink,
+    idle: Color = LocalHome.current.muted,
+) {
+    val fill by
+        animateColorAsState(if (done) color else Color.Transparent, tween(180), label = "casilla")
+    val pop by
+        animateFloatAsState(
+            if (done) 1f else .9f,
+            spring(dampingRatio = .35f, stiffness = 600f),
+            label = "salto",
+        )
     Box(
-        Modifier.size(28.dp).scale(if (done) pop else 1f).clip(RoundedCornerShape(9.dp)).background(fill)
+        Modifier.size(28.dp)
+            .scale(if (done) pop else 1f)
+            .clip(RoundedCornerShape(9.dp))
+            .background(fill)
             .border(3.dp, if (done) color else idle.copy(alpha = .7f), RoundedCornerShape(9.dp)),
         contentAlignment = Alignment.Center,
     ) {
@@ -175,11 +204,33 @@ fun GameCheck(done: Boolean, color: Color = Act.DONE.face, ink: Color = Act.DONE
 /** Barra del día: se llena con lo hecho (verde con brillo). */
 @Composable
 fun GameBar(value: Float, modifier: Modifier = Modifier, color: Color = Act.GO.face) {
-    val v by animateFloatAsState(value.coerceIn(0f, 1f), spring(dampingRatio = .6f, stiffness = 120f), label = "barra")
-    Box(modifier.height(14.dp).clip(RoundedCornerShape(8.dp)).background(Color.Black.copy(alpha = .32f))) {
+    val v by
+        animateFloatAsState(
+            value.coerceIn(0f, 1f),
+            spring(dampingRatio = .6f, stiffness = 120f),
+            label = "barra",
+        )
+    Box(
+        modifier
+            .height(14.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.Black.copy(alpha = .32f))
+    ) {
         if (v > 0f)
-            Box(Modifier.fillMaxWidth(v).fillMaxHeight().clip(RoundedCornerShape(8.dp)).background(color)) {
-                Box(Modifier.fillMaxWidth().height(4.dp).padding(horizontal = 4.dp).offset(y = 2.dp).clip(RoundedCornerShape(2.dp)).background(Color.White.copy(alpha = .35f)))
+            Box(
+                Modifier.fillMaxWidth(v)
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(color)
+            ) {
+                Box(
+                    Modifier.fillMaxWidth()
+                        .height(4.dp)
+                        .padding(horizontal = 4.dp)
+                        .offset(y = 2.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(Color.White.copy(alpha = .35f))
+                )
             }
     }
 }
@@ -189,9 +240,17 @@ fun GameBar(value: Float, modifier: Modifier = Modifier, color: Color = Act.GO.f
 fun GameStat(icon: ImageVector, value: String, tint: Color, modifier: Modifier = Modifier) {
     val c = LocalHome.current
     Box(modifier.padding(bottom = 3.dp)) {
-        Box(Modifier.matchParentSize().offset(y = 3.dp).clip(GameSmall).background(Color.Black.copy(alpha = .35f)))
+        Box(
+            Modifier.matchParentSize()
+                .offset(y = 3.dp)
+                .clip(GameSmall)
+                .background(Color.Black.copy(alpha = .35f))
+        )
         Row(
-            Modifier.height(34.dp).clip(GameSmall).background(c.card.copy(alpha = .96f)).padding(horizontal = 9.dp),
+            Modifier.height(34.dp)
+                .clip(GameSmall)
+                .background(c.card.copy(alpha = .96f))
+                .padding(horizontal = 9.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(icon, null, tint = tint, modifier = Modifier.size(17.dp))
@@ -205,7 +264,10 @@ fun GameStat(icon: ImageVector, value: String, tint: Color, modifier: Modifier =
 @Composable
 fun GameChip(text: String, color: Color, modifier: Modifier = Modifier, icon: ImageVector? = null) {
     Row(
-        modifier.clip(GameSmall).background(color.copy(alpha = .18f)).padding(horizontal = 8.dp, vertical = 4.dp),
+        modifier
+            .clip(GameSmall)
+            .background(color.copy(alpha = .18f))
+            .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {

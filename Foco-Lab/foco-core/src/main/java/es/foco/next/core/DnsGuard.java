@@ -4,9 +4,9 @@ import java.util.Locale;
 
 /**
  * Fase 3: decide si el DNS privado de Android cumple el proveedor elegido. Desde la v26 el único
- * proveedor es NextDNS (tu perfil exacto); "automático" solo existe si lo pides y tarda 24 h. Java puro: no lee la
- * red, solo recibe lo que Android informó (LinkProperties) y el reloj. Nunca toca FocusEngine ni el
- * presupuesto.
+ * proveedor es NextDNS (tu perfil exacto); "automático" solo existe si lo pides y tarda 24 h. Java
+ * puro: no lee la red, solo recibe lo que Android informó (LinkProperties) y el reloj. Nunca toca
+ * FocusEngine ni el presupuesto.
  *
  * <p>Reglas anti falsos positivos: sin red activa = OK; sin vigilancia activada = OK; 60 s de
  * margen antes de bloquear; el nombre del servidor se compara sin mayúsculas, espacios ni punto
@@ -14,7 +14,10 @@ import java.util.Locale;
  */
 public final class DnsGuard {
     public static final long GRACE = 60_000L;
-    /** Sin perfil todavía: vale cualquier perfil de NextDNS hasta que Foco adopta el primero que ve. */
+
+    /**
+     * Sin perfil todavía: vale cualquier perfil de NextDNS hasta que Foco adopta el primero que ve.
+     */
     public static final String DEFAULT_PROVIDER = "";
 
     /**
@@ -24,8 +27,8 @@ public final class DnsGuard {
     public static final String AUTOMATIC = "automatico";
 
     /**
-     * NextDNS: cada perfil tiene su propio host ({@code <id>.dns.nextdns.io}, o
-     * {@code <dispositivo>-<id>.dns.nextdns.io}). Se acepta el host EXACTO del perfil elegido, no
+     * NextDNS: cada perfil tiene su propio host ({@code <id>.dns.nextdns.io}, o {@code
+     * <dispositivo>-<id>.dns.nextdns.io}). Se acepta el host EXACTO del perfil elegido, no
      * cualquier perfil de NextDNS: cambiar a otro perfil (quizá sin filtros) cuenta como DNS
      * incorrecto. Foco no puede ver qué filtra el perfil: eso se configura en my.nextdns.io.
      */

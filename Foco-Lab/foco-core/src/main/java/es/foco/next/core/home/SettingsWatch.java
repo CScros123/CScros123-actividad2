@@ -70,7 +70,9 @@ public final class SettingsWatch {
                 if (t.equals(foco)) hasFoco = true;
                 if (t.contains("dns privado") || t.contains("private dns")) dns = true;
                 // El diálogo del DNS privado (no la fila "DNS privado" de la lista de conexiones).
-                if (t.contains("nombre de host") || t.contains("hostname") || t.equals("automatico")
+                if (t.contains("nombre de host")
+                        || t.contains("hostname")
+                        || t.equals("automatico")
                         || t.equals("automatic")) dnsChoice = true;
                 // La página de Foco dentro de Accesibilidad (no la lista general de servicios).
                 if (t.contains("usar foco") || t.contains("use foco")) access = true;

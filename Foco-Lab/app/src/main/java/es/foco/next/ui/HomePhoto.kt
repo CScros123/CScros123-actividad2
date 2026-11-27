@@ -36,22 +36,42 @@ import androidx.compose.ui.unit.sp
 
 /**
  * Fondo de los temas fotográficos: la foto (ya a tamaño de pantalla) y dos velos para leer bien el
- * reloj arriba y el dock abajo. Todo estático y cacheado: no se redibuja al deslizar ni al hablar el
- * búho.
+ * reloj arriba y el dock abajo. Todo estático y cacheado: no se redibuja al deslizar ni al hablar
+ * el búho.
  */
 @Composable
 fun PhotoBackground(photo: ImageBitmap, hillTop: Float) {
     val c = LocalHome.current
     Box(Modifier.fillMaxSize()) {
-        Image(photo, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop, filterQuality = FilterQuality.Low)
+        Image(
+            photo,
+            null,
+            Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+            filterQuality = FilterQuality.Low,
+        )
         Spacer(
             Modifier.fillMaxSize().drawWithCache {
-                val top = Brush.verticalGradient(listOf(c.background.copy(alpha = .55f), Color.Transparent), 0f, size.height * .38f)
+                val top =
+                    Brush.verticalGradient(
+                        listOf(c.background.copy(alpha = .55f), Color.Transparent),
+                        0f,
+                        size.height * .38f,
+                    )
                 val start = if (hillTop > 0) hillTop - 40.dp.toPx() else size.height * .62f
-                val bottom = Brush.verticalGradient(listOf(Color.Transparent, c.hill), start, start + 120.dp.toPx())
+                val bottom =
+                    Brush.verticalGradient(
+                        listOf(Color.Transparent, c.hill),
+                        start,
+                        start + 120.dp.toPx(),
+                    )
                 onDrawBehind {
                     drawRect(top, size = Size(size.width, size.height * .38f))
-                    drawRect(bottom, topLeft = Offset(0f, start), size = Size(size.width, size.height - start))
+                    drawRect(
+                        bottom,
+                        topLeft = Offset(0f, start),
+                        size = Size(size.width, size.height - start),
+                    )
                 }
             }
         )
@@ -59,14 +79,22 @@ fun PhotoBackground(photo: ImageBitmap, hillTop: Float) {
 }
 
 /**
- * El búho como voz de Foco: su último mensaje (de los últimos 30 min) arriba del inicio, como en
- * el prototipo. "Ahora no" lo cierra; nunca insiste.
+ * El búho como voz de Foco: su último mensaje (de los últimos 30 min) arriba del inicio, como en el
+ * prototipo. "Ahora no" lo cierra; nunca insiste.
  */
 @Composable
-fun OwlBanner(title: String, text: String, target: String, onOpen: () -> Unit, onClose: () -> Unit) {
+fun OwlBanner(
+    title: String,
+    text: String,
+    target: String,
+    onOpen: () -> Unit,
+    onClose: () -> Unit,
+) {
     val c = LocalHome.current
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(c.card)
+        Modifier.fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(c.card)
             .border(1.dp, lerp(c.card, c.accent, .25f), RoundedCornerShape(20.dp))
             .padding(12.dp)
             .semantics { contentDescription = "El búho dice: $text" },
@@ -74,19 +102,44 @@ fun OwlBanner(title: String, text: String, target: String, onOpen: () -> Unit, o
     ) {
         Image(painterResource(es.foco.next.R.drawable.owl_face), null, Modifier.size(40.dp))
         Column(Modifier.weight(1f).padding(start = 10.dp)) {
-            HomeText("🦉 Búho · ${title.ifBlank { "ahora" }}", 11.5.sp, c.muted, FontWeight.SemiBold)
+            HomeText(
+                "🦉 Búho · ${title.ifBlank { "ahora" }}",
+                11.5.sp,
+                c.muted,
+                FontWeight.SemiBold,
+            )
             HomeText(text, 13.sp, modifier = Modifier.padding(top = 2.dp))
-            Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                HomeText("Ahora no", 12.5.sp, c.muted, FontWeight.SemiBold, Modifier.clip(RoundedCornerShape(10.dp)).clickable(onClick = onClose).padding(8.dp))
+            Row(
+                Modifier.padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                HomeText(
+                    "Ahora no",
+                    12.5.sp,
+                    c.muted,
+                    FontWeight.SemiBold,
+                    Modifier.clip(RoundedCornerShape(10.dp))
+                        .clickable(onClick = onClose)
+                        .padding(8.dp),
+                )
                 if (target != "cuidado")
                     Box(
-                        Modifier.clip(RoundedCornerShape(12.dp)).background(c.accent).clickable(onClick = onOpen)
+                        Modifier.clip(RoundedCornerShape(12.dp))
+                            .background(c.accent)
+                            .clickable(onClick = onOpen)
                             .padding(horizontal = 14.dp, vertical = 8.dp)
                     ) {
                         androidx.compose.material3.Text(
-                            when (target) { "reto" -> "Hacer el reto"; "respirar" -> "Respirar 30 s"; else -> "Vamos" },
-                            color = if (c.text.lum() > .5f) c.background else c.card.copy(alpha = 1f),
-                            fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                            when (target) {
+                                "reto" -> "Hacer el reto"
+                                "respirar" -> "Respirar 30 s"
+                                else -> "Vamos"
+                            },
+                            color =
+                                if (c.text.lum() > .5f) c.background else c.card.copy(alpha = 1f),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
                         )
                     }
             }

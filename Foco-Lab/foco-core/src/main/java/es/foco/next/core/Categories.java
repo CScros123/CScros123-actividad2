@@ -59,7 +59,8 @@ public final class Categories {
     // v37: NextDNS se configura solo desde otro dispositivo. En este teléfono, su app y su web
     // (my.nextdns.io y el resto de nextdns.io) se cierran siempre, como Telegram. Foco sigue
     // leyendo las estadísticas con su clave (eso no pasa por el navegador).
-    public static final List<String> DNS_PANEL_DOMAINS = Collections.unmodifiableList(Arrays.asList("nextdns.io"));
+    public static final List<String> DNS_PANEL_DOMAINS =
+            Collections.unmodifiableList(Arrays.asList("nextdns.io"));
 
     /** La app de NextDNS (o cualquier paquete con "nextdns" en el nombre). */
     public static boolean dnsPanelApp(String pkg) {

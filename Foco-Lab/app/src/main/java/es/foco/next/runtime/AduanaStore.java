@@ -17,8 +17,13 @@ public final class AduanaStore {
         if (!Aduana.validChoice(minutes)) minutes = 5;
         long now = System.currentTimeMillis();
         Aduana.Limit l = new Aduana.Limit(pkg, now, minutes);
-        p(c).edit().putString("pkg", l.pkg).putLong("at", l.chosenAt).putLong("until", l.until).apply();
-        InspectorLog.event(c, "aduana", pkg, now, 0, 1, minutes, "elegido_" + minutes + "_min", null);
+        p(c).edit()
+                .putString("pkg", l.pkg)
+                .putLong("at", l.chosenAt)
+                .putLong("until", l.until)
+                .apply();
+        InspectorLog.event(
+                c, "aduana", pkg, now, 0, 1, minutes, "elegido_" + minutes + "_min", null);
         FocusAccessibilityService.checkpoint();
     }
 

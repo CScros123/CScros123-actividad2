@@ -6,8 +6,8 @@ import java.util.List;
 
 /**
  * Cerebro del búho de Foco (puro). Elige el modo a partir de datos REALES y escribe lo que dice.
- * Reglas: nada de culpa ni de minutos inventados (la Regla 4 solo paga retos, uso productivo y subir
- * de nivel); de noche solo calma o palabra del día; sin rojo (la paleta está en la vista).
+ * Reglas: nada de culpa ni de minutos inventados (la Regla 4 solo paga retos, uso productivo y
+ * subir de nivel); de noche solo calma o palabra del día; sin rojo (la paleta está en la vista).
  */
 public final class OwlBrain {
     private OwlBrain() {}
@@ -67,11 +67,23 @@ public final class OwlBrain {
 
     /** Palabra del día: Reina-Valera 1909 (dominio público), con acentos actuales. */
     public static final String[][] VERSES = {
-        {"Mira que te mando que te esfuerces y seas valiente: no temas ni desmayes, porque Jehová tu Dios será contigo.", "Josué 1:9"},
-        {"Sobre toda cosa guardada guarda tu corazón; porque de él mana la vida.", "Proverbios 4:23"},
+        {
+            "Mira que te mando que te esfuerces y seas valiente: no temas ni desmayes, porque Jehová tu Dios será contigo.",
+            "Josué 1:9"
+        },
+        {
+            "Sobre toda cosa guardada guarda tu corazón; porque de él mana la vida.",
+            "Proverbios 4:23"
+        },
         {"Estad quietos, y conoced que yo soy Dios.", "Salmo 46:10"},
-        {"Los que esperan a Jehová tendrán nuevas fuerzas; levantarán las alas como águilas; correrán, y no se cansarán.", "Isaías 40:31"},
-        {"Venid a mí todos los que estáis trabajados y cargados, que yo os haré descansar.", "Mateo 11:28"},
+        {
+            "Los que esperan a Jehová tendrán nuevas fuerzas; levantarán las alas como águilas; correrán, y no se cansarán.",
+            "Isaías 40:31"
+        },
+        {
+            "Venid a mí todos los que estáis trabajados y cargados, que yo os haré descansar.",
+            "Mateo 11:28"
+        },
         {"Lámpara es a mis pies tu palabra, y lumbrera a mi camino.", "Salmo 119:105"},
         {"Todo lo puedo en Cristo que me fortalece.", "Filipenses 4:13"},
     };
@@ -89,45 +101,59 @@ public final class OwlBrain {
         switch (m) {
             case OCIO:
                 // Cuidado: preocupado y tierno, nunca regaño. Pregunta y propone; tú decides.
-                return pick(new String[] {
-                    "¿Cómo estás" + b + "? Te acompaño.",
-                    "Descansar está bien" + b + ".",
-                    "¿Reto, leer o caminar?",
-                }, idx);
+                return pick(
+                        new String[] {
+                            "¿Cómo estás" + b + "? Te acompaño.",
+                            "Descansar está bien" + b + ".",
+                            "¿Reto, leer o caminar?",
+                        },
+                        idx);
             case LIBRO:
-                return pick(new String[] {
-                    "¿Cinco minutos de " + f.reader + "?",
-                    "Cinco páginas" + b + ". ¿Vamos?",
-                }, idx);
+                return pick(
+                        new String[] {
+                            "¿Cinco minutos de " + f.reader + "?",
+                            "Cinco páginas" + b + ". ¿Vamos?",
+                        },
+                        idx);
             case JUEGO:
                 // Entrenar la mente no da minutos (v26): el ocio solo lo abren las tareas reales.
-                return pick(new String[] {
-                    "¿Un reto rápido" + b + "?",
-                    f.game + ": dos minutos.",
-                }, idx);
+                return pick(
+                        new String[] {
+                            "¿Un reto rápido" + b + "?", f.game + ": dos minutos.",
+                        },
+                        idx);
             case BIBLIA:
                 String[] v = VERSES[Math.floorMod(idx, VERSES.length)];
                 return v[0] + " (" + v[1] + ")";
             case LEVANTATE:
-                return pick(new String[] {
-                    "¡Levántate" + b + "! Agua y estira.",
-                    "De pie un minuto" + b + ".",
-                }, idx);
+                return pick(
+                        new String[] {
+                            "¡Levántate" + b + "! Agua y estira.", "De pie un minuto" + b + ".",
+                        },
+                        idx);
             case NOCHE:
-                return pick(new String[] {
-                    "Descansa" + b + ". Ocio a las " + es.foco.next.core.AbsoluteRules.nightEnd() + ":00.",
-                    "Día cerrado. Buen trabajo.",
-                }, idx);
+                return pick(
+                        new String[] {
+                            "Descansa"
+                                    + b
+                                    + ". Ocio a las "
+                                    + es.foco.next.core.AbsoluteRules.nightEnd()
+                                    + ":00.",
+                            "Día cerrado. Buen trabajo.",
+                        },
+                        idx);
             case DESPERTAR:
                 return "Buenos días" + b + ". ¡A la rutina!";
             default:
-                return pick(new String[] {
-                    f.investedMin > 0
-                            ? "Todo en orden" + b + ". " + f.investedMin + "′ invertidos."
-                            : "Todo en orden" + b + ".",
-                    "Buen ritmo" + b + ".",
-                    "Tareas reales, hora libre.",
-                }, idx);
+                return pick(
+                        new String[] {
+                            f.investedMin > 0
+                                    ? "Todo en orden" + b + ". " + f.investedMin + "′ invertidos."
+                                    : "Todo en orden" + b + ".",
+                            "Buen ritmo" + b + ".",
+                            "Tareas reales, hora libre.",
+                        },
+                        idx);
         }
     }
 
@@ -149,8 +175,7 @@ public final class OwlBrain {
             case NOCHE:
                 return "";
             default:
-                // v43: en calma no hay botón: «otra idea» ya es el ↻ del globo.
-                return "";
+                return "Ver idea";
         }
     }
 }

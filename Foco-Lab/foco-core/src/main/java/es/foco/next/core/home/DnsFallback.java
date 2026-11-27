@@ -1,9 +1,9 @@
 package es.foco.next.core.home;
 
 /**
- * Etapa 5.4: DNS automático de respaldo. Puro: recibe resultados de pruebas de resolución y dice qué
- * modo de DNS privado poner. Si el proveedor falla {@link #FAILS_TO_FALLBACK} veces seguidas, pasa
- * a automático {@link #FALLBACK_MS}, lo restaura y vuelve a probar.
+ * Etapa 5.4: DNS automático de respaldo. Puro: recibe resultados de pruebas de resolución y dice
+ * qué modo de DNS privado poner. Si el proveedor falla {@link #FAILS_TO_FALLBACK} veces seguidas,
+ * pasa a automático {@link #FALLBACK_MS}, lo restaura y vuelve a probar.
  */
 public final class DnsFallback {
     public static final int FAILS_TO_FALLBACK = 2;

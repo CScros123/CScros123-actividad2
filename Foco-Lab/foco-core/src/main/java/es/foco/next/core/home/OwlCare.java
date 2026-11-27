@@ -23,7 +23,9 @@ public final class OwlCare {
     public static boolean morningDue(LocalDateTime now, String lastRitualDay, boolean enabled) {
         if (!enabled) return false;
         int h = now.getHour();
-        return h >= MORNING_FROM && h < MORNING_UNTIL && !now.toLocalDate().toString().equals(lastRitualDay);
+        return h >= MORNING_FROM
+                && h < MORNING_UNTIL
+                && !now.toLocalDate().toString().equals(lastRitualDay);
     }
 
     /** Texto de la pausa de noche cuando ya es de mañana (antes del fin de la noche). */
@@ -45,8 +47,8 @@ public final class OwlCare {
     public static final int RESTLESS_OPENS = 6;
 
     /**
-     * 6 o más aperturas de apps de ocio en 2 minutos, y como mucho un aviso cada 30 min.
-     * {@code opens}: instantes (ms) de cada apertura, en cualquier orden.
+     * 6 o más aperturas de apps de ocio en 2 minutos, y como mucho un aviso cada 30 min. {@code
+     * opens}: instantes (ms) de cada apertura, en cualquier orden.
      */
     public static boolean restless(List<Long> opens, long now, long lastNotice) {
         if (lastNotice >= 0 && now - lastNotice < RESTLESS_COOLDOWN_MS) return false;
@@ -59,6 +61,7 @@ public final class OwlCare {
 
     /** Un hueco cuenta a partir de 10 min (un reinicio rápido no merece aviso). */
     public static final long OFF_MIN_MS = 10 * 60_000L;
+
     /** Aviso "estoy apagado" como mucho cada 6 h. */
     public static final long OFF_NOTICE_EVERY_MS = 6 * 60 * 60_000L;
 
@@ -72,9 +75,15 @@ public final class OwlCare {
         String a = Instant.ofEpochMilli(offSince).atZone(zone).format(f);
         String b = Instant.ofEpochMilli(backAt).atZone(zone).format(f);
         boolean otherDay =
-                !Instant.ofEpochMilli(offSince).atZone(zone).toLocalDate()
+                !Instant.ofEpochMilli(offSince)
+                        .atZone(zone)
+                        .toLocalDate()
                         .equals(Instant.ofEpochMilli(backAt).atZone(zone).toLocalDate());
-        return "Estuve apagado de " + a + (otherDay ? " (ayer)" : "") + " a " + b
+        return "Estuve apagado de "
+                + a
+                + (otherDay ? " (ayer)" : "")
+                + " a "
+                + b
                 + ". Gracias por encenderme; ya te acompaño otra vez.";
     }
 
@@ -88,7 +97,8 @@ public final class OwlCare {
     // ---------- 4. Foco Home dejó de ser el inicio ----------
 
     /** Una vez al día, solo si Foco Home llegó a ser el inicio alguna vez. */
-    public static boolean roleNoticeDue(boolean everHeld, boolean heldNow, String lastNoticeDay, String today) {
+    public static boolean roleNoticeDue(
+            boolean everHeld, boolean heldNow, String lastNoticeDay, String today) {
         return everHeld && !heldNow && !today.equals(lastNoticeDay);
     }
 

@@ -12,12 +12,16 @@ final class ForegroundWindows {
      * pantalla dividida no tiene el foco, así que antes no contaba. Si la app enfocada no está
      * vigilada y otra ventana de app visible sí, se mide esa.
      */
-    static String current(AccessibilityService service, boolean overlayVisible, java.util.function.Predicate<String> watched) {
+    static String current(
+            AccessibilityService service,
+            boolean overlayVisible,
+            java.util.function.Predicate<String> watched) {
         String focused = current(service, overlayVisible);
         if (watched == null || (!focused.isEmpty() && watched.test(focused))) return focused;
         try {
             for (AccessibilityWindowInfo w : service.getWindows()) {
-                if (w.getType() != AccessibilityWindowInfo.TYPE_APPLICATION || w.isFocused()) continue;
+                if (w.getType() != AccessibilityWindowInfo.TYPE_APPLICATION || w.isFocused())
+                    continue;
                 AccessibilityNodeInfo root = w.getRoot();
                 try {
                     if (root == null || root.getPackageName() == null) continue;

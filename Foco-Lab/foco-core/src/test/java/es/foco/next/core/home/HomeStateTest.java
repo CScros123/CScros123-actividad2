@@ -36,7 +36,14 @@ public class HomeStateTest {
     @Test
     public void autoTimeOffIsNight() {
         Snapshot s =
-                HomeState.step(Snapshot.initial(at(12, 0)), new ArrayList<>(), at(12, 0), Z, false, -1, false);
+                HomeState.step(
+                        Snapshot.initial(at(12, 0)),
+                        new ArrayList<>(),
+                        at(12, 0),
+                        Z,
+                        false,
+                        -1,
+                        false);
         assertEquals(Estado.NOCHE, s.estado);
     }
 
@@ -44,7 +51,14 @@ public class HomeStateTest {
     public void wakeAfterFirstUnlockUntilSevenOrDone() {
         long unlock = at(5, 40);
         Snapshot s =
-                HomeState.step(Snapshot.initial(at(5, 0)), new ArrayList<>(), at(5, 41), Z, true, unlock, false);
+                HomeState.step(
+                        Snapshot.initial(at(5, 0)),
+                        new ArrayList<>(),
+                        at(5, 41),
+                        Z,
+                        true,
+                        unlock,
+                        false);
         assertEquals(Estado.DESPERTAR, s.estado);
         s = HomeState.step(s, new ArrayList<>(), at(6, 10), Z, true, unlock, true);
         assertEquals(Estado.NOCHE, s.estado); // reto hecho: vuelve la noche (Regla 2 sigue)
@@ -55,7 +69,14 @@ public class HomeStateTest {
     @Test
     public void unlockBeforeFiveIsNotWake() {
         Snapshot s =
-                HomeState.step(Snapshot.initial(at(4, 0)), new ArrayList<>(), at(5, 30), Z, true, at(4, 50), false);
+                HomeState.step(
+                        Snapshot.initial(at(4, 0)),
+                        new ArrayList<>(),
+                        at(5, 30),
+                        Z,
+                        true,
+                        at(4, 50),
+                        false);
         assertEquals(Estado.NOCHE, s.estado);
     }
 
@@ -128,7 +149,8 @@ public class HomeStateTest {
         int t = HomeState.countDay(2, "2026-11-10", d, true);
         assertEquals(3, t);
         assertEquals(3, HomeState.countDay(3, d.toString(), d, true)); // una vez por día
-        assertEquals(3, HomeState.countDay(3, d.toString(), d.plusDays(1), false)); // descanso: no baja
+        assertEquals(
+                3, HomeState.countDay(3, d.toString(), d.plusDays(1), false)); // descanso: no baja
         assertTrue(HomeState.milestone(2, 3));
         assertTrue(HomeState.milestone(6, 7));
         assertFalse(HomeState.milestone(7, 8));

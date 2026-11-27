@@ -90,7 +90,9 @@ public class DnsGuardTest {
         assertFalse(DnsGuard.compliant(new DnsGuard.State(true, true, true, "dns.google", "")));
         assertFalse(DnsGuard.compliant(new DnsGuard.State(true, true, false, null, "")));
         // Automático (pedido con 24 h): no se exige DNS.
-        assertTrue(DnsGuard.compliant(new DnsGuard.State(true, true, false, null, DnsGuard.AUTOMATIC)));
+        assertTrue(
+                DnsGuard.compliant(
+                        new DnsGuard.State(true, true, false, null, DnsGuard.AUTOMATIC)));
         assertEquals("Automático (sin filtro)", DnsGuard.providerLabel(DnsGuard.AUTOMATIC));
     }
 
@@ -209,8 +211,12 @@ public class DnsGuardTest {
         assertEquals("abc123", DnsGuard.nextDnsProfile("galaxy-abc123.dns.nextdns.io"));
         assertEquals("NextDNS (perfil abc123)", DnsGuard.providerLabel("abc123.dns.nextdns.io"));
         // Otro perfil de NextDNS no cuenta como el elegido.
-        assertFalse(DnsGuard.sameHost("zzz999.dns.nextdns.io", DnsGuard.provider("abc123.dns.nextdns.io")));
-        DnsGuard.State st = new DnsGuard.State(true, true, true, "abc123.dns.nextdns.io", "abc123.dns.nextdns.io");
+        assertFalse(
+                DnsGuard.sameHost(
+                        "zzz999.dns.nextdns.io", DnsGuard.provider("abc123.dns.nextdns.io")));
+        DnsGuard.State st =
+                new DnsGuard.State(
+                        true, true, true, "abc123.dns.nextdns.io", "abc123.dns.nextdns.io");
         assertTrue(DnsGuard.compliant(st));
         st = new DnsGuard.State(true, true, true, "zzz999.dns.nextdns.io", "abc123.dns.nextdns.io");
         assertFalse(DnsGuard.compliant(st));

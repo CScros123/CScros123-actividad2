@@ -14,8 +14,8 @@ import java.time.ZoneId;
 import java.util.List;
 
 /**
- * Lee las estadísticas de hoy del perfil de NextDNS con la clave de API que la persona pega una vez.
- * Solo habla con api.nextdns.io, solo con clave guardada y como mucho cada 30 min. La clave se
+ * Lee las estadísticas de hoy del perfil de NextDNS con la clave de API que la persona pega una
+ * vez. Solo habla con api.nextdns.io, solo con clave guardada y como mucho cada 30 min. La clave se
  * guarda en las preferencias privadas de Foco y no se exporta ni se registra.
  */
 public final class NextDnsSync {
@@ -23,7 +23,8 @@ public final class NextDnsSync {
 
     private static final String PREFS = "foco-nextdns";
     private static volatile boolean running;
-    private static final java.util.concurrent.CopyOnWriteArrayList<Runnable> listeners = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private static final java.util.concurrent.CopyOnWriteArrayList<Runnable> listeners =
+            new java.util.concurrent.CopyOnWriteArrayList<>();
 
     public static final class Snapshot {
         public final long blocked, total, at;
@@ -49,7 +50,8 @@ public final class NextDnsSync {
 
     public static void setKey(Context c, String key) {
         SharedPreferences.Editor e = prefs(c).edit().putLong("at", 0).remove("error");
-        if (key == null || key.trim().isEmpty()) e.remove("key").remove("blocked").remove("total").remove("top").remove("day");
+        if (key == null || key.trim().isEmpty())
+            e.remove("key").remove("blocked").remove("total").remove("top").remove("day");
         else e.putString("key", key.trim());
         e.apply();
     }
@@ -80,7 +82,9 @@ public final class NextDnsSync {
                 today ? p.getLong("blocked", 0) : 0,
                 today ? p.getLong("total", 0) : 0,
                 p.getLong("at", 0),
-                today ? NextDnsStats.decode(p.getString("top", "")) : java.util.Collections.emptyList(),
+                today
+                        ? NextDnsStats.decode(p.getString("top", ""))
+                        : java.util.Collections.emptyList(),
                 p.getString("error", null));
     }
 
@@ -98,24 +102,43 @@ public final class NextDnsSync {
         new Thread(
                         () -> {
                             try {
-                                String from = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toString();
+                                String from =
+                                        LocalDate.now()
+                                                .atStartOfDay(ZoneId.systemDefault())
+                                                .toInstant()
+                                                .toString();
                                 String status = get(NextDnsStats.statusUrl(id, from), key);
-                                String domains = get(NextDnsStats.blockedDomainsUrl(id, from, 5), key);
+                                String domains =
+                                        get(NextDnsStats.blockedDomainsUrl(id, from, 5), key);
                                 p.edit()
                                         .putString("day", LocalDate.now().toString())
                                         .putLong("at", System.currentTimeMillis())
                                         .putLong("blocked", NextDnsStats.queries(status, "blocked"))
                                         .putLong("total", NextDnsStats.total(status))
-                                        .putString("top", NextDnsStats.encode(NextDnsStats.domains(domains, 5)))
+                                        .putString(
+                                                "top",
+                                                NextDnsStats.encode(
+                                                        NextDnsStats.domains(domains, 5)))
                                         .remove("error")
                                         .apply();
                             } catch (HttpError e) {
                                 p.edit()
                                         .putLong("at", System.currentTimeMillis())
-                                        .putString("error", e.code == 401 || e.code == 403 ? "La clave de API no es válida o no tiene acceso a este perfil." : e.code == 404 ? "NextDNS no encuentra el perfil " + id + "." : "NextDNS respondió " + e.code + ".")
+                                        .putString(
+                                                "error",
+                                                e.code == 401 || e.code == 403
+                                                        ? "La clave de API no es válida o no tiene acceso a este perfil."
+                                                        : e.code == 404
+                                                                ? "NextDNS no encuentra el perfil "
+                                                                        + id
+                                                                        + "."
+                                                                : "NextDNS respondió "
+                                                                        + e.code
+                                                                        + ".")
                                         .apply();
                             } catch (Exception e) {
-                                // Sin red: se reintenta en la próxima vuelta al inicio (sin marcar la hora).
+                                // Sin red: se reintenta en la próxima vuelta al inicio (sin marcar
+                                // la hora).
                                 p.edit().putString("error", "Sin conexión con NextDNS.").apply();
                             } finally {
                                 running = false;

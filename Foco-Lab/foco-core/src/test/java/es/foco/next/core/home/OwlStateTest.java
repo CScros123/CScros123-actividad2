@@ -13,29 +13,45 @@ public class OwlStateTest {
 
     @Test
     public void nightWinsOverEverything() {
-        assertEquals(Pose.SLEEPING, OwlState.resolve(true, true, Recent.LECTURA, NOW - 1000, false, NOW, Pose.STRETCH));
+        assertEquals(
+                Pose.SLEEPING,
+                OwlState.resolve(true, true, Recent.LECTURA, NOW - 1000, false, NOW, Pose.STRETCH));
     }
 
     @Test
     public void musicWinsOverRecentApp() {
-        assertEquals(Pose.LISTENING_MUSIC, OwlState.resolve(false, true, Recent.OCIO, NOW - 1000, true, NOW, Pose.CALM));
+        assertEquals(
+                Pose.LISTENING_MUSIC,
+                OwlState.resolve(false, true, Recent.OCIO, NOW - 1000, true, NOW, Pose.CALM));
     }
 
     @Test
     public void readingLastsFourMinutes() {
-        assertEquals(Pose.READING, OwlState.resolve(false, false, Recent.LECTURA, NOW - 3 * 60_000, false, NOW, Pose.CURIOUS));
-        assertEquals(Pose.CURIOUS, OwlState.resolve(false, false, Recent.LECTURA, NOW - 4 * 60_000, false, NOW, Pose.CURIOUS));
+        assertEquals(
+                Pose.READING,
+                OwlState.resolve(
+                        false, false, Recent.LECTURA, NOW - 3 * 60_000, false, NOW, Pose.CURIOUS));
+        assertEquals(
+                Pose.CURIOUS,
+                OwlState.resolve(
+                        false, false, Recent.LECTURA, NOW - 4 * 60_000, false, NOW, Pose.CURIOUS));
     }
 
     @Test
     public void backOnlyWhenLeisureWentOver() {
-        assertEquals(Pose.ANGRY_BACK, OwlState.resolve(false, false, Recent.OCIO, NOW - 60_000, true, NOW, Pose.CALM));
-        assertEquals(Pose.CALM, OwlState.resolve(false, false, Recent.OCIO, NOW - 60_000, false, NOW, Pose.CALM));
+        assertEquals(
+                Pose.ANGRY_BACK,
+                OwlState.resolve(false, false, Recent.OCIO, NOW - 60_000, true, NOW, Pose.CALM));
+        assertEquals(
+                Pose.CALM,
+                OwlState.resolve(false, false, Recent.OCIO, NOW - 60_000, false, NOW, Pose.CALM));
     }
 
     @Test
     public void nonIdleFallbackIsCalm() {
-        assertEquals(Pose.CALM, OwlState.resolve(false, false, Recent.NONE, 0, false, NOW, Pose.READING));
+        assertEquals(
+                Pose.CALM,
+                OwlState.resolve(false, false, Recent.NONE, 0, false, NOW, Pose.READING));
     }
 
     @Test

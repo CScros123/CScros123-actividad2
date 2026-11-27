@@ -10,7 +10,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import es.foco.next.core.AbsoluteRules;
-import es.foco.next.core.care.FocoCore;
 import es.foco.next.core.care.Rewards;
 import es.foco.next.core.care.Routine;
 import java.time.LocalDate;
@@ -22,14 +21,15 @@ import java.util.Set;
 
 /**
  * v31: cupones, semana perfecta, progreso y avisos que inspiran (las reglas puras están en {@link
- * Rewards}). Preferencias "foco-premios". El cupón en uso abre UNA app hasta una hora; la decide
- * el servicio de Accesibilidad con {@link #grantActive}.
+ * Rewards}). Preferencias "foco-premios". El cupón en uso abre UNA app hasta una hora; la decide el
+ * servicio de Accesibilidad con {@link #grantActive}.
  */
 public final class RewardStore {
     private RewardStore() {}
 
     private static final String PREFS = "foco-premios", CHANNEL = "foco-premios";
     private static final int NOTE_PROGRESS = 7401, NOTE_GRANT = 7402;
+
     /** Como mucho 3 avisos del búho al día por esto, nunca de noche ni con No molestar. */
     private static final int MAX_NOTES = 3;
 
@@ -41,7 +41,8 @@ public final class RewardStore {
     // ---------------- Cupones ----------------
 
     public static List<Rewards.Coupon> coupons(Context c) {
-        return Rewards.valid(Rewards.decode(prefs(c).getString("cupones", "")), RoutineStore.today());
+        return Rewards.valid(
+                Rewards.decode(prefs(c).getString("cupones", "")), RoutineStore.today());
     }
 
     private static void save(Context c, List<Rewards.Coupon> l) {
@@ -50,7 +51,9 @@ public final class RewardStore {
 
     public static int usedToday(Context c) {
         SharedPreferences p = prefs(c);
-        return RoutineStore.today().toString().equals(p.getString("usadoDia", "")) ? p.getInt("usados", 0) : 0;
+        return RoutineStore.today().toString().equals(p.getString("usadoDia", ""))
+                ? p.getInt("usados", 0)
+                : 0;
     }
 
     private static boolean night(Context c) {
@@ -58,8 +61,12 @@ public final class RewardStore {
     }
 
     private static boolean morningPending(Context c) {
-        if (!RoutineStore.enabled(c) || RoutineStore.current(c) != Routine.Kind.MORNING) return false;
-        return Routine.remainingCount(RoutineStore.tasks(c, Routine.Kind.MORNING), RoutineStore.done(c, Routine.Kind.MORNING)) > 0;
+        if (!RoutineStore.enabled(c) || RoutineStore.current(c) != Routine.Kind.MORNING)
+            return false;
+        return Routine.remainingCount(
+                        RoutineStore.tasks(c, Routine.Kind.MORNING),
+                        RoutineStore.done(c, Routine.Kind.MORNING))
+                > 0;
     }
 
     /** Motivo por el que ese tipo de cupón no se puede usar ahora, o null. */
@@ -80,16 +87,24 @@ public final class RewardStore {
         long until = System.currentTimeMillis() + min * 60_000L;
         SharedPreferences p = prefs(c);
         String today = RoutineStore.today().toString();
-        SharedPreferences.Editor e = p.edit()
-                .putString("cupones", Rewards.encode(Rewards.without(l, k.id)))
-                .putString("app", pkg)
-                .putString("appNombre", label)
-                .putBoolean("semana", k.week) // v32 (R5): el de semana perfecta salta más reglas
-                .putLong("hasta", until);
+        SharedPreferences.Editor e =
+                p.edit()
+                        .putString("cupones", Rewards.encode(Rewards.without(l, k.id)))
+                        .putString("app", pkg)
+                        .putString("appNombre", label)
+                        .putBoolean(
+                                "semana",
+                                k.week) // v32 (R5): el de semana perfecta salta más reglas
+                        .putLong("hasta", until);
         if (!k.week) e.putString("usadoDia", today).putInt("usados", usedToday(c) + 1);
         e.apply();
-        es.foco.next.log.InspectorLog.event(c, es.foco.next.log.InspectorLog.INCIDENTE, pkg, min,
-                (k.week ? "cupon_semana" : "cupon") + ":" + min + "min", "cupon|" + k.id);
+        es.foco.next.log.InspectorLog.event(
+                c,
+                es.foco.next.log.InspectorLog.INCIDENTE,
+                pkg,
+                min,
+                (k.week ? "cupon_semana" : "cupon") + ":" + min + "min",
+                "cupon|" + k.id);
         notifyGrant(c, label, until);
         FocusAccessibilityService.checkpoint();
         return null;
@@ -98,7 +113,9 @@ public final class RewardStore {
     /** ¿El cupón en uso abre esta app ahora? */
     public static boolean grantActive(Context c, String pkg) {
         SharedPreferences p = prefs(c);
-        return pkg != null && pkg.equals(p.getString("app", "")) && System.currentTimeMillis() < p.getLong("hasta", 0);
+        return pkg != null
+                && pkg.equals(p.getString("app", ""))
+                && System.currentTimeMillis() < p.getLong("hasta", 0);
     }
 
     /** ¿El cupón en uso es de semana perfecta? */
@@ -149,8 +166,10 @@ public final class RewardStore {
         try {
             LocalDate today = RoutineStore.today();
             Set<String> days = completeDays(c);
-            if (days.contains(today.toString())) return; // ya contado hoy (barato: se llama a menudo)
-            // v32 (R2): cuenta aunque haya una pausa activa (la pausa solo anula la semana perfecta).
+            if (days.contains(today.toString()))
+                return; // ya contado hoy (barato: se llama a menudo)
+            // v32 (R2): cuenta aunque haya una pausa activa (la pausa solo anula la semana
+            // perfecta).
             if (!RoutineStore.dayComplete(c, today)) return;
             days.add(today.toString());
             // Guarda como mucho 60 días.
@@ -161,7 +180,8 @@ public final class RewardStore {
             boolean earned = l.size() > Rewards.valid(before, today).size();
             prefs(c).edit().putStringSet("dias", days).apply();
             int streak = streak(c);
-            if (Rewards.bonusAt(streak)) l = Rewards.earnBonus(l, today); // cada 7 días seguidos, uno extra
+            if (Rewards.bonusAt(streak))
+                l = Rewards.earnBonus(l, today); // cada 7 días seguidos, uno extra
             save(c, l);
             Set<String> have = unlocked(c);
             List<String> news = Rewards.newUnlocks(streak, have);
@@ -169,9 +189,14 @@ public final class RewardStore {
                 have.addAll(news);
                 prefs(c).edit().putStringSet("desbloqueado", have).apply();
             }
-            String text = (earned ? "Cupón de 30 min ganado. " : "Ya tienes 3 cupones guardados. ")
-                    + "Llevas " + streak + (streak == 1 ? " día" : " días") + " al 100 %.";
-            if (!news.isEmpty()) text += " Desbloqueaste: " + Rewards.unlockName(news.get(news.size() - 1)) + ".";
+            String text =
+                    (earned ? "Cupón de 30 min ganado. " : "Ya tienes 3 cupones guardados. ")
+                            + "Llevas "
+                            + streak
+                            + (streak == 1 ? " día" : " días")
+                            + " al 100 %.";
+            if (!news.isEmpty())
+                text += " Desbloqueaste: " + Rewards.unlockName(news.get(news.size() - 1)) + ".";
             note(c, "Día completo ✓", text, true);
         } catch (RuntimeException ignored) {
         }
@@ -179,7 +204,9 @@ public final class RewardStore {
 
     // ---------------- Semana perfecta ----------------
 
-    /** Intentos de evasión (Accesibilidad apagada, hora cambiada, DNS apagado a mano, otro inicio…). */
+    /**
+     * Intentos de evasión (Accesibilidad apagada, hora cambiada, DNS apagado a mano, otro inicio…).
+     */
     public static void markEvasion(Context c, String detail) {
         try {
             if (detail == null) return;
@@ -201,7 +228,9 @@ public final class RewardStore {
 
     /** El respaldo de 10 min de NextDNS no cuenta como evasión. */
     private static boolean dnsFallback(Context c) {
-        return c.getApplicationContext().getSharedPreferences("foco-dns-auto", Context.MODE_PRIVATE).getBoolean("fallback", false);
+        return c.getApplicationContext()
+                .getSharedPreferences("foco-dns-auto", Context.MODE_PRIVATE)
+                .getBoolean("fallback", false);
     }
 
     public static int evasions(Context c, LocalDate d) {
@@ -216,14 +245,22 @@ public final class RewardStore {
             List<Routine.Task> t = RoutineStore.blockTasks(c, b, d);
             Set<Integer> done = RoutineStore.blockDone(c, b, d);
             for (int i = 0; i < t.size(); i++)
-                if (t.get(i).photo && done.contains(i) && !new java.io.File(dir, d + "_" + b + "_" + i + ".webp").exists()) n++;
+                if (t.get(i).photo
+                        && done.contains(i)
+                        && !new java.io.File(dir, d + "_" + b + "_" + i + ".webp").exists()) n++;
         }
         return n;
     }
 
     private static Rewards.DayCheck dayCheck(Context c, LocalDate d) {
         int[] t = RoutineStore.totals(c, d);
-        return new Rewards.DayCheck(t[0], t[1], RoutineStore.planned(c, d), photosMissing(c, d), RoutineStore.penalties(c, d), evasions(c, d));
+        return new Rewards.DayCheck(
+                t[0],
+                t[1],
+                RoutineStore.planned(c, d),
+                photosMissing(c, d),
+                RoutineStore.penalties(c, d),
+                evasions(c, d));
     }
 
     /** Días perfectos de esta semana (lunes a hoy) para mostrar el camino a la semana perfecta. */
@@ -250,7 +287,11 @@ public final class RewardStore {
             for (int i = 0; i < 7; i++) days.add(dayCheck(c, monday.plusDays(i)));
             if (!Rewards.perfectWeek(days)) return;
             save(c, Rewards.earnWeek(coupons(c), monday, today));
-            note(c, "¡Semana perfecta! 🏆", "Todas tus tareas, con sus fotos y sin atajos. Ganaste 2 cupones especiales: 1 h para lo que quieras esta semana.", true);
+            note(
+                    c,
+                    "¡Semana perfecta! 🏆",
+                    "Todas tus tareas, con sus fotos y sin atajos. Ganaste 2 cupones especiales: 1 h para lo que quieras esta semana.",
+                    true);
         } catch (RuntimeException ignored) {
         }
     }
@@ -269,15 +310,20 @@ public final class RewardStore {
             int left = t[0] - t[1];
             if (t[0] == 0 || left <= 0 || left > 3) return;
             p.edit().putString("animoDia", today).apply();
-            note(c, left == 1 ? "Te falta 1 tarea" : "Te faltan " + left + " tareas",
-                    "Estás cerca: termina y ganas tu cupón de 30 min. " + (streak(c) > 0 ? "Tu racha va en " + streak(c) + "." : ""), false);
+            note(
+                    c,
+                    left == 1 ? "Te falta 1 tarea" : "Te faltan " + left + " tareas",
+                    "Estás cerca: termina y ganas tu cupón de 30 min. "
+                            + (streak(c) > 0 ? "Tu racha va en " + streak(c) + "." : ""),
+                    false);
         } catch (RuntimeException ignored) {
         }
     }
 
     private static void note(Context c, String title, String text, boolean important) {
         Context app = c.getApplicationContext();
-        if (app.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return;
+        if (app.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) return;
         if (AbsoluteRules.esNocheAbsoluta(LocalDateTime.now())) return;
         SharedPreferences p = prefs(c);
         String today = RoutineStore.today().toString();
@@ -286,15 +332,34 @@ public final class RewardStore {
         if (!OwlBudget.take(app, false)) return; // v32 (R10): presupuesto común de avisos
         try {
             NotificationManager nm = app.getSystemService(NotificationManager.class);
-            if (nm == null || nm.getCurrentInterruptionFilter() > NotificationManager.INTERRUPTION_FILTER_ALL) return;
-            NotificationChannel ch = new NotificationChannel(CHANNEL, "Logros y ánimo", important ? NotificationManager.IMPORTANCE_DEFAULT : NotificationManager.IMPORTANCE_LOW);
+            if (nm == null
+                    || nm.getCurrentInterruptionFilter()
+                            > NotificationManager.INTERRUPTION_FILTER_ALL) return;
+            NotificationChannel ch =
+                    new NotificationChannel(
+                            CHANNEL,
+                            "Logros y ánimo",
+                            important
+                                    ? NotificationManager.IMPORTANCE_DEFAULT
+                                    : NotificationManager.IMPORTANCE_LOW);
             ch.setSound(null, null);
             ch.enableVibration(false);
             nm.createNotificationChannel(ch);
-            Intent open = new Intent().setClassName(app, "es.foco.next.ui.HomeActivity").putExtra(RoutineStore.EXTRA_CORE, true)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            PendingIntent tap = PendingIntent.getActivity(app, NOTE_PROGRESS, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-            nm.notify(NOTE_PROGRESS,
+            Intent open =
+                    new Intent()
+                            .setClassName(app, "es.foco.next.ui.HomeActivity")
+                            .putExtra(RoutineStore.EXTRA_CORE, true)
+                            .addFlags(
+                                    Intent.FLAG_ACTIVITY_NEW_TASK
+                                            | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            PendingIntent tap =
+                    PendingIntent.getActivity(
+                            app,
+                            NOTE_PROGRESS,
+                            open,
+                            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            nm.notify(
+                    NOTE_PROGRESS,
                     new Notification.Builder(app, CHANNEL)
                             .setSmallIcon(es.foco.next.R.drawable.ic_owl)
                             .setContentTitle("🦉 " + title)
@@ -311,15 +376,25 @@ public final class RewardStore {
     /** Aviso fijo mientras dura el cupón (cuándo termina). */
     private static void notifyGrant(Context c, String label, long until) {
         Context app = c.getApplicationContext();
-        if (app.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return;
+        if (app.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) return;
         try {
             NotificationManager nm = app.getSystemService(NotificationManager.class);
             if (nm == null) return;
-            NotificationChannel ch = new NotificationChannel(CHANNEL + "-uso", "Cupón en uso", NotificationManager.IMPORTANCE_LOW);
+            NotificationChannel ch =
+                    new NotificationChannel(
+                            CHANNEL + "-uso", "Cupón en uso", NotificationManager.IMPORTANCE_LOW);
             ch.setSound(null, null);
             nm.createNotificationChannel(ch);
-            String end = java.time.Instant.ofEpochMilli(until).atZone(java.time.ZoneId.systemDefault()).toLocalTime().withSecond(0).withNano(0).toString();
-            nm.notify(NOTE_GRANT,
+            String end =
+                    java.time.Instant.ofEpochMilli(until)
+                            .atZone(java.time.ZoneId.systemDefault())
+                            .toLocalTime()
+                            .withSecond(0)
+                            .withNano(0)
+                            .toString();
+            nm.notify(
+                    NOTE_GRANT,
                     new Notification.Builder(app, CHANNEL + "-uso")
                             .setSmallIcon(es.foco.next.R.drawable.ic_owl)
                             .setContentTitle("🎟 Cupón: " + label)

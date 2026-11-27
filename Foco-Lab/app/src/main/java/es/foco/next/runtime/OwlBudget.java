@@ -24,16 +24,17 @@ public final class OwlBudget {
     private static final String PREFS = "foco-buho-presupuesto";
 
     /**
-     * ¿Puede salir ahora un aviso no crítico? Si sí, lo cuenta. Nunca con No molestar; de noche solo
-     * si {@code nightOk} (el aviso cálido de la noche).
+     * ¿Puede salir ahora un aviso no crítico? Si sí, lo cuenta. Nunca con No molestar; de noche
+     * solo si {@code nightOk} (el aviso cálido de la noche).
      */
     public static synchronized boolean take(Context c, boolean nightOk) {
         try {
             Context app = c.getApplicationContext();
             if (!nightOk && AbsoluteRules.esNocheAbsoluta(LocalDateTime.now())) return false;
             NotificationManager nm = app.getSystemService(NotificationManager.class);
-            if (nm != null && nm.getCurrentInterruptionFilter() > NotificationManager.INTERRUPTION_FILTER_ALL)
-                return false;
+            if (nm != null
+                    && nm.getCurrentInterruptionFilter()
+                            > NotificationManager.INTERRUPTION_FILTER_ALL) return false;
             SharedPreferences p = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
             String today = RoutineStore.today().toString();
             int sent = today.equals(p.getString("dia", "")) ? p.getInt("n", 0) : 0;

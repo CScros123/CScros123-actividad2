@@ -17,7 +17,9 @@ public final class LeisurePolicy {
     public enum Pass {
         /** Sin excepción: valen todas las reglas. */
         NONE,
-        /** Hora libre de Foco Core (100 % hecho): sin el límite de ocio; las demás reglas siguen. */
+        /**
+         * Hora libre de Foco Core (100 % hecho): sin el límite de ocio; las demás reglas siguen.
+         */
         FREE_HOUR,
         /** Cupón normal para ESA app: salta límite, tope, rutina, Aduana y bloqueos con nombre. */
         COUPON,
@@ -53,7 +55,8 @@ public final class LeisurePolicy {
      * @param coupon hay un cupón en uso para ESTA app
      * @param weekCoupon ese cupón es de semana perfecta
      */
-    public static Pass pass(boolean night, boolean care, boolean coupon, boolean weekCoupon, boolean freeHour) {
+    public static Pass pass(
+            boolean night, boolean care, boolean coupon, boolean weekCoupon, boolean freeHour) {
         if (night) return Pass.NONE;
         if (coupon) return weekCoupon ? Pass.WEEK_COUPON : Pass.COUPON;
         if (freeHour) return Pass.FREE_HOUR;
@@ -88,8 +91,8 @@ public final class LeisurePolicy {
     }
 
     /**
-     * La puerta de Foco Core: en Enfoque, y en el Weekend Lock salvo en Cuidado, el ocio solo se abre
-     * con la hora libre o un cupón (v26; v32 R7: también en Normal durante el Weekend Lock).
+     * La puerta de Foco Core: en Enfoque, y en el Weekend Lock salvo en Cuidado, el ocio solo se
+     * abre con la hora libre o un cupón (v26; v32 R7: también en Normal durante el Weekend Lock).
      */
     public static boolean gated(es.foco.next.core.care.CareMode.Modo m, boolean weekend) {
         return m == es.foco.next.core.care.CareMode.Modo.ENFOQUE
@@ -97,13 +100,18 @@ public final class LeisurePolicy {
     }
 
     /** Por qué el respaldo (sin Accesibilidad) debe tapar una app de ocio; null si puede seguir. */
-    public enum Reason { NIGHT, GATE, ROUTINE }
+    public enum Reason {
+        NIGHT,
+        GATE,
+        ROUTINE
+    }
 
     /**
      * Versión del respaldo: solo las reglas para las que GuardService tiene datos (app delante,
      * hora, modo, Foco Core y premios). No puede ver webs, secciones ni el DNS, y no lo finge.
      */
-    public static Reason backup(boolean leisure, boolean night, boolean gated, boolean routinePending, Pass p) {
+    public static Reason backup(
+            boolean leisure, boolean night, boolean gated, boolean routinePending, Pass p) {
         if (!leisure) return null;
         if (night) return Reason.NIGHT;
         if (routinePending && !skips(p, Layer.ROUTINE)) return Reason.ROUTINE;

@@ -106,17 +106,22 @@ public final class RoutineStore {
         LocalDate today = today();
         SharedPreferences p = prefs(c);
         String applies =
-                p.contains(Routine.dateKey(k, today)) ? Routine.dateKey(k, today)
-                        : p.contains(Routine.weekdayKey(k, today.getDayOfWeek())) ? Routine.weekdayKey(k, today.getDayOfWeek())
-                        : Routine.generalKey(k);
+                p.contains(Routine.dateKey(k, today))
+                        ? Routine.dateKey(k, today)
+                        : p.contains(Routine.weekdayKey(k, today.getDayOfWeek()))
+                                ? Routine.weekdayKey(k, today.getDayOfWeek())
+                                : Routine.generalKey(k);
         // Crear una lista propia de hoy también cambia la de hoy.
-        return key.equals(applies) || key.equals(Routine.dateKey(k, today)) || key.equals(Routine.weekdayKey(k, today.getDayOfWeek()));
+        return key.equals(applies)
+                || key.equals(Routine.dateKey(k, today))
+                || key.equals(Routine.weekdayKey(k, today.getDayOfWeek()));
     }
 
     // ---------------- Planificar la semana (domingo) ----------------
 
     public static boolean planDue(Context c) {
-        return enabled(c) && Routine.planDue(LocalDateTime.now(), prefs(c).getString("planDomingo", ""));
+        return enabled(c)
+                && Routine.planDue(LocalDateTime.now(), prefs(c).getString("planDomingo", ""));
     }
 
     public static void planSeen(Context c) {
@@ -125,9 +130,9 @@ public final class RoutineStore {
     }
 
     /**
-     * Las tareas de hoy de esa rutina. v32 (R1): exactamente la misma lista que Foco Core
-     * ({@link #blockTasks}, con la copia fijada de hoy), para que la puerta del ocio, el aviso fijo y
-     * el fin de la mañana usen los mismos índices que lo que ves.
+     * Las tareas de hoy de esa rutina. v32 (R1): exactamente la misma lista que Foco Core ({@link
+     * #blockTasks}, con la copia fijada de hoy), para que la puerta del ocio, el aviso fijo y el
+     * fin de la mañana usen los mismos índices que lo que ves.
      */
     public static List<Routine.Task> tasks(Context c, Routine.Kind k) {
         return blockTasks(c, k.name(), today());
@@ -177,7 +182,11 @@ public final class RoutineStore {
         prefs(c).edit().putStringSet(key, s).apply();
         if (on && Routine.remainingCount(tasks(c, k), done(c, k)) == 0) {
             es.foco.next.log.InspectorLog.event(
-                    c, "rutina", "", 1, "rutina_" + k.name().toLowerCase(),
+                    c,
+                    "rutina",
+                    "",
+                    1,
+                    "rutina_" + k.name().toLowerCase(),
                     "rutina|" + Routine.dayKey(k, LocalDateTime.now()));
             // La mañana termina con la rutina, no con un ritual aparte (auditoría v25).
             if (k == Routine.Kind.MORNING) HomeHub.wakeDone(c);
@@ -233,17 +242,34 @@ public final class RoutineStore {
             nm.cancel(ID);
             return;
         }
-        if (app.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return;
+        if (app.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) return;
         try {
-            NotificationChannel ch = new NotificationChannel(CHANNEL, "Rutinas", NotificationManager.IMPORTANCE_LOW);
+            NotificationChannel ch =
+                    new NotificationChannel(CHANNEL, "Rutinas", NotificationManager.IMPORTANCE_LOW);
             ch.setSound(null, null);
             ch.enableVibration(false);
             nm.createNotificationChannel(ch);
-            Intent open = new Intent().setClassName(app, "es.foco.next.ui.HomeActivity").putExtra(EXTRA_ROUTINE, true)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            PendingIntent tap = PendingIntent.getActivity(app, ID, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-            String text = (left == 1 ? "Falta 1" : "Faltan " + left) + " · ~" + Routine.remainingMinutes(t, d) + " min. El ocio espera.";
-            nm.notify(ID,
+            Intent open =
+                    new Intent()
+                            .setClassName(app, "es.foco.next.ui.HomeActivity")
+                            .putExtra(EXTRA_ROUTINE, true)
+                            .addFlags(
+                                    Intent.FLAG_ACTIVITY_NEW_TASK
+                                            | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            PendingIntent tap =
+                    PendingIntent.getActivity(
+                            app,
+                            ID,
+                            open,
+                            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            String text =
+                    (left == 1 ? "Falta 1" : "Faltan " + left)
+                            + " · ~"
+                            + Routine.remainingMinutes(t, d)
+                            + " min. El ocio espera.";
+            nm.notify(
+                    ID,
                     new Notification.Builder(app, CHANNEL)
                             .setSmallIcon(es.foco.next.R.drawable.ic_owl)
                             .setContentTitle("🦉 Rutina de la " + k.word)
@@ -285,7 +311,8 @@ public final class RoutineStore {
 
     /** Tareas de un bloque en una fecha. Los días pasados usan la copia guardada ese día. */
     public static List<Routine.Task> blockTasks(Context c, String block, LocalDate d) {
-        // v30: si hoy se quitó una tarea de su lista, hoy se sigue viendo (quitar vale desde mañana).
+        // v30: si hoy se quitó una tarea de su lista, hoy se sigue viendo (quitar vale desde
+        // mañana).
         if (d.equals(today())) {
             String fixed = prefs(c).getString(fixedKey(block, d), null);
             if (fixed != null) return Routine.parse(fixed);
@@ -323,7 +350,9 @@ public final class RoutineStore {
 
     private static void snapshot(Context c, String block) {
         LocalDate d = today();
-        prefs(c).edit().putString("plan_" + blockKey(block, d), Routine.encode(blockTasks(c, block, d))).apply();
+        prefs(c).edit()
+                .putString("plan_" + blockKey(block, d), Routine.encode(blockTasks(c, block, d)))
+                .apply();
     }
 
     /** Marcar o desmarcar una tarea de hoy en cualquier bloque. */
@@ -382,11 +411,14 @@ public final class RoutineStore {
         Routine.Kind k = Routine.Kind.valueOf(block);
         SharedPreferences p = prefs(c);
         if (p.contains(Routine.dateKey(k, d))) return Routine.dateKey(k, d);
-        if (p.contains(Routine.weekdayKey(k, d.getDayOfWeek()))) return Routine.weekdayKey(k, d.getDayOfWeek());
+        if (p.contains(Routine.weekdayKey(k, d.getDayOfWeek())))
+            return Routine.weekdayKey(k, d.getDayOfWeek());
         return Routine.generalKey(k);
     }
 
-    /** Lo que hay en la clave; una lista por día sin contenido propio empieza desde la de siempre. */
+    /**
+     * Lo que hay en la clave; una lista por día sin contenido propio empieza desde la de siempre.
+     */
     public static String keyText(Context c, String key, String block) {
         String v = prefs(c).getString(key, null);
         if (v != null) return v;
@@ -421,10 +453,11 @@ public final class RoutineStore {
 
     /**
      * Nueva tarea. Hoy / Mañana: evento de esa fecha. Siempre: la lista de siempre de la franja (y
-     * las listas propias de días y fechas que ya existan, para que también salga en ellas). Días: la
-     * lista de cada día de la semana elegido.
+     * las listas propias de días y fechas que ya existan, para que también salga en ellas). Días:
+     * la lista de cada día de la semana elegido.
      */
-    public static void addTask(Context c, int when, Routine.Kind kind, Set<java.time.DayOfWeek> days, Routine.Task t) {
+    public static void addTask(
+            Context c, int when, Routine.Kind kind, Set<java.time.DayOfWeek> days, Routine.Task t) {
         LocalDate d = today();
         if (when == WHEN_TODAY || when == WHEN_TOMORROW) {
             addToKey(c, eventsKey(when == WHEN_TODAY ? d : d.plusDays(1)), EVENT, t);
@@ -435,12 +468,15 @@ public final class RoutineStore {
             addToKey(c, Routine.generalKey(kind), block, t);
             SharedPreferences p = prefs(c);
             for (java.time.DayOfWeek w : java.time.DayOfWeek.values())
-                if (p.contains(Routine.weekdayKey(kind, w))) addToKey(c, Routine.weekdayKey(kind, w), block, t);
+                if (p.contains(Routine.weekdayKey(kind, w)))
+                    addToKey(c, Routine.weekdayKey(kind, w), block, t);
             for (int i = 0; i < 8; i++)
-                if (p.contains(Routine.dateKey(kind, d.plusDays(i)))) addToKey(c, Routine.dateKey(kind, d.plusDays(i)), block, t);
+                if (p.contains(Routine.dateKey(kind, d.plusDays(i))))
+                    addToKey(c, Routine.dateKey(kind, d.plusDays(i)), block, t);
             return;
         }
-        if (days != null) for (java.time.DayOfWeek w : days) addToKey(c, Routine.weekdayKey(kind, w), block, t);
+        if (days != null)
+            for (java.time.DayOfWeek w : days) addToKey(c, Routine.weekdayKey(kind, w), block, t);
     }
 
     /** Cambia la tarea {@code i} de una clave (y en la copia fijada de hoy, por nombre). */
@@ -454,19 +490,24 @@ public final class RoutineStore {
         String fixed = prefs(c).getString(fixedKey(block, d), null);
         if (fixed != null) {
             int j = Routine.indexOf(fixed, label);
-            if (j >= 0) prefs(c).edit().putString(fixedKey(block, d), Routine.withReplaced(fixed, j, t)).apply();
+            if (j >= 0)
+                prefs(c).edit()
+                        .putString(fixedKey(block, d), Routine.withReplaced(fixed, j, t))
+                        .apply();
         }
         afterEdit(c);
     }
 
     /**
-     * Quita la tarea {@code i} de una clave. Si esa lista vale hoy, hoy se fija antes tal como está:
-     * quitar vale desde mañana (quitar no puede ser un atajo para abrir el ocio).
+     * Quita la tarea {@code i} de una clave. Si esa lista vale hoy, hoy se fija antes tal como
+     * está: quitar vale desde mañana (quitar no puede ser un atajo para abrir el ocio).
      */
     public static void removeFromKey(Context c, String key, String block, int i) {
         LocalDate d = today();
         if (key.equals(sourceKey(c, block, d)) && !prefs(c).contains(fixedKey(block, d)))
-            prefs(c).edit().putString(fixedKey(block, d), Routine.encode(blockTasks(c, block, d))).apply();
+            prefs(c).edit()
+                    .putString(fixedKey(block, d), Routine.encode(blockTasks(c, block, d)))
+                    .apply();
         putKey(c, key, Routine.withRemoved(keyText(c, key, block), i));
         afterEdit(c);
     }
@@ -480,7 +521,9 @@ public final class RoutineStore {
             List<Routine.Task> l = Routine.parse(fixed);
             if (i < 0 || i >= l.size()) return;
             int j = Routine.indexOf(keyText(c, key, block), l.get(i).label);
-            prefs(c).edit().putString(fixedKey(block, d), Routine.withReplaced(fixed, i, t)).apply();
+            prefs(c).edit()
+                    .putString(fixedKey(block, d), Routine.withReplaced(fixed, i, t))
+                    .apply();
             if (j >= 0) putKey(c, key, Routine.withReplaced(keyText(c, key, block), j, t));
             afterEdit(c);
         } else replaceInKey(c, key, block, i, t);
@@ -505,12 +548,28 @@ public final class RoutineStore {
             out.add(new String[] {Routine.generalKey(k), k.name(), word + " · todos los días"});
             for (java.time.DayOfWeek w : java.time.DayOfWeek.values())
                 if (p.contains(Routine.weekdayKey(k, w)))
-                    out.add(new String[] {Routine.weekdayKey(k, w), k.name(), word + " · cada " + Routine.dayName(w)});
+                    out.add(
+                            new String[] {
+                                Routine.weekdayKey(k, w),
+                                k.name(),
+                                word + " · cada " + Routine.dayName(w)
+                            });
         }
         LocalDate d = today();
         for (int i = 0; i < 8; i++)
             if (p.contains(eventsKey(d.plusDays(i))))
-                out.add(new String[] {eventsKey(d.plusDays(i)), EVENT, i == 0 ? "Hoy" : i == 1 ? "Mañana" : Routine.dayName(d.plusDays(i).getDayOfWeek()) + " " + d.plusDays(i).getDayOfMonth()});
+                out.add(
+                        new String[] {
+                            eventsKey(d.plusDays(i)),
+                            EVENT,
+                            i == 0
+                                    ? "Hoy"
+                                    : i == 1
+                                            ? "Mañana"
+                                            : Routine.dayName(d.plusDays(i).getDayOfWeek())
+                                                    + " "
+                                                    + d.plusDays(i).getDayOfMonth()
+                        });
         return out;
     }
 
@@ -528,7 +587,8 @@ public final class RoutineStore {
 
     public static int remainingMinutes(Context c, LocalDate d) {
         int n = 0;
-        for (String b : BLOCKS) n += Routine.remainingMinutes(blockTasks(c, b, d), blockDone(c, b, d));
+        for (String b : BLOCKS)
+            n += Routine.remainingMinutes(blockTasks(c, b, d), blockDone(c, b, d));
         return n;
     }
 
@@ -539,13 +599,16 @@ public final class RoutineStore {
      */
     public static boolean dayComplete(Context c, LocalDate d) {
         int[] t = totals(c, d);
-        return t[0] > 0 && t[1] >= t[0] && planned(c, d) >= es.foco.next.core.care.FocoCore.MIN_TASKS;
+        return t[0] > 0
+                && t[1] >= t[0]
+                && planned(c, d) >= es.foco.next.core.care.FocoCore.MIN_TASKS;
     }
 
     public static es.foco.next.core.care.FocoCore.State state(Context c) {
         LocalDate d = today();
         int[] t = totals(c, d);
-        return es.foco.next.core.care.FocoCore.state(t[0], t[1], planned(c, d), activePenaltyUntil(c), System.currentTimeMillis());
+        return es.foco.next.core.care.FocoCore.state(
+                t[0], t[1], planned(c, d), activePenaltyUntil(c), System.currentTimeMillis());
     }
 
     /**
@@ -587,19 +650,25 @@ public final class RoutineStore {
     private static String penaltyText(Context c) {
         long left = activePenaltyUntil(c) - System.currentTimeMillis();
         if (left <= 0) return null;
-        return "Se pasó la hora de " + prefs(c).getString("castigoTarea", "una tarea") + ". El ocio espera "
-                + Math.max(1, (left + 59_999) / 60_000) + " min. Aprovecha para terminarla.";
+        return "Se pasó la hora de "
+                + prefs(c).getString("castigoTarea", "una tarea")
+                + ". El ocio espera "
+                + Math.max(1, (left + 59_999) / 60_000)
+                + " min. Aprovecha para terminarla.";
     }
 
     /**
      * Revisa las horas límite de hoy (como mucho cada 30 s): aviso al llegar la hora y, pasado el
-     * margen de 10 min, marca incumplida y abre 1 h de pausa del ocio (sin acumular, nunca de noche).
+     * margen de 10 min, marca incumplida y abre 1 h de pausa del ocio (sin acumular, nunca de
+     * noche).
      */
     public static void sweep(Context c) {
         sweep(c, false);
     }
 
-    /** {@code force}: desde la alarma (sin el límite de 30 s). Al terminar, programa la siguiente. */
+    /**
+     * {@code force}: desde la alarma (sin el límite de 30 s). Al terminar, programa la siguiente.
+     */
     public static void sweep(Context c, boolean force) {
         long now = System.currentTimeMillis();
         if (!force && now - lastSweep < 30_000) return;
@@ -633,21 +702,39 @@ public final class RoutineStore {
                     snapshot(c, b);
                     putInt(c, "fallo_" + blockKey(b, d), i, true);
                     // En Cuidado: se apunta como incumplida, sin pausa.
-                    long until = careMode(c) ? 0 : es.foco.next.core.care.FocoCore.penaltyUntil(now, penaltyUntil(c), night);
+                    long until =
+                            careMode(c)
+                                    ? 0
+                                    : es.foco.next.core.care.FocoCore.penaltyUntil(
+                                            now, penaltyUntil(c), night);
                     if (until > 0) {
                         prefs(c).edit()
                                 .putLong("castigoHasta", until)
                                 .putString("castigoTarea", task.label)
                                 .putInt("castigos_" + d, penalties(c, d) + 1)
                                 .apply();
-                        notifyCore(c, "Se pasó la hora de " + task.label, "1 h sin ocio. Terminarla sigue contando para hoy.");
+                        notifyCore(
+                                c,
+                                "Se pasó la hora de " + task.label,
+                                "1 h sin ocio. Terminarla sigue contando para hoy.");
                     }
-                    // Sin el nombre de la tarea: el registro se puede exportar y las tareas son tuyas.
-                    es.foco.next.log.InspectorLog.event(c, "tarea_incumplida", "", 1, b.toLowerCase(), "fallo|" + blockKey(b, d) + "|" + i);
+                    // Sin el nombre de la tarea: el registro se puede exportar y las tareas son
+                    // tuyas.
+                    es.foco.next.log.InspectorLog.event(
+                            c,
+                            "tarea_incumplida",
+                            "",
+                            1,
+                            b.toLowerCase(),
+                            "fallo|" + blockKey(b, d) + "|" + i);
                     changed();
-                } else if (es.foco.next.core.care.FocoCore.warnDueAt(task, h, lm) && !warned.contains(i)) {
+                } else if (es.foco.next.core.care.FocoCore.warnDueAt(task, h, lm)
+                        && !warned.contains(i)) {
                     putInt(c, "avisado_" + blockKey(b, d), i, true);
-                    notifyCore(c, task.label + " vence a las " + task.windowText(), "Te quedan 10 min de margen.");
+                    notifyCore(
+                            c,
+                            task.label + " vence a las " + task.windowText(),
+                            "Te quedan 10 min de margen.");
                 }
             }
         }
@@ -663,7 +750,9 @@ public final class RoutineStore {
         }
     }
 
-    /** v36: lo más urgente con hora límite cerca, o null. {título, texto, minutos hasta la hora}. */
+    /**
+     * v36: lo más urgente con hora límite cerca, o null. {título, texto, minutos hasta la hora}.
+     */
     private static String[] urgent(Context c) {
         LocalDate d = today();
         int lm = es.foco.next.core.care.FocoCore.logicalMinute(java.time.LocalTime.now());
@@ -677,7 +766,8 @@ public final class RoutineStore {
             for (int i = 0; i < tasks.size(); i++) {
                 Routine.Task t = tasks.get(i);
                 int dl = es.foco.next.core.care.FocoCore.logicalDeadline(t.window);
-                if (es.foco.next.core.care.FocoCore.nagAt(dl, done.contains(i), lm) && dl < bestDeadline) {
+                if (es.foco.next.core.care.FocoCore.nagAt(dl, done.contains(i), lm)
+                        && dl < bestDeadline) {
                     bestDeadline = dl;
                     best = new String[] {t.label, es.foco.next.core.care.FocoCore.nagText(dl, lm)};
                 }
@@ -694,10 +784,14 @@ public final class RoutineStore {
             if (es.foco.next.core.care.FocoCore.nagAt(dl, pending == 0, lm) && dl < bestDeadline) {
                 bestDeadline = dl;
                 String word = MORNING.equals(b) ? "la mañana" : "la tarde y noche";
-                best = new String[] {
-                    pending == 1 ? first : first + " y " + (pending - 1) + " más",
-                    es.foco.next.core.care.FocoCore.nagText(dl, lm) + " para terminar " + word + "."
-                };
+                best =
+                        new String[] {
+                            pending == 1 ? first : first + " y " + (pending - 1) + " más",
+                            es.foco.next.core.care.FocoCore.nagText(dl, lm)
+                                    + " para terminar "
+                                    + word
+                                    + "."
+                        };
             }
         }
         return best;
@@ -707,8 +801,8 @@ public final class RoutineStore {
     private static final int ID_NAG = 7423;
 
     /**
-     * v36: aviso insistente cada 5 min desde 30 min antes de la hora límite hasta que la cumples
-     * (o vence el margen). Lo pediste tú: no pasa por el presupuesto del búho y suena también de
+     * v36: aviso insistente cada 5 min desde 30 min antes de la hora límite hasta que la cumples (o
+     * vence el margen). Lo pediste tú: no pasa por el presupuesto del búho y suena también de
      * noche; con No molestar, el sistema lo silencia.
      */
     private static void nag(Context c, long now) {
@@ -723,21 +817,41 @@ public final class RoutineStore {
                 }
                 return;
             }
-            if (!es.foco.next.core.care.FocoCore.nagAgain(prefs(c).getLong("ultimoInsistir", 0), now)) return;
-            if (nm == null || app.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return;
+            if (!es.foco.next.core.care.FocoCore.nagAgain(
+                    prefs(c).getLong("ultimoInsistir", 0), now)) return;
+            if (nm == null
+                    || app.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                            != PackageManager.PERMISSION_GRANTED) return;
             prefs(c).edit().putLong("ultimoInsistir", now).apply();
-            NotificationChannel ch = new NotificationChannel(CHANNEL_NAG, "Hora límite (cada 5 min)", NotificationManager.IMPORTANCE_HIGH);
+            NotificationChannel ch =
+                    new NotificationChannel(
+                            CHANNEL_NAG,
+                            "Hora límite (cada 5 min)",
+                            NotificationManager.IMPORTANCE_HIGH);
             ch.enableVibration(true);
             nm.createNotificationChannel(ch);
-            Intent open = new Intent().setClassName(app, "es.foco.next.ui.HomeActivity").putExtra(EXTRA_CORE, true)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            PendingIntent tap = PendingIntent.getActivity(app, ID_NAG, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-            nm.notify(ID_NAG,
+            Intent open =
+                    new Intent()
+                            .setClassName(app, "es.foco.next.ui.HomeActivity")
+                            .putExtra(EXTRA_CORE, true)
+                            .addFlags(
+                                    Intent.FLAG_ACTIVITY_NEW_TASK
+                                            | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            PendingIntent tap =
+                    PendingIntent.getActivity(
+                            app,
+                            ID_NAG,
+                            open,
+                            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            nm.notify(
+                    ID_NAG,
                     new Notification.Builder(app, CHANNEL_NAG)
                             .setSmallIcon(es.foco.next.R.drawable.ic_owl)
                             .setContentTitle("🦉 " + u[0])
                             .setContentText(u[1])
-                            .setStyle(new Notification.BigTextStyle().bigText(u[1] + " Toca para marcarla."))
+                            .setStyle(
+                                    new Notification.BigTextStyle()
+                                            .bigText(u[1] + " Toca para marcarla."))
                             .setCategory(Notification.CATEGORY_REMINDER)
                             .setContentIntent(tap)
                             .setAutoCancel(true)
@@ -748,16 +862,20 @@ public final class RoutineStore {
 
     /**
      * Alarma para la próxima hora límite (o el fin de su margen) de hoy: así el aviso y la pausa
-     * llegan a su hora aunque no estés usando el teléfono. Inexacta (±5 min) para no gastar batería.
+     * llegan a su hora aunque no estés usando el teléfono. Inexacta (±5 min) para no gastar
+     * batería.
      */
     public static void scheduleNext(Context c) {
         try {
             Context app = c.getApplicationContext();
             android.app.AlarmManager am = app.getSystemService(android.app.AlarmManager.class);
             if (am == null) return;
-            PendingIntent pi = PendingIntent.getBroadcast(app, 7422,
-                    new Intent(app, OwlWatch.class).setAction(OwlWatch.ACTION_CORE),
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            PendingIntent pi =
+                    PendingIntent.getBroadcast(
+                            app,
+                            7422,
+                            new Intent(app, OwlWatch.class).setAction(OwlWatch.ACTION_CORE),
+                            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             long next = Long.MAX_VALUE;
             if (enabled(c)) {
                 LocalDate d = today();
@@ -771,7 +889,8 @@ public final class RoutineStore {
                         Routine.Task t = tasks.get(i);
                         if (t.window < 0 || done.contains(i) || missed.contains(i)) continue;
                         long at = base.plusMinutes(t.window).toInstant().toEpochMilli();
-                        for (long when : new long[] {at, at + es.foco.next.core.care.FocoCore.GRACE_MS})
+                        for (long when :
+                                new long[] {at, at + es.foco.next.core.care.FocoCore.GRACE_MS})
                             if (when > now && when < next) next = when;
                     }
                 }
@@ -784,7 +903,11 @@ public final class RoutineStore {
                 if (urgent(c) != null) {
                     nagging = true;
                     long last = prefs(c).getLong("ultimoInsistir", 0);
-                    long at = Math.max(now + 60_000L, (last > 0 ? last : now) + es.foco.next.core.care.FocoCore.NAG_EVERY_MS);
+                    long at =
+                            Math.max(
+                                    now + 60_000L,
+                                    (last > 0 ? last : now)
+                                            + es.foco.next.core.care.FocoCore.NAG_EVERY_MS);
                     if (at < next) next = at;
                 } else {
                     LocalDate d = today();
@@ -794,30 +917,50 @@ public final class RoutineStore {
                         if (tasks.isEmpty()) continue;
                         Set<Integer> done = blockDone(c, b, d);
                         java.util.List<Integer> deadlines = new java.util.ArrayList<>();
-                        if (done.size() < tasks.size()) deadlines.add(es.foco.next.core.care.FocoCore.logicalDeadline(blockDeadline(c, b)));
+                        if (done.size() < tasks.size())
+                            deadlines.add(
+                                    es.foco.next.core.care.FocoCore.logicalDeadline(
+                                            blockDeadline(c, b)));
                         for (int i = 0; i < tasks.size(); i++)
-                            if (!done.contains(i)) deadlines.add(es.foco.next.core.care.FocoCore.logicalDeadline(tasks.get(i).window));
+                            if (!done.contains(i))
+                                deadlines.add(
+                                        es.foco.next.core.care.FocoCore.logicalDeadline(
+                                                tasks.get(i).window));
                         for (int dl : deadlines) {
                             if (dl < 0) continue;
-                            long start = base.plusMinutes(dl - es.foco.next.core.care.FocoCore.NAG_LEAD_MIN).toInstant().toEpochMilli();
+                            long start =
+                                    base.plusMinutes(
+                                                    dl
+                                                            - es.foco.next.core.care.FocoCore
+                                                                    .NAG_LEAD_MIN)
+                                            .toInstant()
+                                            .toEpochMilli();
                             if (start > now && start < next) next = start;
                         }
                     }
                 }
             }
             if (next == Long.MAX_VALUE) am.cancel(pi);
-            else am.setWindow(android.app.AlarmManager.RTC_WAKEUP, next, nagging ? 60_000L : 5 * 60_000L, pi);
+            else
+                am.setWindow(
+                        android.app.AlarmManager.RTC_WAKEUP,
+                        next,
+                        nagging ? 60_000L : 5 * 60_000L,
+                        pi);
         } catch (RuntimeException ignored) {
         }
     }
 
-    /** ¿Hay datos de Foco Core ese día? (para no pintar de rojo los días anteriores a instalarlo) */
+    /**
+     * ¿Hay datos de Foco Core ese día? (para no pintar de rojo los días anteriores a instalarlo)
+     */
     public static boolean hasData(Context c, LocalDate d) {
         if (d.equals(today())) return true;
         SharedPreferences p = prefs(c);
         for (String b : BLOCKS)
-            if (p.contains("plan_" + blockKey(b, d)) || p.contains("hecho_" + blockKey(b, d)) || p.contains("fallo_" + blockKey(b, d)))
-                return true;
+            if (p.contains("plan_" + blockKey(b, d))
+                    || p.contains("hecho_" + blockKey(b, d))
+                    || p.contains("fallo_" + blockKey(b, d))) return true;
         return p.getInt("castigos_" + d, 0) > 0;
     }
 
@@ -833,17 +976,26 @@ public final class RoutineStore {
 
     /** Activa 1 h de ocio sin límite de 5 min/h (las reglas fijas y la noche siguen). */
     public static boolean startFree(Context c) {
-        if (state(c) != es.foco.next.core.care.FocoCore.State.COMPLETE || freeUsedToday(c)) return false;
-        long until = es.foco.next.core.care.FocoCore.freeUntil(LocalDateTime.now(), System.currentTimeMillis(), AbsoluteRules.nightStart());
+        if (state(c) != es.foco.next.core.care.FocoCore.State.COMPLETE || freeUsedToday(c))
+            return false;
+        long until =
+                es.foco.next.core.care.FocoCore.freeUntil(
+                        LocalDateTime.now(),
+                        System.currentTimeMillis(),
+                        AbsoluteRules.nightStart());
         if (until <= 0) return false;
-        prefs(c).edit().putLong("libreHasta", until).putString("libreDia", today().toString()).apply();
+        prefs(c).edit()
+                .putLong("libreHasta", until)
+                .putString("libreDia", today().toString())
+                .apply();
         es.foco.next.log.InspectorLog.event(c, "hora_libre", "", 1, "", "libre|" + today());
         changed();
         return true;
     }
 
     public static boolean freeActive(Context c) {
-        return freeUntil(c) > System.currentTimeMillis() && !AbsoluteRules.esNocheAbsoluta(LocalDateTime.now());
+        return freeUntil(c) > System.currentTimeMillis()
+                && !AbsoluteRules.esNocheAbsoluta(LocalDateTime.now());
     }
 
     // ---------------- Cronómetro por tarea ----------------
@@ -861,7 +1013,12 @@ public final class RoutineStore {
         SharedPreferences p = prefs(c);
         long start = p.getLong("crono_" + k, 0);
         if (start > 0)
-            p.edit().putLong("cronoMs_" + k, p.getLong("cronoMs_" + k, 0) + (System.currentTimeMillis() - start)).remove("crono_" + k).apply();
+            p.edit()
+                    .putLong(
+                            "cronoMs_" + k,
+                            p.getLong("cronoMs_" + k, 0) + (System.currentTimeMillis() - start))
+                    .remove("crono_" + k)
+                    .apply();
         else p.edit().putLong("crono_" + k, System.currentTimeMillis()).apply();
         changed();
     }
@@ -890,13 +1047,16 @@ public final class RoutineStore {
             if (o.outWidth <= 0) return false;
             o.inJustDecodeBounds = false;
             o.inSampleSize = Math.max(1, Integer.highestOneBit(Math.max(1, o.outWidth / 480)));
-            android.graphics.Bitmap raw = android.graphics.BitmapFactory.decodeFile(tmp.getPath(), o);
+            android.graphics.Bitmap raw =
+                    android.graphics.BitmapFactory.decodeFile(tmp.getPath(), o);
             if (raw == null) return false;
             raw = rotate(raw, tmp);
             int w = Math.min(480, raw.getWidth());
             int h = Math.round(raw.getHeight() * (w / (float) raw.getWidth()));
-            android.graphics.Bitmap small = android.graphics.Bitmap.createScaledBitmap(raw, w, h, true);
-            java.io.File out = new java.io.File(evidenceDir(c), today() + "_" + block + "_" + i + ".webp");
+            android.graphics.Bitmap small =
+                    android.graphics.Bitmap.createScaledBitmap(raw, w, h, true);
+            java.io.File out =
+                    new java.io.File(evidenceDir(c), today() + "_" + block + "_" + i + ".webp");
             try (java.io.FileOutputStream fo = new java.io.FileOutputStream(out)) {
                 small.compress(android.graphics.Bitmap.CompressFormat.WEBP_LOSSY, 60, fo);
             }
@@ -914,12 +1074,16 @@ public final class RoutineStore {
 
     private static android.graphics.Bitmap rotate(android.graphics.Bitmap b, java.io.File f) {
         try {
-            int o = new android.media.ExifInterface(f.getPath()).getAttributeInt(android.media.ExifInterface.TAG_ORIENTATION, 1);
+            int o =
+                    new android.media.ExifInterface(f.getPath())
+                            .getAttributeInt(android.media.ExifInterface.TAG_ORIENTATION, 1);
             int deg = o == 6 ? 90 : o == 3 ? 180 : o == 8 ? 270 : 0;
             if (deg == 0) return b;
             android.graphics.Matrix m = new android.graphics.Matrix();
             m.postRotate(deg);
-            android.graphics.Bitmap r = android.graphics.Bitmap.createBitmap(b, 0, 0, b.getWidth(), b.getHeight(), m, true);
+            android.graphics.Bitmap r =
+                    android.graphics.Bitmap.createBitmap(
+                            b, 0, 0, b.getWidth(), b.getHeight(), m, true);
             if (r != b) b.recycle();
             return r;
         } catch (Exception e) {
@@ -955,7 +1119,8 @@ public final class RoutineStore {
     }
 
     private static String lastNoteKey(String label) {
-        return "ultimaNota|" + (label == null ? "" : label.trim().toLowerCase(java.util.Locale.ROOT));
+        return "ultimaNota|"
+                + (label == null ? "" : label.trim().toLowerCase(java.util.Locale.ROOT));
     }
 
     /**
@@ -984,19 +1149,25 @@ public final class RoutineStore {
     // ---------------- v36: hora límite de cada franja ----------------
 
     /**
-     * Hora límite de la franja (minutos del día) o -1 sin hora. Mañana: 9:00; tarde y noche:
-     * 23:00 (se cambian tocando la franja). Las tareas «solo este día» no tienen.
+     * Hora límite de la franja (minutos del día) o -1 sin hora. Mañana: 9:00; tarde y noche: 23:00
+     * (se cambian tocando la franja). Las tareas «solo este día» no tienen.
      */
     public static int blockDeadline(Context c, String block) {
-        if (MORNING.equals(block)) return prefs(c).getInt("limite_" + MORNING, es.foco.next.core.care.FocoCore.MORNING_DEADLINE);
-        if (NIGHT.equals(block)) return prefs(c).getInt("limite_" + NIGHT, es.foco.next.core.care.FocoCore.NIGHT_DEADLINE);
+        if (MORNING.equals(block))
+            return prefs(c).getInt(
+                            "limite_" + MORNING, es.foco.next.core.care.FocoCore.MORNING_DEADLINE);
+        if (NIGHT.equals(block))
+            return prefs(c).getInt(
+                            "limite_" + NIGHT, es.foco.next.core.care.FocoCore.NIGHT_DEADLINE);
         return -1;
     }
 
     /** {@code minute} -1 = sin hora. */
     public static void setBlockDeadline(Context c, String block, int minute) {
         if (!MORNING.equals(block) && !NIGHT.equals(block)) return;
-        prefs(c).edit().putInt("limite_" + block, minute < 0 ? -1 : Math.min(minute, 24 * 60 - 1)).apply();
+        prefs(c).edit()
+                .putInt("limite_" + block, minute < 0 ? -1 : Math.min(minute, 24 * 60 - 1))
+                .apply();
         lastSweep = 0;
         scheduleNext(c);
     }
@@ -1016,20 +1187,35 @@ public final class RoutineStore {
 
     private static void notifyCore(Context c, String title, String text) {
         Context app = c.getApplicationContext();
-        if (app.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return;
+        if (app.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) return;
         // Como el resto del búho: nada de noche ni con No molestar.
         if (AbsoluteRules.esNocheAbsoluta(LocalDateTime.now())) return;
         try {
             NotificationManager nm = app.getSystemService(NotificationManager.class);
-            if (nm == null || nm.getCurrentInterruptionFilter() > NotificationManager.INTERRUPTION_FILTER_ALL) return;
-            NotificationChannel ch = new NotificationChannel(CHANNEL, "Rutinas", NotificationManager.IMPORTANCE_LOW);
+            if (nm == null
+                    || nm.getCurrentInterruptionFilter()
+                            > NotificationManager.INTERRUPTION_FILTER_ALL) return;
+            NotificationChannel ch =
+                    new NotificationChannel(CHANNEL, "Rutinas", NotificationManager.IMPORTANCE_LOW);
             ch.setSound(null, null);
             ch.enableVibration(false);
             nm.createNotificationChannel(ch);
-            Intent open = new Intent().setClassName(app, "es.foco.next.ui.HomeActivity").putExtra(EXTRA_CORE, true)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            PendingIntent tap = PendingIntent.getActivity(app, ID_CORE, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-            nm.notify(ID_CORE,
+            Intent open =
+                    new Intent()
+                            .setClassName(app, "es.foco.next.ui.HomeActivity")
+                            .putExtra(EXTRA_CORE, true)
+                            .addFlags(
+                                    Intent.FLAG_ACTIVITY_NEW_TASK
+                                            | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            PendingIntent tap =
+                    PendingIntent.getActivity(
+                            app,
+                            ID_CORE,
+                            open,
+                            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            nm.notify(
+                    ID_CORE,
                     new Notification.Builder(app, CHANNEL)
                             .setSmallIcon(es.foco.next.R.drawable.ic_owl)
                             .setContentTitle("🦉 " + title)

@@ -44,14 +44,21 @@ final class DnsPause {
         String pending = es.foco.next.runtime.DnsMonitor.pendingProvider(service);
         if (!pending.isEmpty()) {
             String when =
-                    java.time.Instant.ofEpochMilli(es.foco.next.runtime.DnsMonitor.pendingAt(service))
+                    java.time.Instant.ofEpochMilli(
+                                    es.foco.next.runtime.DnsMonitor.pendingAt(service))
                             .atZone(java.time.ZoneId.systemDefault())
-                            .format(java.time.format.DateTimeFormatter.ofPattern("EEEE H:mm", new java.util.Locale("es")));
+                            .format(
+                                    java.time.format.DateTimeFormatter.ofPattern(
+                                            "EEEE H:mm", new java.util.Locale("es")));
             label(box, "Cambio de DNS en camino", 25, 0xFFFFE7A3);
             label(
                     box,
-                    "Pediste " + DnsGuard.providerLabel(pending) + "; Foco lo adopta el " + when
-                            + ". Hasta entonces vigila " + DnsGuard.providerLabel(host)
+                    "Pediste "
+                            + DnsGuard.providerLabel(pending)
+                            + "; Foco lo adopta el "
+                            + when
+                            + ". Hasta entonces vigila "
+                            + DnsGuard.providerLabel(host)
                             + " y pausa ocio y navegadores si el teléfono usa otro. Para seguir ya, vuelve a poner este:",
                     17,
                     0xFFE4D0A1);
@@ -71,7 +78,11 @@ final class DnsPause {
                 "Ajustes › Conexiones › Más ajustes de conexión › DNS privado › Nombre de host del proveedor:",
                 14,
                 scene.getColor(R.color.text_secondary));
-        label(box, host.isEmpty() ? "tu perfil de NextDNS (TU-ID.dns.nextdns.io)" : host, 18, 0xFFFFFFFF);
+        label(
+                box,
+                host.isEmpty() ? "tu perfil de NextDNS (TU-ID.dns.nextdns.io)" : host,
+                18,
+                0xFFFFFFFF);
         box.addView(
                 action(
                         scene,

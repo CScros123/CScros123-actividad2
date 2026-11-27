@@ -15,7 +15,9 @@ public final class HomeRole {
     public static boolean held(Context c) {
         try {
             RoleManager r = c.getSystemService(RoleManager.class);
-            return r != null && r.isRoleAvailable(RoleManager.ROLE_HOME) && r.isRoleHeld(RoleManager.ROLE_HOME);
+            return r != null
+                    && r.isRoleAvailable(RoleManager.ROLE_HOME)
+                    && r.isRoleHeld(RoleManager.ROLE_HOME);
         } catch (RuntimeException e) {
             return false;
         }
@@ -26,11 +28,20 @@ public final class HomeRole {
         boolean now = held(c);
         try {
             SharedPreferences p =
-                    c.getApplicationContext().getSharedPreferences("foco-home-role", Context.MODE_PRIVATE);
+                    c.getApplicationContext()
+                            .getSharedPreferences("foco-home-role", Context.MODE_PRIVATE);
             boolean was = p.getBoolean("held", false);
             if (was && !now)
-                InspectorLog.event(c, InspectorLog.LAUNCHER_CAMBIADO, "", System.currentTimeMillis(),
-                        0, 1, 0, "inicio_predeterminado_ya_no_es_foco", null);
+                InspectorLog.event(
+                        c,
+                        InspectorLog.LAUNCHER_CAMBIADO,
+                        "",
+                        System.currentTimeMillis(),
+                        0,
+                        1,
+                        0,
+                        "inicio_predeterminado_ya_no_es_foco",
+                        null);
             if (was != now) p.edit().putBoolean("held", now).apply();
         } catch (RuntimeException ignored) {
         }

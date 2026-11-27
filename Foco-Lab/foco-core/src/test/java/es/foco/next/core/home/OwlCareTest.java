@@ -51,7 +51,9 @@ public class OwlCareTest {
         assertTrue(OwlCare.gapWorthTelling(off, back));
         assertFalse(OwlCare.gapWorthTelling(back - 5 * MIN, back));
         assertFalse(OwlCare.gapWorthTelling(0, back));
-        assertEquals("Estuve apagado de 5:00 a 10:07. Gracias por encenderme; ya te acompaño otra vez.", OwlCare.gapText(off, back, z));
+        assertEquals(
+                "Estuve apagado de 5:00 a 10:07. Gracias por encenderme; ya te acompaño otra vez.",
+                OwlCare.gapText(off, back, z));
         assertTrue(OwlCare.offNoticeDue(-1, back, false));
         assertFalse(OwlCare.offNoticeDue(back - 60 * MIN, back, false));
         assertFalse(OwlCare.offNoticeDue(-1, back, true)); // de noche, nada
