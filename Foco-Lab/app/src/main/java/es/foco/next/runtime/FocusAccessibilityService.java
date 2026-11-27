@@ -1276,9 +1276,15 @@ public final class FocusAccessibilityService extends AccessibilityService
             // «sí»).
             // v34: antes cuanto más ocio llevas hoy (10 min desde 1 h; 5 min y «sí» de 3 desde 2
             // h).
+            // v46: en Cuidado no hay «¿Te aporta?»: es para relajarse sin que te vigilen (abrir
+            // la ventana sacaba de un juego en plena partida).
             long awareDue =
                     awareness(
-                            leisureApp && night == null && !pauseShown && DeviceState.awake(this),
+                            leisureApp
+                                    && night == null
+                                    && !pauseShown
+                                    && pass != es.foco.next.core.LeisurePolicy.Pass.CARE
+                                    && DeviceState.awake(this),
                             in.elapsed);
             if (pill != null)
                 pill.show(

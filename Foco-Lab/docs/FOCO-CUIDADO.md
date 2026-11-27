@@ -634,3 +634,10 @@ anterior y se descarta):
 Pendiente: 11 pruebas de `LiteRuntimeTest`/`BlockLogServiceTest` comprueban el bloqueo por los 5 min
 con capa, que ya no existe en ningún modo (Normal recuerda; Enfoque cierra antes en la puerta de Foco
 Core; la hora libre salta el límite). Hay que reescribirlas viéndolas correr en el PC.
+
+## v46: en Cuidado no sale «¿Te aporta?»
+
+La ventana de conciencia salía también en Cuidado y, al ser una pantalla propia, sacaba de un juego
+en plena partida. Cuidado es relajarse sin que te vigilen: ahí ya no se abre (se sigue midiendo el
+ocio como `ocio_cuidado`). Lo que sí cierra el ocio en Cuidado, a propósito: la noche y la rutina
+obligatoria de mañana o de noche si falta.
