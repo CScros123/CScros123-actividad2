@@ -448,7 +448,7 @@ fun Owl(
 private const val AWAY_YAW = 2.88f
 
 private val PHONES = Color(0xFF3E4A52)
-private val SCARF = Color(0xFFC0634A)
+private val SCARF = Color(0xFFC0735A)
 private val TORTOISE = Color(0xFF8A5A33)
 private val GLASS_GOLD = Color(0xFFE2C27A)
 private val COVER = Color(0xFF3B6998)
@@ -530,7 +530,7 @@ private fun DrawScope.drawCrown() {
         }
     drawPath(p, Color(0xFFFFC93C))
     drawPath(p, Color(0xFFC4911A), style = Stroke(u * .03f))
-    drawCircle(Color(0xFFFF6B5E), u * .045f, Offset(cx, base - hgt * .35f))
+    drawCircle(Color(0xFFFF8170), u * .045f, Offset(cx, base - hgt * .35f))
 }
 
 /** Confeti de los colores de acción al festejar (sube y cae). */
@@ -567,7 +567,7 @@ private fun DrawScope.drawAlert(t: Float) {
     val u = owlUnit()
     val c = Offset(size.width * .2f, size.height * .3f)
     val r = u * (.28f + .03f * sin(t * 4f))
-    drawCircle(Color(0xFFC26A14), r, Offset(c.x, c.y + u * .05f))
+    drawCircle(Color(0xFFC27A1E), r, Offset(c.x, c.y + u * .05f))
     drawCircle(Color(0xFFFF9F43), r, c)
     drawCircle(Color(0xFF331800), r * .68f, c, style = Stroke(u * .045f))
     drawLine(Color(0xFF331800), c, Offset(c.x, c.y - r * .45f), u * .05f, StrokeCap.Round)

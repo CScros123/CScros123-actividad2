@@ -618,3 +618,19 @@ Primera parte del diseño aprobado («modo juego»). El fondo (foto o paisaje de
 El menú de mantener pulsado el búho usaba el desplegable del sistema (fondo claro) con el texto
 claro del tema: no se leía. Ahora es una ventanita propia con el color de la tarjeta y tres botones
 del modo juego: Respirar (turquesa), Siguiente tarea (verde) y ¿Cómo estás? (neutro).
+
+## v45: base del PC (formato Spotless) y arreglos de la auditoría
+
+La base es ahora la versión del PC del usuario (v43 con `spotlessApply`, rama `version-pc`). Sobre
+ella, otra vez los arreglos verificados de la auditoría (la v44 se escribió sobre el formato
+anterior y se descarta):
+
+- Sin rojo (`CareTextTest`): parar `0xFFFF8170`/`0xFFC2725F`, relieve naranja `0xFFC27A1E`,
+  Terracotta y bufanda `0xFFC0735A`, coral de «¿Me aporta?» `0xFFE8806F`.
+- `OwlBrainTest.neutralToneHasNoBro` busca «, bro» (fallaba con «El Libro Total»).
+- `HomeViewModel.onCleared` suelta `RoutineStore.listen`; `NextDnsSync.running` es `AtomicBoolean`;
+  los `catch` vacíos de `BrainViewModel` relanzan la cancelación.
+
+Pendiente: 11 pruebas de `LiteRuntimeTest`/`BlockLogServiceTest` comprueban el bloqueo por los 5 min
+con capa, que ya no existe en ningún modo (Normal recuerda; Enfoque cierra antes en la puerta de Foco
+Core; la hora libre salta el límite). Hay que reescribirlas viéndolas correr en el PC.

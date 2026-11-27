@@ -95,9 +95,9 @@ enum class Act(val face: Color, val edge: Color, val ink: Color) {
     /** Premio: cupones, racha, semana perfecta. */
     PRIZE(Color(0xFFA77BFF), Color(0xFF6F45CC), Color(0xFF1B0B3A)),
     /** Tiempo: horas límite, cuenta atrás, cronómetro. */
-    TIME(Color(0xFFFF9F43), Color(0xFFC26A14), Color(0xFF331800)),
+    TIME(Color(0xFFFF9F43), Color(0xFFC27A1E), Color(0xFF331800)),
     /** Parar: salir del ocio, quitar, bloqueos. */
-    STOP(Color(0xFFFF6B5E), Color(0xFFC23F34), Color(0xFF3A0703)),
+    STOP(Color(0xFFFF8170), Color(0xFFC2725F), Color(0xFF3A0703)),
     /** Cuidarte: modo Cuidado, ánimo, respirar. */
     CARE(Color(0xFF4FD6C8), Color(0xFF239488), Color(0xFF04241F)),
     /** Secundario neutro (sobre tarjeta oscura). */

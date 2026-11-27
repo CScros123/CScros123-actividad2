@@ -96,7 +96,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 
 /** Rojo suave (terracota) para el dinero por encima del presupuesto: se nota sin alarmar. */
-val Terracotta = Color(0xFFC0634A)
+val Terracotta = Color(0xFFC0735A)
 
 private val BLOCK_TITLES =
     mapOf(

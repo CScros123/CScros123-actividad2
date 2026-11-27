@@ -568,6 +568,8 @@ class BrainViewModel(app: Application) : AndroidViewModel(app) {
                         feedbackEvents.tryEmit(FeedbackCue.UNLOCK)
                     }
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {}
         }
     }
@@ -598,6 +600,8 @@ class BrainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             try {
                 writes.withLock { saveWallet(readWallet().equip(id)) }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {}
         }
     }
@@ -607,6 +611,8 @@ class BrainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             try {
                 ChestSummary.write(getApplication(), readWallet().pending.size)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {}
         }
     }
@@ -745,6 +751,8 @@ class BrainViewModel(app: Application) : AndroidViewModel(app) {
                         feedbackEvents.tryEmit(FeedbackCue.UNLOCK)
                     }
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {}
         }
     }

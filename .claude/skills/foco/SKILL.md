@@ -29,9 +29,13 @@ español, claro y sin tecnicismos innecesarios.
 
 ## Dónde está el código
 
-El código está en **`Foco-Lab/`** de este repositorio (subido en la v32). El usuario compila su
-propia copia en `~/Foco-Lab`: si él compiló cambios que no están aquí, pídele el zip antes de
-empezar. Antes de cada versión guarda una copia intacta (`Foco-Lab-before-vNN` en el scratchpad)
+El código está en **`Foco-Lab/`** de este repositorio. Desde la v45 el usuario trabaja con un clon
+de esta rama en `~/foco-repo` y compila el APK release firmado con `~/bin/compilar-foco.sh`
+(spotlessApply + pruebas de core + assembleRelease). Entrega con commit y push en la rama; el
+usuario hace `git pull` (ya no hacen falta zips). El código va formateado con Spotless (ktfmt
+kotlinlang, google-java-format AOSP): respeta ese estilo. Si el usuario cambió algo en su PC, pídele
+que lo suba (rama aparte, p. ej. `version-pc`) antes de empezar. Nunca pidas ni muestres la
+contraseña de su llave de firma. Antes de cada versión guarda una copia intacta (`Foco-Lab-before-vNN` en el scratchpad)
 para comparar y armar el zip acumulado, y al terminar haz commit de `Foco-Lab/` en la rama de
 trabajo.
 
