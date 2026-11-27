@@ -243,7 +243,7 @@ fun MoodCard(
                 if (offer) {
                     HomeText("¿Pasamos a modo Cuidado? Es tu decisión.", 12.5.sp, c.muted, modifier = Modifier.padding(top = 8.dp))
                     Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        PrimaryButton("Sí, modo Cuidado", Modifier.weight(1f)) { onCare(); offer = false }
+                        GameButton("Sí, modo Cuidado", Act.CARE, Modifier.weight(1f)) { onCare(); offer = false }
                         HomeText("Ahora no", 12.5.sp, c.muted, FontWeight.SemiBold, Modifier.clip(RoundedCornerShape(10.dp)).clickable { offer = false; onSkip() }.padding(10.dp))
                     }
                 } else {

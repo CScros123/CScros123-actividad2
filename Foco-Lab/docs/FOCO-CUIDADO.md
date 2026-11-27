@@ -558,3 +558,21 @@ Los dos fondos nuevos se generaron con el mismo estilo de capas (`theme_pradera.
 (`theme_auto_v38`). La luna creciente que el búho dibujaba con cualquier tema oscuro (también a
 mediodía) ahora solo sale con cielo de noche (`PhotoTheme.nightSky()`) o cuando duerme. Prueba:
 `nuncaUnCieloDeNocheDeDia`.
+
+## v39: modo juego (base) y Foco Core
+
+Primera parte del diseño aprobado («modo juego»). El fondo (foto o paisaje del tema) no cambia.
+
+- **Base, `ui/GameStyle.kt`:** letras Rubik (títulos, números, botones) y Lexend (texto), en
+  `res/font` como versiones fijas recortadas a caracteres latinos (~290 KB, licencia OFL en
+  `docs/LICENCIA-LETRAS-OFL.txt`, sin dependencias nuevas). Colores por acción (`Act`): verde hacer,
+  azul completar, amarillo foto, morado premio, naranja tiempo, coral parar, turquesa cuidarte. Tres
+  redondeos (10/16/26). `GameButton` con relieve que se hunde y vibra; `GameCheck` cuadrada que
+  salta; `GameBar`, `GameStat`, `GameChip`.
+- **Toda la app:** `HomeText` usa la letra nueva (Rubik desde Bold, Lexend el resto) y
+  `PrimaryButton` es el botón verde con relieve. «Sí, modo Cuidado» va en turquesa.
+- **Foco Core:** arriba un marcador (hechas/total grande, racha y cupones, barra del día y una sola
+  etiqueta de estado). «Siguiente» con Empezar (verde, naranja mientras corre), ✓ (azul) y cámara
+  (amarillo). Tareas como fichas con casilla cuadrada; hora límite en chip naranja; minutos con «′».
+  Textos más cortos: sin la línea «Más que 2+2», cupones «Todo hecho → 30′…», el consejo de
+  mantener pulsado solo hasta la primera edición, hoja «¿Cómo? (opcional)» con Foto/Hecha.

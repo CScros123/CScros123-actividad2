@@ -45,6 +45,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.ConfirmationNumber
+import androidx.compose.material.icons.rounded.LocalFireDepartment
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PhotoCamera
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -270,10 +280,9 @@ fun FocoCoreScreen(vm: HomeViewModel, a: HomeActions, startTab: Int, onClose: ()
                     }
                 }
                 if (tab != 2)
-                    Box(
-                        Modifier.align(Alignment.BottomEnd).padding(18.dp).clip(RoundedCornerShape(20.dp)).background(c.accent)
-                            .clickable { editing = Editing(null, block = RoutineStore.MORNING) }.padding(horizontal = 20.dp, vertical = 15.dp),
-                    ) { HomeText("＋  Nueva tarea", 15.sp, k.onAccent, FontWeight.Bold) }
+                    GameButton("Tarea", Act.GO, Modifier.align(Alignment.BottomEnd).padding(18.dp), icon = Icons.Rounded.Add, height = 54.dp) {
+                        editing = Editing(null, block = RoutineStore.MORNING)
+                    }
             }
         }
         editing?.let { e ->
@@ -321,11 +330,11 @@ private fun CoreTabs(tab: Int, k: CoreColors, onTab: (Int) -> Unit) {
     val c = LocalHome.current
     Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp).clip(RoundedCornerShape(18.dp)).background(c.text.copy(alpha = .06f)).padding(4.dp)) {
         listOf("Hoy", "Semana", "Reportes").forEachIndexed { i, label ->
-            val bg by animateColorAsState(if (i == tab) c.accent else Color.Transparent, tween(250), label = "tab")
+            val bg by animateColorAsState(if (i == tab) Act.GO.face else Color.Transparent, tween(250), label = "tab")
             Box(
                 Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).background(bg).clickable { onTab(i) }.padding(vertical = 10.dp),
                 contentAlignment = Alignment.Center,
-            ) { HomeText(label, 13.5.sp, if (i == tab) k.onAccent else c.muted, FontWeight.SemiBold) }
+            ) { HomeText(label, 13.5.sp, if (i == tab) Act.GO.ink else c.muted, FontWeight.Bold) }
         }
     }
 }
@@ -348,39 +357,39 @@ private fun TodayTab(
     val d = RoutineStore.today()
     val s = vm.core ?: return
     val left = remember(tick) { RoutineStore.remainingMinutes(ctx, d) }
-    // Resumen: anillo y lo esencial del día.
+    // v39: HUD del día (modo juego): hechas, barra, racha y cupones, con textos cortos.
+    val streak = remember(tick) { es.foco.next.runtime.RewardStore.streak(ctx) }
+    val couponCount = remember(tick) { es.foco.next.runtime.RewardStore.coupons(ctx).size }
     CoreCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            ProgressRing(if (s.total == 0) 0f else s.done / s.total.toFloat(), "${s.done}/${s.total}", "hechas", k, motion, 92.dp)
-            Column(Modifier.weight(1f).padding(start = 16.dp)) {
-                HomeText(
-                    when {
-                        s.total == 0 -> "Anota tu día"
-                        s.done == s.total -> "Todo hecho ✓"
-                        s.done * 2 >= s.total -> "Vas muy bien"
-                        s.done > 0 -> "Buen comienzo"
-                        else -> "Empieza por una"
-                    },
-                    18.sp, weight = FontWeight.Bold,
-                )
-                HomeText(if (left > 0) "Quedan ~$left min · terminas ${s.finish}" else "Sin tiempo pendiente", 12.5.sp, c.muted)
-                if (s.money != null) HomeText("Dinero: " + s.money, 12.5.sp, if (s.moneyOver) k.bad else c.muted, if (s.moneyOver) FontWeight.SemiBold else FontWeight.Normal)
-                val pill: Pair<String, Color>? = when (s.state) {
-                    FocoCore.State.NO_PLAN -> "Anota 2 tareas propias de hoy" to k.warn
-                    FocoCore.State.PENALTY -> "Ocio en pausa · ${s.penaltyMin} min" to k.bad
-                    FocoCore.State.COMPLETE -> (if (s.freeLeftMin > 0) "Ocio libre · ${s.freeLeftMin} min" else if (s.freeUsed) "Hora libre usada" else "1 h de ocio libre ganada") to k.ok
-                    else -> (if (s.total - s.done == 1) "Hora libre a 1 tarea" else "Hora libre a ${s.total - s.done} tareas") to k.ok
-                }
-                pill?.let { (t, col) ->
-                    Box(Modifier.padding(top = 8.dp).clip(RoundedCornerShape(999.dp)).background(col.copy(alpha = .16f)).padding(horizontal = 10.dp, vertical = 4.dp)) {
-                        HomeText(t, 11.5.sp, col, FontWeight.SemiBold)
-                    }
-                }
+            Row(Modifier.weight(1f), verticalAlignment = Alignment.Bottom) {
+                GameText("${s.done}/${s.total}", 32.sp, c.text, FontWeight.Black)
+                GameText(if (s.total > 0 && s.done == s.total) "¡todo!" else "hechas", 13.sp, c.muted, FontWeight.Bold, Modifier.padding(start = 8.dp, bottom = 5.dp))
             }
+            GameStat(Icons.Rounded.LocalFireDepartment, "$streak", Act.TIME.face)
+            Spacer(Modifier.width(8.dp))
+            GameStat(Icons.Rounded.ConfirmationNumber, "$couponCount", Act.PRIZE.face)
         }
+        Spacer(Modifier.height(12.dp))
+        GameBar(if (s.total == 0) 0f else s.done / s.total.toFloat(), Modifier.fillMaxWidth())
+        Spacer(Modifier.height(12.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            val (pillText, pillColor) = when (s.state) {
+                FocoCore.State.NO_PLAN -> "Anota 2 tareas" to Act.TIME.face
+                FocoCore.State.PENALTY -> "Ocio en pausa · ${s.penaltyMin}′" to Act.STOP.face
+                FocoCore.State.COMPLETE ->
+                    (if (s.freeLeftMin > 0) "Ocio libre · ${s.freeLeftMin}′" else if (s.freeUsed) "Hora libre usada" else "1 h libre ganada") to Act.GO.face
+                else -> "Hora libre a ${s.total - s.done}" to Act.GO.face
+            }
+            GameChip(pillText, pillColor)
+            Spacer(Modifier.weight(1f))
+            if (left > 0) GameText("~$left′ · fin ${s.finish}", 12.5.sp, c.muted, FontWeight.Medium)
+        }
+        if (s.money != null)
+            GameText("Dinero: " + s.money, 12.5.sp, if (s.moneyOver) Act.STOP.face else c.muted, FontWeight.Medium, Modifier.padding(top = 8.dp))
         if (s.state == FocoCore.State.COMPLETE && !s.freeUsed && s.freeLeftMin <= 0) {
             Spacer(Modifier.height(12.dp))
-            ActionButton("Activar 1 h de ocio libre", c.accent, k.onAccent, Modifier.fillMaxWidth(), a::startFreeHour)
+            GameButton("Activar 1 h libre", Act.GO, Modifier.fillMaxWidth(), icon = Icons.Rounded.PlayArrow, onClick = a::startFreeHour)
         }
     }
     CouponsCard(tick, k, onCoupon)
@@ -395,13 +404,18 @@ private fun TodayTab(
                 .background(Brush.linearGradient(listOf(c.accent.copy(alpha = .28f), c.card.copy(alpha = .9f))))
                 .border(1.dp, c.accent.copy(alpha = .4f), CardShape).padding(16.dp),
         ) {
-            HomeText("LO SIGUIENTE", 11.sp, c.accent, FontWeight.Bold)
+            HomeText("SIGUIENTE", 11.sp, Act.GO.face, FontWeight.Bold)
             HomeText(t.label, 19.sp, weight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp))
             HomeText(meta(t), 12.5.sp, c.muted)
             Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ActionButton(if (running) "❚❚  ${ms / 60_000} min" else "▶  Empezar", c.accent, k.onAccent, Modifier.weight(1f)) { a.toggleTaskTimer(b, i) }
-                ActionButton("✓  Hecha", c.text.copy(alpha = .09f), c.text, Modifier.weight(1f)) { onDo(Doing(b, i, t)) }
-                ActionButton("📷", c.text.copy(alpha = .09f), c.text, Modifier.width(56.dp)) { a.photoTask(b, i) }
+                GameButton(
+                    if (running) "${ms / 60_000}′" else "Empezar",
+                    if (running) Act.TIME else Act.GO,
+                    Modifier.weight(1f),
+                    icon = if (running) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                ) { a.toggleTaskTimer(b, i) }
+                GameButton(null, Act.DONE, Modifier.width(52.dp), icon = Icons.Rounded.Check) { onDo(Doing(b, i, t)) }
+                GameButton(null, Act.PHOTO, Modifier.width(52.dp), icon = Icons.Rounded.PhotoCamera) { a.photoTask(b, i) }
             }
         }
     }
@@ -418,30 +432,28 @@ private fun TodayTab(
         Row(Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             HomeText("${(BLOCK_TITLES[b] ?: b).uppercase()} · $doneCount/${tasks.size}", 11.sp, c.muted, FontWeight.Bold, Modifier.weight(1f))
             if (b != RoutineStore.EVENT)
-                HomeText(
-                    if (limit >= 0) "⏰ hasta ${hm(limit)}" else "⏰ sin hora",
-                    11.sp, if (limit >= 0) k.warn else c.muted, FontWeight.Bold,
-                    Modifier.padding(end = 10.dp).clip(RoundedCornerShape(8.dp)).clickable {
+                GameChip(
+                    if (limit >= 0) hm(limit) else "sin hora",
+                    if (limit >= 0) Act.TIME.face else c.muted,
+                    Modifier.padding(end = 8.dp).clip(GameSmall).clickable {
                         pickDeadline(ctx, limit) { m ->
                             RoutineStore.setBlockDeadline(ctx, b, m)
                             limit = RoutineStore.blockDeadline(ctx, b)
                         }
-                    }.padding(horizontal = 6.dp, vertical = 2.dp),
+                    },
+                    icon = Icons.Rounded.Schedule,
                 )
-            HomeText(if (tasks.isNotEmpty() && doneCount == tasks.size) "✓ completa" else if (pending > 0) "~$pending min" else "", 11.sp, if (doneCount == tasks.size && tasks.isNotEmpty()) k.ok else c.muted, FontWeight.Bold)
+            HomeText(if (tasks.isNotEmpty() && doneCount == tasks.size) "✓ completa" else if (pending > 0) "~$pending′" else "", 11.sp, if (doneCount == tasks.size && tasks.isNotEmpty()) k.ok else c.muted, FontWeight.Bold)
         }
         var showDone by remember(b) { mutableStateOf(false) }
         CoreCard(Modifier.animateContentSize(), padV = 6.dp) {
             if (tasks.isEmpty())
                 HomeText("Sin tareas. Toca ＋ Nueva tarea.", 12.5.sp, c.muted, modifier = Modifier.padding(vertical = 10.dp))
-            // Más de 2+2: solo se avisa.
-            if (b != RoutineStore.EVENT && (tasks.size > 2 || Routine.totalMinutes(tasks) > 120))
-                HomeText("Más que 2+2: ${tasks.size} tareas, ~${Routine.totalMinutes(tasks)} min", 11.sp, c.muted, modifier = Modifier.padding(top = 6.dp))
             tasks.forEachIndexed { i, t ->
                 if (i !in done)
                     TaskRow(t, false, i in missed, RoutineStore.hasPhoto(ctx, b, i), k,
                         onCheck = { onDo(Doing(b, i, t)) },
-                        onLong = { onEdit(Editing(t, block = b, index = i, today = true)) })
+                        onLong = { markEditHint(ctx); onEdit(Editing(t, block = b, index = i, today = true)) })
             }
             if (doneCount > 0) {
                 Row(
@@ -454,14 +466,22 @@ private fun TodayTab(
                             if (i in done)
                                 TaskRow(t, true, i in missed, RoutineStore.hasPhoto(ctx, b, i), k,
                                     onCheck = { a.uncheckTask(b, i) },
-                                    onLong = { onEdit(Editing(t, block = b, index = i, today = true)) })
+                                    onLong = { markEditHint(ctx); onEdit(Editing(t, block = b, index = i, today = true)) })
                         }
                     }
                 }
             }
         }
     }
-    HomeText("Mantén pulsada una tarea para editarla.", 11.5.sp, c.muted, modifier = Modifier.padding(start = 4.dp))
+    // v39: el consejo sale solo hasta que editas una tarea por primera vez.
+    if (!editHintSeen(ctx)) HomeText("Mantén pulsada una tarea para editarla.", 11.5.sp, c.muted, modifier = Modifier.padding(start = 4.dp))
+}
+
+private fun editHintSeen(ctx: android.content.Context): Boolean =
+    ctx.getSharedPreferences("foco-home", 0).getBoolean("consejo_editar_visto", false)
+
+private fun markEditHint(ctx: android.content.Context) {
+    ctx.getSharedPreferences("foco-home", 0).edit().putBoolean("consejo_editar_visto", true).apply()
 }
 
 private fun hm(minute: Int): String = "${minute / 60}:${if (minute % 60 < 10) "0" else ""}${minute % 60}"
@@ -487,7 +507,7 @@ private fun DoneSheet(d: Doing, k: CoreColors, onDismiss: () -> Unit, onPhoto: (
     CoreSheet(k, onDismiss) {
         HomeText(d.task.label, 19.sp, weight = FontWeight.Bold)
         HomeText(meta(d.task), 12.5.sp, c.muted)
-        Label("¿CÓMO LO HICISTE? · OPCIONAL")
+        Label("¿CÓMO? (OPCIONAL)")
         Box(
             Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.text.copy(alpha = .06f))
                 .border(1.5.dp, c.accent.copy(alpha = .6f), RoundedCornerShape(16.dp)).padding(14.dp),
@@ -506,14 +526,13 @@ private fun DoneSheet(d: Doing, k: CoreColors, onDismiss: () -> Unit, onPhoto: (
                 Modifier.padding(top = 8.dp).clip(RoundedCornerShape(999.dp)).background(c.text.copy(alpha = .07f))
                     .clickable { note = last }.padding(horizontal = 12.dp, vertical = 7.dp),
             ) { HomeText("↺ Igual que la última vez: ${last.take(40)}${if (last.length > 40) "…" else ""}", 12.sp, c.text) }
-        HomeText("Va a tu informe del día. La foto también es opcional.", 11.5.sp, c.muted, modifier = Modifier.padding(top = 10.dp))
         Spacer(Modifier.height(14.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ActionButton("📷  Foto y hecha", c.accent, k.onAccent, Modifier.weight(1f)) {
+            GameButton("Foto", Act.PHOTO, Modifier.weight(1f), icon = Icons.Rounded.PhotoCamera) {
                 RoutineStore.saveNote(ctx, d.block, d.index, d.task.label, note)
                 onPhoto()
             }
-            ActionButton("✓  Hecha", c.text.copy(alpha = .09f), c.text, Modifier.weight(1f)) {
+            GameButton("Hecha", Act.DONE, Modifier.weight(1f), icon = Icons.Rounded.Check) {
                 RoutineStore.saveNote(ctx, d.block, d.index, d.task.label, note)
                 RoutineStore.checkBlock(ctx, d.block, d.index, true)
                 onDone()
@@ -551,28 +570,26 @@ private fun meta(t: Routine.Task): String =
 @Composable
 private fun TaskRow(t: Routine.Task, done: Boolean, missed: Boolean, hasPhoto: Boolean, k: CoreColors, onCheck: () -> Unit, onLong: () -> Unit) {
     val c = LocalHome.current
-    val fill by animateColorAsState(if (done) k.ok else Color.Transparent, tween(300), label = "check")
+    // v39: cada tarea es una ficha con casilla cuadrada que salta al marcarla.
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).combinedClickable(onClick = onCheck, onLongClick = onLong).padding(vertical = 10.dp),
+        Modifier.fillMaxWidth().padding(vertical = 3.dp).clip(GameMid).background(c.text.copy(alpha = if (done) .03f else .07f))
+            .combinedClickable(onClick = onCheck, onLongClick = onLong).padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            Modifier.size(26.dp).clip(CircleShape).background(fill).border(2.dp, if (done) k.ok else c.muted, CircleShape),
-            contentAlignment = Alignment.Center,
-        ) { if (done) HomeText("✓", 13.sp, k.onAccent, FontWeight.Black) }
+        GameCheck(done)
         Column(Modifier.weight(1f).padding(start = 12.dp)) {
             Text(
-                t.label, color = if (done) c.muted else c.text, fontSize = 14.5.sp,
+                t.label, color = if (done) c.muted else c.text, fontSize = 15.sp, fontFamily = Lexend, fontWeight = FontWeight.Medium,
                 textDecoration = if (done) TextDecoration.LineThrough else null,
             )
-            if (missed && !done) HomeText("Fuera de hora", 11.sp, k.bad, FontWeight.SemiBold)
+            if (missed && !done) GameText("Fuera de hora", 11.5.sp, Act.STOP.face, FontWeight.Bold)
         }
         if (!done) {
-            if (t.window >= 0) Chip(t.windowText(), k.warn)
-            Chip("${t.minutes}′", c.muted)
-            if (t.photo || hasPhoto) HomeText("📷", 12.sp, modifier = Modifier.padding(start = 4.dp))
+            if (t.window >= 0) GameChip(t.windowText(), Act.TIME.face, Modifier.padding(start = 5.dp), icon = Icons.Rounded.Schedule)
+            if (t.photo || hasPhoto) Icon(Icons.Rounded.PhotoCamera, null, tint = Act.PHOTO.face, modifier = Modifier.padding(start = 6.dp).size(16.dp))
             if (t.difficulty > 0)
-                Box(Modifier.padding(start = 6.dp).size(7.dp).clip(CircleShape).background(when (t.difficulty) { 1 -> k.ok; 2 -> k.warn; else -> k.bad }))
+                Box(Modifier.padding(start = 6.dp).size(8.dp).clip(CircleShape).background(when (t.difficulty) { 1 -> Act.GO.face; 2 -> Act.TIME.face; else -> Act.STOP.face }))
+            GameText("${t.minutes}′", 13.sp, c.muted, FontWeight.ExtraBold, Modifier.padding(start = 8.dp))
         }
     }
 }
@@ -799,10 +816,10 @@ private fun CouponsCard(tick: Int, k: CoreColors, onUse: (Boolean) -> Unit) {
     if (list.isEmpty() && inUse.isEmpty()) {
         CoreCard {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                HomeText("🎟", 22.sp)
+                Icon(Icons.Rounded.ConfirmationNumber, null, tint = Act.PRIZE.face, modifier = Modifier.size(28.dp))
                 Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                    HomeText("Tus cupones", 14.5.sp, weight = FontWeight.Bold)
-                    HomeText("Completa todas las tareas de hoy y ganas 30 min para la app que quieras.", 12.sp, c.muted)
+                    HomeText("Cupones", 15.sp, weight = FontWeight.Bold)
+                    HomeText("Todo hecho → 30′ para la app que quieras", 12.5.sp, c.muted)
                 }
             }
         }
@@ -815,7 +832,7 @@ private fun CouponsCard(tick: Int, k: CoreColors, onUse: (Boolean) -> Unit) {
             .border(1.dp, gold.copy(alpha = .45f), CardShape).padding(16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            HomeText("🎟", 24.sp)
+            Icon(Icons.Rounded.ConfirmationNumber, null, tint = Act.PRIZE.face, modifier = Modifier.size(28.dp))
             Column(Modifier.weight(1f).padding(start = 12.dp)) {
                 HomeText(
                     listOfNotNull(
@@ -834,8 +851,8 @@ private fun CouponsCard(tick: Int, k: CoreColors, onUse: (Boolean) -> Unit) {
             }
         }
         if (inUse.isEmpty()) Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (normal > 0) ActionButton("Usar cupón", c.accent, k.onAccent, Modifier.weight(1f)) { onUse(false) }
-            if (week > 0) ActionButton("Usar de semana", gold, Color(0xFF2A1E08), Modifier.weight(1f)) { onUse(true) }
+            if (normal > 0) GameButton("Usar", Act.PRIZE, Modifier.weight(1f), icon = Icons.Rounded.ConfirmationNumber) { onUse(false) }
+            if (week > 0) GameButton("Semana", Act.PHOTO, Modifier.weight(1f), icon = Icons.Rounded.ConfirmationNumber) { onUse(true) }
         }
     }
 }
@@ -932,8 +949,8 @@ private fun ProgressCard(tick: Int, k: CoreColors, motion: Boolean) {
 private fun CoreCard(modifier: Modifier = Modifier, padV: androidx.compose.ui.unit.Dp = 16.dp, content: @Composable () -> Unit) {
     val c = LocalHome.current
     Column(
-        modifier.fillMaxWidth().clip(CardShape).background(if (c.card.alpha > .99f) c.card.copy(alpha = .94f) else c.card)
-            .border(1.dp, c.text.copy(alpha = .07f), CardShape).padding(horizontal = 16.dp, vertical = padV),
+        modifier.fillMaxWidth().clip(GameLarge).background(if (c.card.alpha > .99f) c.card.copy(alpha = .94f) else c.card)
+            .border(1.dp, c.text.copy(alpha = .07f), GameLarge).padding(horizontal = 16.dp, vertical = padV),
     ) { content() }
 }
 
@@ -1103,8 +1120,8 @@ private fun TaskSheet(e: Editing, k: CoreColors, onDismiss: () -> Unit, onSaved:
             if (window >= 0) append(" antes de las " + Routine.Task("", 1, window, 0).windowText())
         }
         Spacer(Modifier.height(18.dp))
-        ActionButton(summary, if (ready) c.accent else c.text.copy(alpha = .08f), if (ready) k.onAccent else c.muted, Modifier.fillMaxWidth()) {
-            if (!ready) return@ActionButton
+        GameButton(summary, Act.GO, Modifier.fillMaxWidth(), enabled = ready) {
+            if (!ready) return@GameButton
             val t = Routine.Task(label, minutes, window, difficulty, photo)
             when {
                 isNew -> RoutineStore.addTask(ctx, whenSel, kind, days, t)
@@ -1152,7 +1169,7 @@ private fun MoneySheet(k: CoreColors, onDismiss: () -> Unit, onSaved: () -> Unit
         CoreMoneyField("LO QUE DEBO", debt) { debt = it }
         CoreMoneyField("ANOTAR UN GASTO DE HOY", spend) { spend = it }
         Spacer(Modifier.height(18.dp))
-        ActionButton("Guardar", c.accent, k.onAccent, Modifier.fillMaxWidth()) {
+        GameButton("Guardar", Act.DONE, Modifier.fillMaxWidth()) {
             MoneyStore.setBudget(ctx, Money.parse(budget).coerceAtLeast(0L))
             MoneyStore.setDebt(ctx, Money.parse(debt).coerceAtLeast(0L))
             val s = Money.parse(spend)

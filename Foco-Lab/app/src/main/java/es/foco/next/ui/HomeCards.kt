@@ -106,7 +106,8 @@ fun HomeCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
 
 @Composable
 fun HomeText(text: String, size: TextUnit = 13.sp, color: Color = LocalHome.current.text, weight: FontWeight = FontWeight.Normal, modifier: Modifier = Modifier) {
-    Text(text, modifier, color = color, fontSize = size, fontWeight = weight, lineHeight = size * 1.3f)
+    // v39: letra del modo juego en toda la app (Rubik desde Bold; Lexend lo demás).
+    Text(text, modifier, color = color, fontSize = size, fontWeight = weight, fontFamily = familyFor(weight), lineHeight = size * 1.3f)
 }
 
 @Composable
@@ -120,22 +121,8 @@ fun IconBadge(icon: ImageVector, size: Int = 32) {
 
 @Composable
 fun PrimaryButton(label: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    val c = LocalHome.current
-    val haptic = LocalHapticFeedback.current
-    val press = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-    Box(
-        modifier
-            .fillMaxWidth()
-            .pressScale(press)
-            .clip(RoundedCornerShape(16.dp))
-            .background(c.accent)
-            .clickable(interactionSource = press, indication = androidx.compose.foundation.LocalIndication.current) {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                onClick()
-            }
-            .padding(vertical = 11.dp),
-        contentAlignment = Alignment.Center,
-    ) { Text(label, color = c.card, fontSize = 14.sp, fontWeight = FontWeight.SemiBold) }
+    // v39: el botón principal es el verde «hacer» con relieve, igual en toda la app.
+    GameButton(label, Act.GO, modifier.fillMaxWidth(), onClick = onClick)
 }
 
 // ===================== Hoy (sin banco desde la v26) =====================

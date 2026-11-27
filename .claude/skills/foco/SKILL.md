@@ -74,6 +74,11 @@ Compose necesitan `imePadding()`).
   va al registro exportable; solo al informe del teléfono.
 - **Horario de la noche:** siempre `AbsoluteRules.nightStart()/esNocheAbsoluta()` (leen
   preferencias vía `CareStore.install`), nunca un valor guardado aparte.
+- **Diseño «modo juego» (v39):** usa `ui/GameStyle.kt`: `Act` (un color por tipo de acción),
+  `GameButton`, `GameCheck`, `GameChip`, `GameBar`, `GameStat`, `GameText`, redondeos
+  `GameSmall/Mid/Large`, letras Rubik/Lexend (`HomeText` ya las aplica). No inventes colores sueltos
+  para botones; no toques el fondo de los temas. Textos cortos: cada regla se explica una vez.
+- **Fondos:** `PhotoTheme.auto` va solo por la hora (v38); nunca un cielo de noche de día.
 - Documentación por versión: `docs/FOCO-CUIDADO.md` (añade una sección por versión).
 
 ## Comprobar sin compilar
