@@ -612,3 +612,9 @@ Primera parte del diseño aprobado («modo juego»). El fondo (foto o paisaje de
 - Pantallas Java (Estadísticas, Ajustes, Registro…) vía `Design`: letra Rubik/Lexend, botón
   principal verde con relieve, campos de 16 dp. Temas XML con Lexend por defecto. Píldora del
   cronómetro en Rubik.
+
+## v42: menú del búho legible
+
+El menú de mantener pulsado el búho usaba el desplegable del sistema (fondo claro) con el texto
+claro del tema: no se leía. Ahora es una ventanita propia con el color de la tarjeta y tres botones
+del modo juego: Respirar (turquesa), Siguiente tarea (verde) y ¿Cómo estás? (neutro).

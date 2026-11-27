@@ -48,7 +48,10 @@ import androidx.compose.material.icons.rounded.ConfirmationNumber
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.rounded.LocalFireDepartment
+import androidx.compose.material.icons.rounded.Mood
 import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.SelfImprovement
 import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Search
@@ -443,10 +446,25 @@ private fun Header(vm: HomeViewModel, a: HomeActions) {
         crown = vm.streak >= 7,
         onHold = { owlMenu = true },
     )
-    androidx.compose.material3.DropdownMenu(owlMenu, onDismissRequest = { owlMenu = false }) {
-        androidx.compose.material3.DropdownMenuItem(text = { GameText("Respirar", 15.sp, weight = FontWeight.Bold) }, onClick = { owlMenu = false; a.breathe() })
-        androidx.compose.material3.DropdownMenuItem(text = { GameText("Siguiente tarea", 15.sp, weight = FontWeight.Bold) }, onClick = { owlMenu = false; a.openCore() })
-        androidx.compose.material3.DropdownMenuItem(text = { GameText("¿Cómo estás?", 15.sp, weight = FontWeight.Bold) }, onClick = { owlMenu = false; a.chooseMoodAgain() })
+    // v42: menú propio del modo juego (el desplegable del sistema salía claro y no se leía).
+    if (owlMenu) {
+        val density = LocalDensity.current
+        androidx.compose.ui.window.Popup(
+            alignment = Alignment.TopEnd,
+            offset = androidx.compose.ui.unit.IntOffset(0, with(density) { 150.dp.roundToPx() }),
+            onDismissRequest = { owlMenu = false },
+            properties = androidx.compose.ui.window.PopupProperties(focusable = true),
+        ) {
+            Column(
+                Modifier.width(230.dp).clip(GameLarge).background(c0.card.copy(alpha = .98f))
+                    .border(1.dp, c0.text.copy(alpha = .12f), GameLarge).padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                GameButton("Respirar", Act.CARE, Modifier.fillMaxWidth(), icon = Icons.Rounded.SelfImprovement) { owlMenu = false; a.breathe() }
+                GameButton("Siguiente tarea", Act.GO, Modifier.fillMaxWidth(), icon = Icons.Rounded.PlayArrow) { owlMenu = false; a.openCore() }
+                GameButton("¿Cómo estás?", Act.GHOST, Modifier.fillMaxWidth(), icon = Icons.Rounded.Mood) { owlMenu = false; a.chooseMoodAgain() }
+            }
+        }
     }
     }
     }
