@@ -22,7 +22,8 @@ public final class NextDnsSync {
     private NextDnsSync() {}
 
     private static final String PREFS = "foco-nextdns";
-    private static volatile boolean running;
+    // v44: una sola actualización a la vez (antes, comprobar y poner no era atómico).
+    private static final java.util.concurrent.atomic.AtomicBoolean running = new java.util.concurrent.atomic.AtomicBoolean(false);
     private static final java.util.concurrent.CopyOnWriteArrayList<Runnable> listeners = new java.util.concurrent.CopyOnWriteArrayList<>();
 
     public static final class Snapshot {
@@ -90,11 +91,11 @@ public final class NextDnsSync {
         SharedPreferences p = prefs(app);
         String key = p.getString("key", "");
         String id = profile(app);
-        if (!NextDnsStats.validKey(key) || id == null || running) return;
+        if (!NextDnsStats.validKey(key) || id == null || running.get()) return;
         long now = System.currentTimeMillis();
         boolean newDay = !LocalDate.now().toString().equals(p.getString("day", ""));
         if (!force && !newDay && now - p.getLong("at", 0) < NextDnsStats.REFRESH_MS) return;
-        running = true;
+        if (!running.compareAndSet(false, true)) return;
         new Thread(
                         () -> {
                             try {
@@ -118,7 +119,7 @@ public final class NextDnsSync {
                                 // Sin red: se reintenta en la próxima vuelta al inicio (sin marcar la hora).
                                 p.edit().putString("error", "Sin conexión con NextDNS.").apply();
                             } finally {
-                                running = false;
+                                running.set(false);
                                 for (Runnable r : listeners) r.run();
                             }
                         },

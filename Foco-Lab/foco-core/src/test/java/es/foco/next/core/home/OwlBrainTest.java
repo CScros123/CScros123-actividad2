@@ -61,6 +61,7 @@ public class OwlBrainTest {
     @Test
     public void neutralToneHasNoBro() {
         OwlBrain.Facts f = facts();
-        for (Mode m : Mode.values()) assertFalse(OwlBrain.say(m, f, 0, false).contains("bro"));
+        // v44: busca el apelativo («, bro»), no la sílaba: «El Libro Total» no es tono cercano.
+        for (Mode m : Mode.values()) assertFalse(OwlBrain.say(m, f, 0, false).contains(", bro"));
     }
 }

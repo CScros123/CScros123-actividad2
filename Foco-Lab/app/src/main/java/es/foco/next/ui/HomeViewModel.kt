@@ -507,6 +507,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
         owlMain.removeCallbacks(owlTick)
         HomeHub.removeListener(this)
         es.foco.next.runtime.CareStore.listen(null)
+        es.foco.next.runtime.RoutineStore.listen(null) // v44: no retener este ViewModel
         io.shutdown()
     }
 

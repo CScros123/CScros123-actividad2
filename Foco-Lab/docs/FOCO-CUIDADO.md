@@ -624,3 +624,18 @@ del modo juego: Respirar (turquesa), Siguiente tarea (verde) y ¿Cómo estás? (
 El globo del búho ya no muestra «Ver idea» en calma (solo cambiaba la frase, igual que ↻). Cuando
 propone algo (leer, un reto, levantarse), su botón es neutro y más bajo: el verde grande queda solo
 para la misión de Foco Core.
+
+## v44: arreglos de una auditoría externa (verificados uno a uno)
+
+- **Sin rojo (CareTextTest):** el coral y el naranja oscuro del modo juego pasaban el umbral de rojo
+  de la regla. Ahora: parar `0xFFFF8170` / `0xFFC2725F`, relieve naranja `0xFFC27A1E`, Terracotta
+  `0xFFC0735A`, coral de «¿Me aporta?» `0xFFE8806F`.
+- **OwlBrainTest:** «tono neutro sin bro» buscaba la sílaba y fallaba con «El Libro Total» (ya
+  pasaba antes). Ahora busca «, bro».
+- **Fuga:** `HomeViewModel.onCleared` suelta también `RoutineStore.listen`.
+- **NextDNS:** `NextDnsSync.running` es `AtomicBoolean` (una actualización a la vez).
+- **Lab:** los `catch (Exception)` vacíos de `BrainViewModel` relanzan la cancelación.
+
+Pendiente, no tocado: 11 pruebas de `LiteRuntimeTest`/`BlockLogServiceTest` esperan que pasar de los
+5 min bloquee, pero en modo Normal (por defecto, desde antes de la v21) solo recuerda. Hay que
+reescribirlas para Normal o ponerlas en Enfoque con la puerta de Foco Core abierta.
