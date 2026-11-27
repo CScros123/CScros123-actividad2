@@ -192,7 +192,9 @@ public final class LogDatabase extends SQLiteOpenHelper {
      * y veces a la existente (uso por hora); si no, la segunda vez no se guarda nada (un hecho se
      * registra una sola vez).
      */
-    /** v32: true si quedó guardado (fila nueva o sumada); false si ya existía ese {@code dedupe}. */
+    /**
+     * v32: true si quedó guardado (fila nueva o sumada); false si ya existía ese {@code dedupe}.
+     */
     public boolean addInspector(
             long ts,
             String day,
@@ -225,7 +227,8 @@ public final class LogDatabase extends SQLiteOpenHelper {
         v.put("value", value);
         v.put("detail", detail);
         if (dedupe != null) v.put("dedupe", dedupe);
-        return db.insertWithOnConflict("inspector_event", null, v, SQLiteDatabase.CONFLICT_IGNORE) != -1;
+        return db.insertWithOnConflict("inspector_event", null, v, SQLiteDatabase.CONFLICT_IGNORE)
+                != -1;
     }
 
     /** Detalle desde {@code fromDay}, en orden de día y hora. */

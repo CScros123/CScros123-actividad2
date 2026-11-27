@@ -3,10 +3,11 @@ package es.foco.next.runtime;
 import android.content.Context;
 import android.content.SharedPreferences;
 import es.foco.next.core.care.Money;
-import java.time.LocalDate;
 import java.util.List;
 
-/** Presupuesto semanal, lo que se debe y lo anotado antes de entrar al banco. Solo en el teléfono. */
+/**
+ * Presupuesto semanal, lo que se debe y lo anotado antes de entrar al banco. Solo en el teléfono.
+ */
 public final class MoneyStore {
     private MoneyStore() {}
 
@@ -41,7 +42,9 @@ public final class MoneyStore {
         List<Money.Entry> e = entries(c);
         e.add(new Money.Entry(RoutineStore.today(), cents, note == null ? "" : note.trim()));
         // Solo aquí: los montos no van al registro ni a lo que se exporta.
-        prefs(c).edit().putString("gastos", Money.encode(Money.trim(e, RoutineStore.today()))).apply();
+        prefs(c).edit()
+                .putString("gastos", Money.encode(Money.trim(e, RoutineStore.today())))
+                .apply();
     }
 
     /** Lo que dice el búho; null si no hay nada configurado ni anotado. */

@@ -195,7 +195,9 @@ public final class StatsActivity extends Activity {
                         this,
                         "Registro de bloqueos ›",
                         false,
-                        () -> startActivity(new android.content.Intent(this, RegistroActivity.class)));
+                        () ->
+                                startActivity(
+                                        new android.content.Intent(this, RegistroActivity.class)));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
         lp.topMargin = Design.dp(this, 6);
         body.addView(log, lp);

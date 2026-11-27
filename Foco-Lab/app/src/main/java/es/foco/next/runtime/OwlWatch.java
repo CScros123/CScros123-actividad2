@@ -39,7 +39,8 @@ import java.util.ArrayList;
  */
 public final class OwlWatch extends BroadcastReceiver {
     static final String PREFS = "foco-owlwatch";
-    private static final String CHANNEL = "foco-acompanamiento", ACTION_CHECK = "es.foco.next.action.OWL_CHECK";
+    private static final String CHANNEL = "foco-acompanamiento",
+            ACTION_CHECK = "es.foco.next.action.OWL_CHECK";
     private static final int ID_OFF = 7410, ID_ROLE = 7411, ID_NIGHT = 7413;
     public static final String EXTRA_WAKE = "es.foco.next.extra.OWL_WAKE",
             EXTRA_ROLE = "es.foco.next.extra.OWL_ROLE";
@@ -58,10 +59,15 @@ public final class OwlWatch extends BroadcastReceiver {
             AlarmManager am = app.getSystemService(AlarmManager.class);
             PendingIntent pi =
                     PendingIntent.getBroadcast(
-                            app, 7412, new Intent(app, OwlWatch.class).setAction(ACTION_CHECK),
+                            app,
+                            7412,
+                            new Intent(app, OwlWatch.class).setAction(ACTION_CHECK),
                             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             am.setInexactRepeating(
-                    AlarmManager.RTC, System.currentTimeMillis() + 30 * 60_000L, 2 * AlarmManager.INTERVAL_HOUR, pi);
+                    AlarmManager.RTC,
+                    System.currentTimeMillis() + 30 * 60_000L,
+                    2 * AlarmManager.INTERVAL_HOUR,
+                    pi);
         } catch (RuntimeException ignored) {
         }
     }
@@ -75,7 +81,10 @@ public final class OwlWatch extends BroadcastReceiver {
         }
         // v33: respuesta de «¿Valió la pena?» desde el aviso.
         if (i != null && AwarenessStore.ACTION_WORTH.equals(i.getAction())) {
-            AwarenessStore.answerWorth(c, i.getStringExtra(AwarenessStore.EXTRA_PKG), i.getStringExtra(AwarenessStore.EXTRA_ANSWER));
+            AwarenessStore.answerWorth(
+                    c,
+                    i.getStringExtra(AwarenessStore.EXTRA_PKG),
+                    i.getStringExtra(AwarenessStore.EXTRA_ANSWER));
             return;
         }
         ensure(c);
@@ -89,7 +98,9 @@ public final class OwlWatch extends BroadcastReceiver {
     public static boolean accessibilityEnabled(Context c) {
         try {
             if (FocusAccessibilityService.connected()) return true;
-            String list = Settings.Secure.getString(c.getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+            String list =
+                    Settings.Secure.getString(
+                            c.getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
             return list != null && list.contains(c.getPackageName() + "/");
         } catch (RuntimeException e) {
             return true; // si no se puede saber, no se molesta
@@ -109,13 +120,24 @@ public final class OwlWatch extends BroadcastReceiver {
                     long alive = p.getLong("aliveAt", 0);
                     p.edit().putLong("offSince", alive > 0 ? alive : now).apply();
                 }
-                // v32 (R3): desactivada en los Ajustes de Android = la apagó alguien, no el sistema.
+                // v32 (R3): desactivada en los Ajustes de Android = la apagó alguien, no el
+                // sistema.
                 // Una vez por hueco (onceKey con su inicio).
-                InspectorLog.event(app, InspectorLog.INCIDENTE, "", 0, "accesibilidad_desactivada",
+                InspectorLog.event(
+                        app,
+                        InspectorLog.INCIDENTE,
+                        "",
+                        0,
+                        "accesibilidad_desactivada",
                         "inc|acc_off|" + p.getLong("offSince", now));
                 if (OwlCare.offNoticeDue(p.getLong("offNoticeAt", -1), now, night)) {
                     p.edit().putLong("offNoticeAt", now).apply();
-                    notify(app, ID_OFF, "Foco está en pausa", OwlCare.OFF_TEXT, "Encenderme",
+                    notify(
+                            app,
+                            ID_OFF,
+                            "Foco está en pausa",
+                            OwlCare.OFF_TEXT,
+                            "Encenderme",
                             new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
                 }
             }
@@ -144,12 +166,16 @@ public final class OwlWatch extends BroadcastReceiver {
     static void serviceOff(Context c) {
         try {
             SharedPreferences p = prefs(c);
-            if (p.getLong("offSince", 0) <= 0) p.edit().putLong("offSince", System.currentTimeMillis()).commit();
+            if (p.getLong("offSince", 0) <= 0)
+                p.edit().putLong("offSince", System.currentTimeMillis()).commit();
         } catch (RuntimeException ignored) {
         }
     }
 
-    /** La Accesibilidad vuelve: si el hueco fue de 10 min o más, el búho lo cuenta al volver al inicio. */
+    /**
+     * La Accesibilidad vuelve: si el hueco fue de 10 min o más, el búho lo cuenta al volver al
+     * inicio.
+     */
     static void serviceOn(Context c) {
         try {
             Context app = c.getApplicationContext();
@@ -163,8 +189,16 @@ public final class OwlWatch extends BroadcastReceiver {
                 e.putString("gapText", OwlCare.gapText(off, now, ZoneId.systemDefault()))
                         .putLong("gapAt", now)
                         .putBoolean("gapClosed", false);
-                InspectorLog.event(app, InspectorLog.INCIDENTE, "", now, now - off, 1, (now - off) / 60_000,
-                        "foco_apagado_min=" + (now - off) / 60_000, "inc|apagado|" + off);
+                InspectorLog.event(
+                        app,
+                        InspectorLog.INCIDENTE,
+                        "",
+                        now,
+                        now - off,
+                        1,
+                        (now - off) / 60_000,
+                        "foco_apagado_min=" + (now - off) / 60_000,
+                        "inc|apagado|" + off);
             }
             e.apply();
             NotificationManager nm = app.getSystemService(NotificationManager.class);
@@ -192,9 +226,14 @@ public final class OwlWatch extends BroadcastReceiver {
         try {
             Context app = c.getApplicationContext();
             SharedPreferences p = prefs(app);
-            if (heldNow && !p.getBoolean("everHeld", false)) p.edit().putBoolean("everHeld", true).apply();
+            if (heldNow && !p.getBoolean("everHeld", false))
+                p.edit().putBoolean("everHeld", true).apply();
             String today = LocalDate.now().toString();
-            if (!OwlCare.roleNoticeDue(p.getBoolean("everHeld", false), heldNow, p.getString("roleNoticeDay", ""), today)) {
+            if (!OwlCare.roleNoticeDue(
+                    p.getBoolean("everHeld", false),
+                    heldNow,
+                    p.getString("roleNoticeDay", ""),
+                    today)) {
                 if (heldNow) {
                     NotificationManager nm = app.getSystemService(NotificationManager.class);
                     if (nm != null) nm.cancel(ID_ROLE);
@@ -203,8 +242,15 @@ public final class OwlWatch extends BroadcastReceiver {
             }
             if (AbsoluteRules.night(LocalDateTime.now(), AppKinds.autoTime(app))) return;
             p.edit().putString("roleNoticeDay", today).apply();
-            notify(app, ID_ROLE, "El inicio cambió", OwlCare.ROLE_TEXT, "Volver a Foco Home",
-                    new Intent().setClassName(app, "es.foco.next.ui.HomeActivity").putExtra(EXTRA_ROLE, true));
+            notify(
+                    app,
+                    ID_ROLE,
+                    "El inicio cambió",
+                    OwlCare.ROLE_TEXT,
+                    "Volver a Foco Home",
+                    new Intent()
+                            .setClassName(app, "es.foco.next.ui.HomeActivity")
+                            .putExtra(EXTRA_ROLE, true));
         } catch (RuntimeException ignored) {
         }
     }
@@ -217,14 +263,17 @@ public final class OwlWatch extends BroadcastReceiver {
         try {
             Context app = c.getApplicationContext();
             SharedPreferences p = prefs(app);
-            if (!OwlCare.morningDue(LocalDateTime.now(), p.getString("ritualDay", ""), true)) return;
+            if (!OwlCare.morningDue(LocalDateTime.now(), p.getString("ritualDay", ""), true))
+                return;
             p.edit().putString("ritualDay", LocalDate.now().toString()).apply();
             // Un servicio de Accesibilidad puede abrir una actividad desde segundo plano.
             app.startActivity(
                     new Intent()
                             .setClassName(app, "es.foco.next.ui.HomeActivity")
                             .putExtra(EXTRA_WAKE, true)
-                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP));
+                            .addFlags(
+                                    Intent.FLAG_ACTIVITY_NEW_TASK
+                                            | Intent.FLAG_ACTIVITY_SINGLE_TOP));
         } catch (RuntimeException ignored) {
         }
     }
@@ -239,7 +288,8 @@ public final class OwlWatch extends BroadcastReceiver {
         nightRest(c);
         long now = System.currentTimeMillis();
         opens.addLast(now);
-        while (!opens.isEmpty() && now - opens.peekFirst() > OwlCare.RESTLESS_WINDOW_MS) opens.pollFirst();
+        while (!opens.isEmpty() && now - opens.peekFirst() > OwlCare.RESTLESS_WINDOW_MS)
+            opens.pollFirst();
         if (!OwlCare.restless(new ArrayList<>(opens), now, restlessAt)) return;
         restlessAt = now;
         opens.clear();
@@ -250,8 +300,9 @@ public final class OwlWatch extends BroadcastReceiver {
     // ---------------- Descanso nocturno ----------------
 
     /**
-     * De noche (horario configurado): desbloquear, tocar al búho o abrir ocio manda un aviso cálido,
-     * como mucho uno cada 45 min y rotando los textos. Con No molestar activo no se envía nada.
+     * De noche (horario configurado): desbloquear, tocar al búho o abrir ocio manda un aviso
+     * cálido, como mucho uno cada 45 min y rotando los textos. Con No molestar activo no se envía
+     * nada.
      */
     public static synchronized void nightRest(Context c) {
         try {
@@ -259,11 +310,17 @@ public final class OwlWatch extends BroadcastReceiver {
             Context app = c.getApplicationContext();
             SharedPreferences p = prefs(app);
             long now = System.currentTimeMillis();
-            if (!es.foco.next.core.home.OwlState.nightNoticeDue(p.getLong("nightAt", 0), now)) return;
+            if (!es.foco.next.core.home.OwlState.nightNoticeDue(p.getLong("nightAt", 0), now))
+                return;
             if (!OwlBudget.take(app, true)) return; // v32 (R10): presupuesto común de avisos
             int i = p.getInt("nightIdx", 0);
             p.edit().putLong("nightAt", now).putInt("nightIdx", i + 1).apply();
-            notify(app, ID_NIGHT, "Buenas noches", es.foco.next.core.home.OwlState.nightText(i), "Vale",
+            notify(
+                    app,
+                    ID_NIGHT,
+                    "Buenas noches",
+                    es.foco.next.core.home.OwlState.nightText(i),
+                    "Vale",
                     new Intent().setClassName(app, "es.foco.next.ui.HomeActivity"));
         } catch (RuntimeException ignored) {
         }
@@ -271,24 +328,28 @@ public final class OwlWatch extends BroadcastReceiver {
 
     // ---------------- Última app antes de volver al inicio (memoria de 4 min) ----------------
 
-    private static es.foco.next.core.home.OwlState.Recent curCat = es.foco.next.core.home.OwlState.Recent.NONE;
+    private static es.foco.next.core.home.OwlState.Recent curCat =
+            es.foco.next.core.home.OwlState.Recent.NONE;
     private static boolean curOver;
 
     /**
-     * Lo llama la Accesibilidad en cada evaluación. Solo escribe al salir de una app de lectura o de
-     * ocio (no en cada evento): categoría, hora de salida y si el ocio pasó del límite.
+     * Lo llama la Accesibilidad en cada evaluación. Solo escribe al salir de una app de lectura o
+     * de ocio (no en cada evento): categoría, hora de salida y si el ocio pasó del límite.
      */
     static synchronized void foreground(Context c, String pkg, boolean leisure, boolean over) {
         es.foco.next.core.home.OwlState.Recent cat =
-                leisure ? es.foco.next.core.home.OwlState.Recent.OCIO
-                        : es.foco.next.core.home.OwlState.reading(pkg, null) ? es.foco.next.core.home.OwlState.Recent.LECTURA
-                        : es.foco.next.core.home.OwlState.Recent.NONE;
+                leisure
+                        ? es.foco.next.core.home.OwlState.Recent.OCIO
+                        : es.foco.next.core.home.OwlState.reading(pkg, null)
+                                ? es.foco.next.core.home.OwlState.Recent.LECTURA
+                                : es.foco.next.core.home.OwlState.Recent.NONE;
         if (cat == curCat) {
             if (leisure && over) curOver = true;
             return;
         }
         if (curCat != es.foco.next.core.home.OwlState.Recent.NONE)
-            prefs(c.getApplicationContext()).edit()
+            prefs(c.getApplicationContext())
+                    .edit()
                     .putString("recentCat", curCat.name())
                     .putLong("recentAt", System.currentTimeMillis())
                     .putBoolean("recentOver", curOver)
@@ -299,7 +360,8 @@ public final class OwlWatch extends BroadcastReceiver {
 
     public static es.foco.next.core.home.OwlState.Recent recentCat(Context c) {
         try {
-            return es.foco.next.core.home.OwlState.Recent.valueOf(prefs(c.getApplicationContext()).getString("recentCat", "NONE"));
+            return es.foco.next.core.home.OwlState.Recent.valueOf(
+                    prefs(c.getApplicationContext()).getString("recentCat", "NONE"));
         } catch (IllegalArgumentException e) {
             return es.foco.next.core.home.OwlState.Recent.NONE;
         }
@@ -315,24 +377,34 @@ public final class OwlWatch extends BroadcastReceiver {
 
     // ---------------- Notificación del búho ----------------
 
-    private static void notify(Context app, int id, String title, String text, String button, Intent open) {
-        if (app.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return;
+    private static void notify(
+            Context app, int id, String title, String text, String button, Intent open) {
+        if (app.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) return;
         try {
             NotificationManager nm = app.getSystemService(NotificationManager.class);
-            if (nm == null || nm.getCurrentInterruptionFilter() > NotificationManager.INTERRUPTION_FILTER_ALL) return;
-            NotificationChannel ch = new NotificationChannel(CHANNEL, "Acompañamiento", NotificationManager.IMPORTANCE_LOW);
+            if (nm == null
+                    || nm.getCurrentInterruptionFilter()
+                            > NotificationManager.INTERRUPTION_FILTER_ALL) return;
+            NotificationChannel ch =
+                    new NotificationChannel(
+                            CHANNEL, "Acompañamiento", NotificationManager.IMPORTANCE_LOW);
             ch.setSound(null, null);
             ch.enableVibration(false);
             nm.createNotificationChannel(ch);
             PendingIntent tap =
                     PendingIntent.getActivity(
-                            app, id, open.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                            app,
+                            id,
+                            open.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
                             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             nm.notify(
                     id,
                     new Notification.Builder(app, CHANNEL)
                             .setSmallIcon(es.foco.next.R.drawable.ic_owl)
-                            .setLargeIcon(android.graphics.drawable.Icon.createWithResource(app, es.foco.next.R.drawable.owl_face))
+                            .setLargeIcon(
+                                    android.graphics.drawable.Icon.createWithResource(
+                                            app, es.foco.next.R.drawable.owl_face))
                             .setContentTitle("🦉 Búho · " + title)
                             .setContentText(text)
                             .setStyle(new Notification.BigTextStyle().bigText(text))

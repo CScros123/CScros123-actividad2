@@ -27,10 +27,13 @@ public final class Routine {
     public static final class Task {
         public final String label;
         public final int minutes;
+
         /** Hora límite en minutos del día (8:30 → 510), o -1 sin ventana. */
         public final int window;
+
         /** 0 sin indicar · 1 fácil · 2 media · 3 difícil. */
         public final int difficulty;
+
         /** v30: al marcarla se pide una foto de evidencia. */
         public final boolean photo;
 
@@ -51,7 +54,11 @@ public final class Routine {
         }
 
         public String windowText() {
-            return window < 0 ? "" : (window / 60) + ":" + String.format(java.util.Locale.ROOT, "%02d", window % 60);
+            return window < 0
+                    ? ""
+                    : (window / 60)
+                            + ":"
+                            + String.format(java.util.Locale.ROOT, "%02d", window % 60);
         }
     }
 
@@ -76,15 +83,17 @@ public final class Routine {
             "Hacer el lonche de mañana · 10\nLeer un poco · 5\nOrdenar el cuarto · 5\nBañarte · 10\nArreglar la barba · 5";
 
     public static final int MAX_TASKS = 12;
+
     /** La mañana se abre a esta hora y, si no se hizo, deja de cerrar el ocio a mediodía. */
     public static final int MORNING_FROM = 5, MORNING_UNTIL = 12;
+
     /** La de noche cierra el ocio desde 2 h antes de la noche (después la noche ya lo cierra). */
     public static final int NIGHT_LEAD_HOURS = 2;
 
     /**
      * Una tarea por línea: "Bañarte · 10", "Bañarte 10", "Bañarte|10" o solo "Bañarte" (5 min).
-     * Foco Core añade, opcionales y en cualquier orden: hora límite y dificultad:
-     * "Estudiar · 60 · 10:30 · difícil".
+     * Foco Core añade, opcionales y en cualquier orden: hora límite y dificultad: "Estudiar · 60 ·
+     * 10:30 · difícil".
      */
     public static List<Task> parse(String text) {
         List<Task> out = new ArrayList<>();
@@ -92,7 +101,8 @@ public final class Routine {
         for (String raw : text.split("\n")) {
             String line = raw.trim();
             if (line.isEmpty()) continue;
-            // v30: "•" (que algunos teclados ponen en vez de "·") también separa; nunca queda en el nombre.
+            // v30: "•" (que algunos teclados ponen en vez de "·") también separa; nunca queda en el
+            // nombre.
             String[] parts = line.split("[·|•]");
             String label = parts[0].replace("•", "").trim();
             int minutes = -1, window = -1, difficulty = 0;
@@ -108,7 +118,9 @@ public final class Routine {
                 else if (p.equalsIgnoreCase("foto")) photo = true;
             }
             if (parts.length == 1 || minutes < 0) {
-                java.util.regex.Matcher m = java.util.regex.Pattern.compile("^(.*?)[\\s:-]*(\\d{1,3})\\s*(min)?$").matcher(label);
+                java.util.regex.Matcher m =
+                        java.util.regex.Pattern.compile("^(.*?)[\\s:-]*(\\d{1,3})\\s*(min)?$")
+                                .matcher(label);
                 if (m.matches() && !m.group(1).trim().isEmpty()) {
                     label = m.group(1).trim();
                     if (minutes < 0) minutes = Integer.parseInt(m.group(2));
@@ -116,7 +128,13 @@ public final class Routine {
             }
             if (minutes < 0) minutes = 5;
             if (label.isEmpty()) continue;
-            out.add(new Task(label.length() > 60 ? label.substring(0, 60) : label, Math.max(1, Math.min(240, minutes)), window, difficulty, photo));
+            out.add(
+                    new Task(
+                            label.length() > 60 ? label.substring(0, 60) : label,
+                            Math.max(1, Math.min(240, minutes)),
+                            window,
+                            difficulty,
+                            photo));
             if (out.size() == MAX_TASKS) break;
         }
         return out;
@@ -128,7 +146,8 @@ public final class Routine {
             if (b.length() > 0) b.append('\n');
             b.append(t.label).append(" · ").append(t.minutes);
             if (t.window >= 0) b.append(" · ").append(t.windowText());
-            if (t.difficulty > 0) b.append(" · ").append(DIFFICULTY[t.difficulty].toLowerCase(java.util.Locale.ROOT));
+            if (t.difficulty > 0)
+                b.append(" · ").append(DIFFICULTY[t.difficulty].toLowerCase(java.util.Locale.ROOT));
             if (t.photo) b.append(" · foto");
         }
         return b.toString();
@@ -138,7 +157,10 @@ public final class Routine {
 
     /** Nombre limpio para una tarea nueva: sin separadores ni saltos de línea, máximo 60. */
     public static String cleanLabel(String raw) {
-        String s = raw == null ? "" : raw.replaceAll("[·|•\\n\\r]", " ").replaceAll("\\s+", " ").trim();
+        String s =
+                raw == null
+                        ? ""
+                        : raw.replaceAll("[·|•\\n\\r]", " ").replaceAll("\\s+", " ").trim();
         return s.length() > 60 ? s.substring(0, 60) : s;
     }
 
@@ -213,28 +235,41 @@ public final class Routine {
     }
 
     /**
-     * ¿Cierra el ocio ahora? Solo con rutinas activadas, con tareas, dentro de su ventana y si falta
-     * algo (o si todo está marcado pero aún no pasó el tiempo mínimo).
+     * ¿Cierra el ocio ahora? Solo con rutinas activadas, con tareas, dentro de su ventana y si
+     * falta algo (o si todo está marcado pero aún no pasó el tiempo mínimo).
      */
-    public static boolean blocks(boolean enabled, List<Task> tasks, Set<Integer> done, long startedAt, long now) {
+    public static boolean blocks(
+            boolean enabled, List<Task> tasks, Set<Integer> done, long startedAt, long now) {
         if (!enabled || tasks.isEmpty()) return false;
         if (remainingCount(tasks, done) > 0) return true;
         return unlockWaitMs(tasks, startedAt, now) > 0;
     }
 
-    public static String gateText(Kind k, List<Task> tasks, Set<Integer> done, long startedAt, long now) {
+    public static String gateText(
+            Kind k, List<Task> tasks, Set<Integer> done, long startedAt, long now) {
         int left = remainingCount(tasks, done);
         if (left == 0) {
             long w = (unlockWaitMs(tasks, startedAt, now) + 59_999) / 60_000;
-            return "Rutina de la " + k.word + " marcada. El ocio se abre en " + Math.max(1, w) + " min.";
+            return "Rutina de la "
+                    + k.word
+                    + " marcada. El ocio se abre en "
+                    + Math.max(1, w)
+                    + " min.";
         }
-        return "Primero tu rutina de la " + k.word + ": " + (left == 1 ? "falta 1" : "faltan " + left)
-                + " (~" + remainingMinutes(tasks, done) + " min). Márcala en el inicio.";
+        return "Primero tu rutina de la "
+                + k.word
+                + ": "
+                + (left == 1 ? "falta 1" : "faltan " + left)
+                + " (~"
+                + remainingMinutes(tasks, done)
+                + " min). Márcala en el inicio.";
     }
 
     // ---------------- Planificar: por día de la semana y por fecha ----------------
 
-    public static final String[] DAY_NAMES = {"lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"};
+    public static final String[] DAY_NAMES = {
+        "lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"
+    };
 
     public static String dayName(java.time.DayOfWeek d) {
         return DAY_NAMES[d.getValue() - 1];
@@ -253,8 +288,12 @@ public final class Routine {
         return "tareas_" + k.name() + "_" + date;
     }
 
-    /** Qué lista vale para una fecha: la de esa fecha, si no la de su día de la semana, si no la general. */
-    public static String resolve(Kind k, java.time.LocalDate date, java.util.function.Function<String, String> stored) {
+    /**
+     * Qué lista vale para una fecha: la de esa fecha, si no la de su día de la semana, si no la
+     * general.
+     */
+    public static String resolve(
+            Kind k, java.time.LocalDate date, java.util.function.Function<String, String> stored) {
         String v = stored.apply(dateKey(k, date));
         if (v != null) return v;
         v = stored.apply(weekdayKey(k, date.getDayOfWeek()));

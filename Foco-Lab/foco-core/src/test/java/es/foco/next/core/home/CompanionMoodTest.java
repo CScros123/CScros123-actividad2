@@ -31,7 +31,9 @@ public class CompanionMoodTest {
         assertEquals(0, CompanionMood.of(Estado.NEUTRO, 0, 0, 0, 0, 12).fallen);
         assertEquals(1, CompanionMood.of(Estado.NEUTRO, 0, 0, 2, 0, 12).fallen);
         assertEquals(3, CompanionMood.of(Estado.NEUTRO, 0, 0, 90, 0, 12).fallen);
-        String c = CompanionMood.of(Estado.NEUTRO, 0, 0, 3, 0, 12).caption(CompanionMood.Variant.BONSAI, 0);
+        String c =
+                CompanionMood.of(Estado.NEUTRO, 0, 0, 3, 0, 12)
+                        .caption(CompanionMood.Variant.BONSAI, 0);
         assertTrue(c.contains("se recupera"));
     }
 

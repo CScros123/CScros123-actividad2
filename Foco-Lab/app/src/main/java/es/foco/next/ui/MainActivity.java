@@ -59,10 +59,13 @@ public final class MainActivity extends Activity {
                     }
                 }
             };
+
     /** v27: pestaña con la que abrir Foco (0 Estado, 1 Mi plan, 2 Ajustes, 3 Bloqueos). */
     public static final String EXTRA_PAGE = "es.foco.next.extra.PAGE";
+
     int pendingReminderMinute = -1;
     private final Handler main = new Handler(Looper.getMainLooper());
+
     /** Foco Home, etapa 1.1: trabajo pesado de onResume, tras el primer dibujado. */
     private final Runnable deferred =
             () -> {
@@ -71,6 +74,7 @@ public final class MainActivity extends Activity {
                 es.foco.next.runtime.CategoryInspector.daily(this);
                 es.foco.next.runtime.Inspector.maybeWrite(this, false);
             };
+
     private final Runnable update =
             new Runnable() {
                 public void run() {
@@ -174,7 +178,9 @@ public final class MainActivity extends Activity {
                 page = asked;
             }
             // v26: aviso del búho "NextDNS no responde" → Ajustes y la pregunta.
-            boolean dnsChoice = getIntent().getBooleanExtra(es.foco.next.runtime.DnsAuto.EXTRA_DNS_CHOICE, false);
+            boolean dnsChoice =
+                    getIntent()
+                            .getBooleanExtra(es.foco.next.runtime.DnsAuto.EXTRA_DNS_CHOICE, false);
             if (dnsChoice) {
                 getIntent().removeExtra(es.foco.next.runtime.DnsAuto.EXTRA_DNS_CHOICE);
                 page = 2;
@@ -414,8 +420,7 @@ public final class MainActivity extends Activity {
         Design.note(box, es.foco.next.core.care.CareMode.description(m));
         box.addView(Design.button(this, "Cambiar de modo", false, this::chooseMode));
         if (!es.foco.next.runtime.CareStore.moodAskedToday(this)
-                && java.time.LocalTime.now().getHour() >= 5)
-            main.post(() -> askMood(false));
+                && java.time.LocalTime.now().getHour() >= 5) main.post(() -> askMood(false));
     }
 
     private void chooseMode() {
@@ -423,12 +428,16 @@ public final class MainActivity extends Activity {
         boolean focus = m == es.foco.next.core.care.CareMode.Modo.ENFOQUE;
         long careLeftMs = es.foco.next.runtime.CareStore.careBudgetLeft(this);
         String careNote =
-                careLeftMs == Long.MAX_VALUE ? "" : " · te quedan " + careLeftMs / 60_000 + " min hoy";
+                careLeftMs == Long.MAX_VALUE
+                        ? ""
+                        : " · te quedan " + careLeftMs / 60_000 + " min hoy";
         String[] items = {
             "Cuidado 15 min" + careNote,
             "Cuidado 1 h",
             "Cuidado 3 h",
-            focus ? "Normal (disponible al terminar el Enfoque)" : "Normal: 5 min y 30 min de pausa, con avisos",
+            focus
+                    ? "Normal (disponible al terminar el Enfoque)"
+                    : "Normal: 5 min y 30 min de pausa, con avisos",
             "Enfoque 1 h",
             "Enfoque 2 h",
             "Enfoque hasta las " + es.foco.next.core.AbsoluteRules.nightStart() + ":00"
@@ -444,15 +453,20 @@ public final class MainActivity extends Activity {
                                 askMood(true);
                             } else if (w == 3) {
                                 if (!es.foco.next.runtime.CareStore.choose(
-                                        this, es.foco.next.core.care.CareMode.Modo.NORMAL, "elegido"))
-                                    message("Normal estará disponible cuando termine tu Enfoque. A Cuidado sí puedes pasar ya.");
+                                        this,
+                                        es.foco.next.core.care.CareMode.Modo.NORMAL,
+                                        "elegido"))
+                                    message(
+                                            "Normal estará disponible cuando termine tu Enfoque. A Cuidado sí puedes pasar ya.");
                             } else {
                                 es.foco.next.core.care.CareMode.Duracion dur =
                                         w == 4
                                                 ? es.foco.next.core.care.CareMode.Duracion.UNA_HORA
                                                 : w == 5
-                                                        ? es.foco.next.core.care.CareMode.Duracion.DOS_HORAS
-                                                        : es.foco.next.core.care.CareMode.Duracion.HASTA_LA_NOCHE;
+                                                        ? es.foco.next.core.care.CareMode.Duracion
+                                                                .DOS_HORAS
+                                                        : es.foco.next.core.care.CareMode.Duracion
+                                                                .HASTA_LA_NOCHE;
                                 if (!es.foco.next.runtime.CareStore.focus(this, dur))
                                     message("Esa duración ya no está disponible hoy.");
                             }
@@ -467,6 +481,7 @@ public final class MainActivity extends Activity {
      * cambio va igual aunque no conteste). Con 1 o 2 se ofrece CUIDADO; nunca se cambia solo.
      */
     private String moodOffered = "";
+
     /** Minutos de Cuidado elegidos (se aplican tras la pregunta de ánimo). */
     private int pendingCareMin = 60;
 
@@ -519,7 +534,9 @@ public final class MainActivity extends Activity {
                             boolean low =
                                     pick[0] > 0
                                             && es.foco.next.runtime.CareStore.recordMood(
-                                                    this, pick[0], word.getText().toString(),
+                                                    this,
+                                                    pick[0],
+                                                    word.getText().toString(),
                                                     thenCare ? "al_elegir_cuidado" : "foco");
                             if (pick[0] == 0) es.foco.next.runtime.CareStore.skipMood(this);
                             else message(es.foco.next.core.care.Mood.reply(pick[0]));
@@ -578,7 +595,8 @@ public final class MainActivity extends Activity {
         LinearLayout choose = Design.card(body, "Cinco minutos. Después, tú eliges algo más.");
         Design.note(
                 choose,
-                es.foco.next.runtime.CareStore.mode(this) == es.foco.next.core.care.CareMode.Modo.ENFOQUE
+                es.foco.next.runtime.CareStore.mode(this)
+                                == es.foco.next.core.care.CareMode.Modo.ENFOQUE
                         ? "Enfoque: al agotar 5 minutos acumulados, tus apps de ocio se cierran hasta el final de la ventana de una hora."
                         : "Modo Normal: 5 minutos de ocio por hora. Si te pasas, no se cierra nada; te aviso con una idea (como mucho 3 veces por hora). En Cuidado, el ocio no se cuenta.");
         if (locked)
@@ -649,7 +667,10 @@ public final class MainActivity extends Activity {
                         still ? "Movimiento: todo quieto · cambiar" : "Movimiento: suave · cambiar",
                         false,
                         () -> {
-                            amb.edit().putBoolean("saving", !still).putBoolean("reduce", !still).apply();
+                            amb.edit()
+                                    .putBoolean("saving", !still)
+                                    .putBoolean("reduce", !still)
+                                    .apply();
                             render();
                         }));
         boolean routines = es.foco.next.runtime.RoutineStore.enabled(this);
@@ -659,10 +680,13 @@ public final class MainActivity extends Activity {
                         this,
                         routines && (off == null || off.isEmpty())
                                 ? "Rutinas obligatorias: encendidas · apagar desde mañana"
-                                : routines ? "Rutinas: se apagan mañana" : "Rutinas obligatorias: apagadas · encender",
+                                : routines
+                                        ? "Rutinas: se apagan mañana"
+                                        : "Rutinas obligatorias: apagadas · encender",
                         false,
                         () -> {
-                            es.foco.next.runtime.RoutineStore.setEnabled(this, !routines || (off != null && !off.isEmpty()));
+                            es.foco.next.runtime.RoutineStore.setEnabled(
+                                    this, !routines || (off != null && !off.isEmpty()));
                             render();
                         }));
         homeAction(box, "Planificar la semana", "plan");
@@ -674,7 +698,12 @@ public final class MainActivity extends Activity {
         Design.note(box, "La foto del tema se pone también en la pantalla de bloqueo, sola.");
     }
 
-    private void homeToggle(LinearLayout box, String label, android.content.SharedPreferences p, String key, boolean def) {
+    private void homeToggle(
+            LinearLayout box,
+            String label,
+            android.content.SharedPreferences p,
+            String key,
+            boolean def) {
         boolean on = p.getBoolean(key, def);
         box.addView(
                 Design.button(
@@ -696,7 +725,8 @@ public final class MainActivity extends Activity {
                         () ->
                                 open(
                                         new Intent(this, HomeActivity.class)
-                                                .putExtra(HomeActivity.EXTRA_HOME_ACTION, action))));
+                                                .putExtra(
+                                                        HomeActivity.EXTRA_HOME_ACTION, action))));
     }
 
     private void settings() {
@@ -740,7 +770,8 @@ public final class MainActivity extends Activity {
                             else change(n -> n.enabled = true);
                         }));
         // Auditoría v13: los textos largos van a una sola hoja a petición, no en la página.
-        essential.addView(Design.button(this, "Cómo funciona y privacidad", false, this::showHowItWorks));
+        essential.addView(
+                Design.button(this, "Cómo funciona y privacidad", false, this::showHowItWorks));
         essential.addView(
                 Design.button(
                         this,
@@ -792,7 +823,6 @@ public final class MainActivity extends Activity {
                         + ". Datos locales; sin cuenta ni telemetría. No se copian a la nube ni a otro teléfono.");
     }
 
-
     private void showHowItWorks() {
         new AlertDialog.Builder(this)
                 .setTitle("Cómo funciona")
@@ -811,8 +841,6 @@ public final class MainActivity extends Activity {
                 .setPositiveButton("Entendido", null)
                 .show();
     }
-
-
 
     /**
      * Reglas absolutas: solo lectura. Viven en el código (core/AbsoluteRules); ninguna pantalla ni
@@ -1037,7 +1065,11 @@ public final class MainActivity extends Activity {
         Design.note(
                 box,
                 "Cada día va de 5:00 a 24:00. Al cerrarse, Foco guarda un informe con tus tareas de Foco Core, el dinero, los tiempos, los bloqueos, los retos de Lab y el DNS. Se queda en el teléfono (90 días); el ánimo no se incluye.");
-        Design.note(box, last.isEmpty() ? "Todavía no hay informes: el primero llega mañana." : "Último informe: " + last + ".");
+        Design.note(
+                box,
+                last.isEmpty()
+                        ? "Todavía no hay informes: el primero llega mañana."
+                        : "Último informe: " + last + ".");
         box.addView(
                 Design.button(
                         this,
@@ -1048,7 +1080,11 @@ public final class MainActivity extends Activity {
                                         new Intent(Intent.ACTION_CREATE_DOCUMENT)
                                                 .setType("text/plain")
                                                 .addCategory(Intent.CATEGORY_OPENABLE)
-                                                .putExtra(Intent.EXTRA_TITLE, "Foco-informes-" + LocalDate.now() + ".txt"),
+                                                .putExtra(
+                                                        Intent.EXTRA_TITLE,
+                                                        "Foco-informes-"
+                                                                + LocalDate.now()
+                                                                + ".txt"),
                                         18)));
     }
 
@@ -1189,7 +1225,8 @@ public final class MainActivity extends Activity {
                                         () -> {
                                             try {
                                                 Documents.write(this, target, text);
-                                                message("Informes exportados. Puedes analizarlos con Claude.");
+                                                message(
+                                                        "Informes exportados. Puedes analizarlos con Claude.");
                                             } catch (Exception e) {
                                                 message("No se pudo escribir el archivo.");
                                             }
@@ -1235,7 +1272,9 @@ public final class MainActivity extends Activity {
                 String backup = repository.exportBackup();
                 try {
                     org.json.JSONObject j = new org.json.JSONObject(backup);
-                    j.put(es.foco.next.runtime.FocoCoreBackup.KEY, es.foco.next.runtime.FocoCoreBackup.export(this));
+                    j.put(
+                            es.foco.next.runtime.FocoCoreBackup.KEY,
+                            es.foco.next.runtime.FocoCoreBackup.export(this));
                     j.put("informes", es.foco.next.runtime.Inspector.backup(this)); // v28
                     backup = j.toString();
                 } catch (org.json.JSONException ignored) {
@@ -1256,10 +1295,17 @@ public final class MainActivity extends Activity {
                                         repository.importBackup(json);
                                         try {
                                             org.json.JSONObject core =
-                                                    new org.json.JSONObject(json).optJSONObject(es.foco.next.runtime.FocoCoreBackup.KEY);
-                                            if (core != null) es.foco.next.runtime.FocoCoreBackup.restore(this, core);
+                                                    new org.json.JSONObject(json)
+                                                            .optJSONObject(
+                                                                    es.foco.next.runtime
+                                                                            .FocoCoreBackup.KEY);
+                                            if (core != null)
+                                                es.foco.next.runtime.FocoCoreBackup.restore(
+                                                        this, core);
                                             es.foco.next.runtime.Inspector.restore(
-                                                    this, new org.json.JSONObject(json).optJSONObject("informes"));
+                                                    this,
+                                                    new org.json.JSONObject(json)
+                                                            .optJSONObject("informes"));
                                         } catch (org.json.JSONException ignored) {
                                         }
                                         render();

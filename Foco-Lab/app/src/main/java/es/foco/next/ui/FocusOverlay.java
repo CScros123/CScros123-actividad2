@@ -256,7 +256,9 @@ public final class FocusOverlay {
                             scene,
                             "Abrir tu cofre 🎁",
                             true,
-                            () -> PracticeEntry.openChest(service))); // Lote C: solo si se ganó practicando
+                            () ->
+                                    PracticeEntry.openChest(
+                                            service))); // Lote C: solo si se ganó practicando
         box.addView(
                 action(
                         scene,
@@ -432,7 +434,8 @@ public final class FocusOverlay {
     /** v28: una frase de ánimo por pausa (la siguiente cada vez, sin repetir seguidas). */
     private String phrase() {
         try {
-            android.content.SharedPreferences p = service.getSharedPreferences("foco-pausa-frases", 0);
+            android.content.SharedPreferences p =
+                    service.getSharedPreferences("foco-pausa-frases", 0);
             long index = p.getLong("index", 0);
             p.edit().putLong("index", index + 1).apply();
             return es.foco.next.core.PauseMessages.next(
@@ -453,7 +456,9 @@ public final class FocusOverlay {
         try {
             String key = service.getSharedPreferences("foco-home", 0).getString("theme_now", "");
             if (key == null || key.isEmpty()) return null;
-            int res = service.getResources().getIdentifier("theme_" + key, "drawable", service.getPackageName());
+            int res =
+                    service.getResources()
+                            .getIdentifier("theme_" + key, "drawable", service.getPackageName());
             if (res == 0) return null;
             android.graphics.BitmapFactory.Options o = new android.graphics.BitmapFactory.Options();
             o.inSampleSize = 2;

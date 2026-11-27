@@ -33,9 +33,11 @@ public class AwarenessTest {
     public void laNotaPideQuincePalabrasDistintas() {
         assertEquals(1, Awareness.words("asdf asdf asdf ASDF"));
         assertEquals(0, Awareness.words("a b c"));
-        assertFalse(Awareness.noteOk("Estoy viendo cómo hacer pan sin horno, quiero probar la receta"));
-        assertTrue(Awareness.noteOk(
-                "Estoy viendo cómo hacer pan sin horno porque quiero probar la receta este fin de semana con mi familia"));
+        assertFalse(
+                Awareness.noteOk("Estoy viendo cómo hacer pan sin horno, quiero probar la receta"));
+        assertTrue(
+                Awareness.noteOk(
+                        "Estoy viendo cómo hacer pan sin horno porque quiero probar la receta este fin de semana con mi familia"));
         assertEquals(0, Awareness.words(null));
     }
 
@@ -69,7 +71,8 @@ public class AwarenessTest {
         assertEquals(5 * M, Awareness.extendMs(90 * M));
         assertEquals(3 * M, Awareness.extendMs(120 * M));
         assertEquals("", Awareness.stageText(40 * M));
-        assertEquals("Hoy llevas 2 h 08 de ocio: te pregunto a los 5 min", Awareness.stageText(128 * M));
+        assertEquals(
+                "Hoy llevas 2 h 08 de ocio: te pregunto a los 5 min", Awareness.stageText(128 * M));
     }
 
     @Test

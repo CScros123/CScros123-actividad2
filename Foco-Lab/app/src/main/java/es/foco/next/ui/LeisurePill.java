@@ -11,9 +11,9 @@ import android.view.WindowManager;
 import android.widget.TextView;
 
 /**
- * Cronómetro de las apps vigiladas: píldora pequeña arriba a la derecha ("🦉 4 min"). Minutos, nunca
- * segundos; el último minuto en tono cálido (ámbar, sin rojo). Se puede arrastrar y recuerda dónde
- * la dejaste. No roba el foco a la app. La decide la Accesibilidad; aquí solo se dibuja.
+ * Cronómetro de las apps vigiladas: píldora pequeña arriba a la derecha ("🦉 4 min"). Minutos,
+ * nunca segundos; el último minuto en tono cálido (ámbar, sin rojo). Se puede arrastrar y recuerda
+ * dónde la dejaste. No roba el foco a la app. La decide la Accesibilidad; aquí solo se dibuja.
  */
 public final class LeisurePill {
     private final AccessibilityService service;
@@ -65,7 +65,8 @@ public final class LeisurePill {
 
     private void paint() {
         GradientDrawable bg = new GradientDrawable();
-        bg.setColor(warm ? 0xEE8A5A2B : 0xD91C2920); // ámbar tostado en el último minuto, nunca rojo
+        bg.setColor(
+                warm ? 0xEE8A5A2B : 0xD91C2920); // ámbar tostado en el último minuto, nunca rojo
         bg.setCornerRadius(Design.dp(service, 999));
         bg.setStroke(Design.dp(service, 1), 0x33FFFFFF);
         view.setBackground(bg);
@@ -75,18 +76,24 @@ public final class LeisurePill {
         view = new TextView(service);
         view.setTextColor(0xFFF6F7FB);
         view.setTextSize(13);
-        view.setTypeface(Design.font(view.getContext(), es.foco.next.R.font.rubik_extrabold, "sans-serif-medium")); // v41
+        view.setTypeface(
+                Design.font(
+                        view.getContext(),
+                        es.foco.next.R.font.rubik_extrabold,
+                        "sans-serif-medium")); // v41
         int h = Design.dp(service, 12), v = Design.dp(service, 6);
         view.setPadding(h, v, h, v);
         view.setContentDescription("Tiempo de ocio restante");
         warm = false;
         paint();
-        lp = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
-                PixelFormat.TRANSLUCENT);
+        lp =
+                new WindowManager.LayoutParams(
+                        WindowManager.LayoutParams.WRAP_CONTENT,
+                        WindowManager.LayoutParams.WRAP_CONTENT,
+                        WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                                | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                        PixelFormat.TRANSLUCENT);
         lp.gravity = Gravity.TOP | Gravity.END;
         lp.x = prefs().getInt("x", Design.dp(service, 12));
         lp.y = prefs().getInt("y", Design.dp(service, 96));
@@ -106,7 +113,12 @@ public final class LeisurePill {
                                 oy = lp.y;
                                 return true;
                             case MotionEvent.ACTION_MOVE:
-                                lp.x = Math.max(0, ox - (int) (e.getRawX() - sx)); // gravedad END: x crece hacia la izquierda
+                                lp.x =
+                                        Math.max(
+                                                0,
+                                                ox - (int) (e.getRawX() - sx)); // gravedad END: x
+                                // crece hacia la
+                                // izquierda
                                 lp.y = Math.max(0, oy + (int) (e.getRawY() - sy));
                                 try {
                                     wm.updateViewLayout(view, lp);

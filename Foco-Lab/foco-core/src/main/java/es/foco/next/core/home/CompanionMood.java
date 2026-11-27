@@ -27,18 +27,30 @@ public final class CompanionMood {
 
     /** 0..4: tamaño (tiempo invertido hoy). */
     public final int growth;
+
     /** 0..3: flores, chispas o musgo (retos superados hoy). */
     public final int blooms;
+
     /** 0..3: hojas caídas, ceniza o piedras sueltas (ocio sin saldo hoy). */
     public final int fallen;
+
     /** Rocío o vapor: por la mañana o tras un descanso real. */
     public final boolean dew;
+
     /** Noche: el banco deja de sumar y el compañero descansa. */
     public final boolean resting;
+
     /** Productivo: más luz. Distraído: se inquieta un poco (oscila más). */
     public final boolean bright, restless;
 
-    private CompanionMood(int growth, int blooms, int fallen, boolean dew, boolean resting, boolean bright, boolean restless) {
+    private CompanionMood(
+            int growth,
+            int blooms,
+            int fallen,
+            boolean dew,
+            boolean resting,
+            boolean bright,
+            boolean restless) {
         this.growth = growth;
         this.blooms = blooms;
         this.fallen = fallen;
@@ -48,10 +60,12 @@ public final class CompanionMood {
         this.restless = restless;
     }
 
-    public static CompanionMood of(Estado e, long investedMin, int retosHoy, long extraMin, int descansosHoy, int hour) {
+    public static CompanionMood of(
+            Estado e, long investedMin, int retosHoy, long extraMin, int descansosHoy, int hour) {
         boolean night = e == Estado.NOCHE;
         int fallen = extraMin <= 0 ? 0 : (int) Math.min(3, 1 + extraMin / 5);
-        boolean dew = !night && ((hour >= 5 && hour < 10) || descansosHoy > 0 || e == Estado.DESPERTAR);
+        boolean dew =
+                !night && ((hour >= 5 && hour < 10) || descansosHoy > 0 || e == Estado.DESPERTAR);
         return new CompanionMood(
                 HomePalette.plantSize(investedMin),
                 Math.max(0, Math.min(3, retosHoy)),
@@ -64,12 +78,21 @@ public final class CompanionMood {
 
     /** Frase corta al tocarlo (sin números técnicos más allá de los minutos del día). */
     public String caption(Variant v, long investedMin) {
-        String who = v == Variant.FOGATA ? "La fogata" : v == Variant.PIEDRAS ? "Las piedras" : "El bonsái";
+        String who =
+                v == Variant.FOGATA
+                        ? "La fogata"
+                        : v == Variant.PIEDRAS ? "Las piedras" : "El bonsái";
         if (resting) return who + " descansa. El ocio vuelve a las 7:00.";
         if (fallen > 0) return who + " perdió algo hoy; mañana se recupera.";
-        if (blooms > 0) return "Retos superados hoy: " + blooms + (blooms == 1 ? ". Se nota." : ". Se nota mucho.");
+        if (blooms > 0)
+            return "Retos superados hoy: "
+                    + blooms
+                    + (blooms == 1 ? ". Se nota." : ". Se nota mucho.");
         if (dew) return "Rocío fresco: buen momento para empezar.";
         if (investedMin <= 0) return who + " espera tu primer paso del día.";
-        return investedMin + " min invertidos hoy. " + who + (growth >= 3 ? " está en su mejor momento." : " sigue creciendo.");
+        return investedMin
+                + " min invertidos hoy. "
+                + who
+                + (growth >= 3 ? " está en su mejor momento." : " sigue creciendo.");
     }
 }

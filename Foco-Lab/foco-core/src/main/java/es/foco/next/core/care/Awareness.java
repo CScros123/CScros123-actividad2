@@ -32,14 +32,17 @@ public final class Awareness {
     public static final long EXIT_ASK_MS = 10 * MIN;
     public static final long MUSIC_MS = 3 * MIN;
     public static final int MIN_WORDS = 15;
+
     /** «¿Valió la pena?» como mucho estas veces al día. */
     public static final int WORTH_PER_DAY = 6;
 
     // v34: cuanto más ocio llevas hoy (día de Foco, desde las 04:00), antes llega la pregunta.
     /** Desde aquí la primera pregunta llega a los {@link #FIRST_CHECK_1H_MS}. */
     public static final long TODAY_1H_MS = 60 * MIN;
+
     /** Desde aquí, a los {@link #FIRST_CHECK_2H_MS} y tras un «sí» solo {@link #EXTEND_2H_MS}. */
     public static final long TODAY_2H_MS = 120 * MIN;
+
     public static final long FIRST_CHECK_1H_MS = 10 * MIN;
     public static final long FIRST_CHECK_2H_MS = 5 * MIN;
     public static final long EXTEND_2H_MS = 3 * MIN;
@@ -105,7 +108,8 @@ public final class Awareness {
      * @param extendedUntil fin de los 5 min tras un «sí» en esta sesión (0 si no hubo)
      * @param reopenedAfterNo se volvió a la app poco después de decir «no»: se pregunta al abrirla
      */
-    public static long dueIn(long sessionMs, long extendedUntil, long now, boolean reopenedAfterNo) {
+    public static long dueIn(
+            long sessionMs, long extendedUntil, long now, boolean reopenedAfterNo) {
         return dueIn(sessionMs, extendedUntil, now, reopenedAfterNo, 0);
     }
 
@@ -115,7 +119,11 @@ public final class Awareness {
      * @param todayBeforeMs ocio de hoy antes de esta sesión (0 si no se sabe)
      */
     public static long dueIn(
-            long sessionMs, long extendedUntil, long now, boolean reopenedAfterNo, long todayBeforeMs) {
+            long sessionMs,
+            long extendedUntil,
+            long now,
+            boolean reopenedAfterNo,
+            long todayBeforeMs) {
         if (extendedUntil > 0) return Math.max(0, extendedUntil - now);
         if (reopenedAfterNo) return 0;
         long session = Math.max(0, sessionMs), before = Math.max(0, todayBeforeMs);
@@ -133,16 +141,20 @@ public final class Awareness {
     // v35: corte preciso entre videos. Cuando toca preguntar, Foco espera a que pases al siguiente
     // video (deslizar) y abre la ventana justo ahí, nunca a mitad de uno. Si no deslizas en
     // {@link #cutGraceMs} (video largo, comentarios, chat), pregunta igual.
-    /** Dos cambios de video más juntos que esto cuentan como uno (un deslizamiento manda varios). */
+    /**
+     * Dos cambios de video más juntos que esto cuentan como uno (un deslizamiento manda varios).
+     */
     public static final long SWIPE_GAP_MS = 3_000;
+
     /** Videos medidos en la sesión para usar tu ritmo real en lugar del típico. */
     public static final int MIN_VIDEOS_FOR_PACE = 5;
+
     public static final long GRACE_MIN_MS = 30_000;
     public static final long GRACE_MAX_MS = 3 * MIN;
 
     /**
-     * Duración típica de un video corto por app (lo que se suele ver antes de deslizar): TikTok
-     * ~45 s, Reels de Instagram y Facebook ~30 s, Shorts de YouTube ~40 s; otras, 60 s.
+     * Duración típica de un video corto por app (lo que se suele ver antes de deslizar): TikTok ~45
+     * s, Reels de Instagram y Facebook ~30 s, Shorts de YouTube ~40 s; otras, 60 s.
      */
     public static long typicalVideoMs(String pkg) {
         if (pkg == null) return 60_000;
@@ -169,23 +181,31 @@ public final class Awareness {
         return typicalVideoMs(pkg);
     }
 
-    /** Cuánto se espera al siguiente video antes de preguntar igual: dos videos (entre 30 s y 3 min). */
+    /**
+     * Cuánto se espera al siguiente video antes de preguntar igual: dos videos (entre 30 s y 3
+     * min).
+     */
     public static long cutGraceMs(String pkg, long sessionMs, int videos) {
         return Math.max(GRACE_MIN_MS, Math.min(GRACE_MAX_MS, 2 * videoMs(pkg, sessionMs, videos)));
     }
 
     /**
-     * ¿Se abre ya la pregunta? Solo cuando ya tocaba ({@code waitedMs} desde entonces): al pasar
-     * de video, al volver tras un «no» (al abrir la app), o al agotar la espera.
+     * ¿Se abre ya la pregunta? Solo cuando ya tocaba ({@code waitedMs} desde entonces): al pasar de
+     * video, al volver tras un «no» (al abrir la app), o al agotar la espera.
      */
-    public static boolean cutNow(boolean swipedSinceDue, boolean reopenedAfterNo, long waitedMs, long graceMs) {
+    public static boolean cutNow(
+            boolean swipedSinceDue, boolean reopenedAfterNo, long waitedMs, long graceMs) {
         return reopenedAfterNo || swipedSinceDue || waitedMs >= graceMs;
     }
 
     /** «≈ 38 videos · unos 28 s cada uno» (vacío si aún no hay datos). */
     public static String videosText(long sessionMs, int videos) {
         if (videos < MIN_VIDEOS_FOR_PACE || sessionMs <= 0) return "";
-        return "≈ " + videos + " videos · unos " + Math.max(1, sessionMs / videos / 1000) + " s cada uno";
+        return "≈ "
+                + videos
+                + " videos · unos "
+                + Math.max(1, sessionMs / videos / 1000)
+                + " s cada uno";
     }
 
     /** Minutos seguidos hasta la primera pregunta, según el ocio de hoy (contando esta sesión). */
@@ -203,8 +223,11 @@ public final class Awareness {
     /** Texto del tramo para la ventana: «Hoy llevas 2 h 08 de ocio: te pregunto cada 5 min». */
     public static String stageText(long todayMs) {
         if (todayMs < TODAY_1H_MS) return "";
-        return "Hoy llevas " + duration(todayMs) + " de ocio: te pregunto a los "
-                + firstCheckMs(todayMs) / MIN + " min";
+        return "Hoy llevas "
+                + duration(todayMs)
+                + " de ocio: te pregunto a los "
+                + firstCheckMs(todayMs) / MIN
+                + " min";
     }
 
     /** ¿Se pregunta «¿Valió la pena?» al salir? */

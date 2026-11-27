@@ -11,8 +11,8 @@ object LabLaunch {
     const val EXTRA_GAME = "personal.qqq.braintraining.extra.GAME"
 
     /**
-     * Foco Home, etapa 4.3: abre Lab directamente en ESE juego (12 rondas, nivel guardado). Desde el
-     * inicio: tarea propia; al terminar, "atrás" vuelve al inicio.
+     * Foco Home, etapa 4.3: abre Lab directamente en ESE juego (12 rondas, nivel guardado). Desde
+     * el inicio: tarea propia; al terminar, "atrás" vuelve al inicio.
      */
     @JvmStatic
     fun game(context: Context, id: String): Intent =

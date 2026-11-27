@@ -18,8 +18,8 @@ import java.util.Set;
  *   <li>Redes sociales fijas en ocio (apps y dominios).
  *   <li>Noche absoluta de 21:00 a 07:00: sin ocio, sin bloque gratis, sin gastar ni ganar minutos.
  *   <li>Hueco de configuración: 30 días de memoria del ocio y 24 horas para sacar una app de ocio.
- *   <li>(v26) Sin banco de minutos: el ocio de Enfoque y del Weekend Lock lo abre Foco Core. Antes: retos según nivel, caída por repetición, misiones a 0, +10 solo por nivel
- *       nuevo.
+ *   <li>(v26) Sin banco de minutos: el ocio de Enfoque y del Weekend Lock lo abre Foco Core. Antes:
+ *       retos según nivel, caída por repetición, misiones a 0, +10 solo por nivel nuevo.
  * </ol>
  */
 public final class AbsoluteRules {
@@ -105,9 +105,9 @@ public final class AbsoluteRules {
     public static final int NIGHT_START = 21, NIGHT_END = 7;
 
     /**
-     * Modos de cuidado: el horario de la noche se puede ajustar (es.foco.next.core.care.NightHours).
-     * Endurecer se aplica al instante y aflojar al día siguiente; quien lo decide llama a {@link
-     * #useNight}. Por defecto, 21:00 a 07:00.
+     * Modos de cuidado: el horario de la noche se puede ajustar
+     * (es.foco.next.core.care.NightHours). Endurecer se aplica al instante y aflojar al día
+     * siguiente; quien lo decide llama a {@link #useNight}. Por defecto, 21:00 a 07:00.
      */
     private static volatile int nightStart = NIGHT_START, nightEnd = NIGHT_END;
 
@@ -118,8 +118,8 @@ public final class AbsoluteRules {
     }
 
     /**
-     * v32 (R13): de dónde sale el horario de la noche que vale hoy. La app instala una fuente que lo
-     * lee de sus preferencias guardadas en cada consulta; así nadie depende de que antes alguien
+     * v32 (R13): de dónde sale el horario de la noche que vale hoy. La app instala una fuente que
+     * lo lee de sus preferencias guardadas en cada consulta; así nadie depende de que antes alguien
      * haya llamado a {@link #useNight} en este proceso. Sin fuente (pruebas), vale lo de useNight.
      */
     public interface NightSource {
@@ -142,7 +142,9 @@ public final class AbsoluteRules {
         if (s != null)
             try {
                 int[] h = s.hours();
-                if (h != null && h.length == 2 && es.foco.next.core.care.NightHours.valid(h[0], h[1])) return h;
+                if (h != null
+                        && h.length == 2
+                        && es.foco.next.core.care.NightHours.valid(h[0], h[1])) return h;
             } catch (RuntimeException ignored) {
             }
         return new int[] {nightStart, nightEnd};
@@ -170,7 +172,6 @@ public final class AbsoluteRules {
     public static boolean night(LocalDateTime ahora, boolean autoTime) {
         return !autoTime || esNocheAbsoluta(ahora);
     }
-
 
     // ---------- Regla 3: hueco de configuración ----------
     public static final int LEISURE_MEMORY_DAYS = 30;

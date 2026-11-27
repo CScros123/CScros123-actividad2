@@ -31,9 +31,9 @@ import org.json.JSONObject;
  * (InspectorLog.usage/event y BlockLog.record llaman aquí) y al mostrarse el inicio; nunca con un
  * temporizador. La decisión es {@link HomeState#step} (pura, con pruebas).
  *
- * <p>Persistencia: SharedPreferences "foco-home-state" (el proyecto no usa DataStore; añadirlo sería
- * una dependencia nueva solo para 7 campos, y SharedPreferences ya es lo que usan Weekend, DNS y el
- * ambiente). Trabajo en un hilo propio; nunca lanza: si falla, el bloqueo sigue igual.
+ * <p>Persistencia: SharedPreferences "foco-home-state" (el proyecto no usa DataStore; añadirlo
+ * sería una dependencia nueva solo para 7 campos, y SharedPreferences ya es lo que usan Weekend,
+ * DNS y el ambiente). Trabajo en un hilo propio; nunca lanza: si falla, el bloqueo sigue igual.
  */
 public final class HomeHub {
     private HomeHub() {}
@@ -46,8 +46,12 @@ public final class HomeHub {
         public final int rachaDias;
         public final long desde;
         public final boolean sinBloqueGratisHoy;
-        /** Para el compañero: retos superados hoy y descansos reales (pantalla apagada ≥ 30 min). */
+
+        /**
+         * Para el compañero: retos superados hoy y descansos reales (pantalla apagada ≥ 30 min).
+         */
         public int retosHoy, descansosHoy;
+
         public long ultimoDescansoMin;
 
         EstadoActual(
@@ -118,48 +122,68 @@ public final class HomeHub {
                                 : null;
         if (k == null || ms <= 0 || c == null) return;
         Context app = c.getApplicationContext();
-        run(() -> {
-            SharedPreferences p = prefs(app);
-            SharedPreferences.Editor e = p.edit();
-            rollDay(p, e, wall);
-            if (k == Kind.OCIO) {
-                e.putLong("ocioMs", p.getLong("ocioMs", 0) + ms);
-                e.putLong("prodRunMs", 0).putBoolean("cheer20", false).putBoolean("pause50", false);
-                // 6.4: ocio medido con el ocio ya bloqueado = minutos_extra (fugas del bloqueo).
-                // Cuidado: solo en ENFOQUE. En NORMAL pasarse no es una fuga (no hay bloqueo) y en
-                // CUIDADO el ocio no se cuenta.
-                if (CareStore.mode(app) == es.foco.next.core.care.CareMode.Modo.ENFOQUE
-                        && Repository.get(app).locked()) {
-                    e.putLong("extraMs", p.getLong("extraMs", 0) + ms);
-                    InspectorLog.event(
-                            app, InspectorLog.MINUTOS_EXTRA, pkg, wall, ms, 0, ms / 60_000, "ocio_sin_saldo", null);
+        run(
+                () -> {
+                    SharedPreferences p = prefs(app);
+                    SharedPreferences.Editor e = p.edit();
+                    rollDay(p, e, wall);
+                    if (k == Kind.OCIO) {
+                        e.putLong("ocioMs", p.getLong("ocioMs", 0) + ms);
+                        e.putLong("prodRunMs", 0)
+                                .putBoolean("cheer20", false)
+                                .putBoolean("pause50", false);
+                        // 6.4: ocio medido con el ocio ya bloqueado = minutos_extra (fugas del
+                        // bloqueo).
+                        // Cuidado: solo en ENFOQUE. En NORMAL pasarse no es una fuga (no hay
+                        // bloqueo) y en
+                        // CUIDADO el ocio no se cuenta.
+                        if (CareStore.mode(app) == es.foco.next.core.care.CareMode.Modo.ENFOQUE
+                                && Repository.get(app).locked()) {
+                            e.putLong("extraMs", p.getLong("extraMs", 0) + ms);
+                            InspectorLog.event(
+                                    app,
+                                    InspectorLog.MINUTOS_EXTRA,
+                                    pkg,
+                                    wall,
+                                    ms,
+                                    0,
+                                    ms / 60_000,
+                                    "ocio_sin_saldo",
+                                    null);
+                            e.apply();
+                            CompanionNotifier.trigger(app, Companion.Trigger.LEISURE_NO_BALANCE);
+                        }
+                    } else {
+                        e.putLong("investedMs", p.getLong("investedMs", 0) + ms);
+                        long lastProd = p.getLong("prodLastAt", -1);
+                        long run =
+                                lastProd >= 0 && wall - lastProd <= 3 * 60_000L
+                                        ? p.getLong("prodRunMs", 0)
+                                        : 0;
+                        run += ms;
+                        e.putLong("prodRunMs", run).putLong("prodLastAt", wall);
+                        if (run >= Companion.PRODUCTIVE_CHEER_MS
+                                && !p.getBoolean("cheer20", false)) {
+                            e.putBoolean("cheer20", true).apply();
+                            CompanionNotifier.trigger(
+                                    app, Companion.Trigger.PRODUCTIVE_20, run / 60_000);
+                        }
+                        if (run >= Companion.PRODUCTIVE_PAUSE_MS
+                                && !p.getBoolean("pause50", false)) {
+                            e.putBoolean("pause50", true).apply();
+                            CompanionNotifier.trigger(
+                                    app, Companion.Trigger.PRODUCTIVE_50, run / 60_000);
+                        }
+                    }
                     e.apply();
-                    CompanionNotifier.trigger(app, Companion.Trigger.LEISURE_NO_BALANCE);
-                }
-            } else {
-                e.putLong("investedMs", p.getLong("investedMs", 0) + ms);
-                long lastProd = p.getLong("prodLastAt", -1);
-                long run = lastProd >= 0 && wall - lastProd <= 3 * 60_000L ? p.getLong("prodRunMs", 0) : 0;
-                run += ms;
-                e.putLong("prodRunMs", run).putLong("prodLastAt", wall);
-                if (run >= Companion.PRODUCTIVE_CHEER_MS && !p.getBoolean("cheer20", false)) {
-                    e.putBoolean("cheer20", true).apply();
-                    CompanionNotifier.trigger(app, Companion.Trigger.PRODUCTIVE_20, run / 60_000);
-                }
-                if (run >= Companion.PRODUCTIVE_PAUSE_MS && !p.getBoolean("pause50", false)) {
-                    e.putBoolean("pause50", true).apply();
-                    CompanionNotifier.trigger(app, Companion.Trigger.PRODUCTIVE_50, run / 60_000);
-                }
-            }
-            e.apply();
-            addFact(app, new Fact(wall, k, ms));
-        });
+                    addFact(app, new Fact(wall, k, ms));
+                });
     }
 
     /**
-     * Modo NORMAL: pasó de los 5 min y no se bloquea. Recordatorio con propuesta; los límites
-     * (cada 5 min como mínimo, 3 por hora, nada en llamadas, No molestar ni de noche) los pone
-     * Companion. Lo llama la Accesibilidad en cada revisión (como mucho una por minuto).
+     * Modo NORMAL: pasó de los 5 min y no se bloquea. Recordatorio con propuesta; los límites (cada
+     * 5 min como mínimo, 3 por hora, nada en llamadas, No molestar ni de noche) los pone Companion.
+     * Lo llama la Accesibilidad en cada revisión (como mucho una por minuto).
      */
     private static long overLimitAt = -1;
 
@@ -182,14 +206,16 @@ public final class HomeHub {
     public static synchronized void careLeisure(Context c, String pkg) {
         if (c == null) return;
         long now = android.os.SystemClock.elapsedRealtime();
-        long delta = careLastElapsed >= 0 && now - careLastElapsed <= 65_000 ? now - careLastElapsed : 0;
+        long delta =
+                careLastElapsed >= 0 && now - careLastElapsed <= 65_000 ? now - careLastElapsed : 0;
         careLastElapsed = now;
         if (delta <= 0) return;
         Context app = c.getApplicationContext();
-        run(() -> {
-            if (CareStore.careSuggestionDue(app, delta))
-                CompanionNotifier.trigger(app, Companion.Trigger.CARE_SUGGESTION, -1, pkg);
-        });
+        run(
+                () -> {
+                    if (CareStore.careSuggestionDue(app, delta))
+                        CompanionNotifier.trigger(app, Companion.Trigger.CARE_SUGGESTION, -1, pkg);
+                });
     }
 
     /** InspectorLog.event: retos y logros. */
@@ -200,25 +226,30 @@ public final class HomeHub {
         boolean logro = InspectorLog.LOGRO.equals(type);
         if (!reto && !logro) return;
         Context app = c.getApplicationContext();
-        run(() -> {
-            SharedPreferences p = prefs(app);
-            // La cola de Lab puede leerse dos veces: el mismo hecho solo cuenta una.
-            if (onceKey != null && !onceKey.isEmpty()) {
-                String seen = p.getString("seenKeys", "");
-                if (("\n" + seen + "\n").contains("\n" + onceKey + "\n")) return;
-                String next = seen.isEmpty() ? onceKey : seen + "\n" + onceKey;
-                if (next.length() > 6000) next = next.substring(next.indexOf('\n', next.length() - 4000) + 1);
-                p.edit().putString("seenKeys", next).apply();
-            }
-            SharedPreferences.Editor e = p.edit();
-            rollDay(p, e, wall);
-            if (reto) e.putInt("retos", p.getInt("retos", 0) + 1);
-            e.apply();
-            if (reto) addFact(app, new Fact(wall, Kind.RETO, 0));
-            CompanionNotifier.trigger(
-                    app, logro ? Companion.Trigger.LEVEL_UP : Companion.Trigger.RETO_PASSED, -1, pkg);
-            if (!reto) recompute(app);
-        });
+        run(
+                () -> {
+                    SharedPreferences p = prefs(app);
+                    // La cola de Lab puede leerse dos veces: el mismo hecho solo cuenta una.
+                    if (onceKey != null && !onceKey.isEmpty()) {
+                        String seen = p.getString("seenKeys", "");
+                        if (("\n" + seen + "\n").contains("\n" + onceKey + "\n")) return;
+                        String next = seen.isEmpty() ? onceKey : seen + "\n" + onceKey;
+                        if (next.length() > 6000)
+                            next = next.substring(next.indexOf('\n', next.length() - 4000) + 1);
+                        p.edit().putString("seenKeys", next).apply();
+                    }
+                    SharedPreferences.Editor e = p.edit();
+                    rollDay(p, e, wall);
+                    if (reto) e.putInt("retos", p.getInt("retos", 0) + 1);
+                    e.apply();
+                    if (reto) addFact(app, new Fact(wall, Kind.RETO, 0));
+                    CompanionNotifier.trigger(
+                            app,
+                            logro ? Companion.Trigger.LEVEL_UP : Companion.Trigger.RETO_PASSED,
+                            -1,
+                            pkg);
+                    if (!reto) recompute(app);
+                });
     }
 
     /** BlockLog.record: intentos y bloqueos. Fin de los 5 min = propuesta. */
@@ -226,11 +257,13 @@ public final class HomeHub {
         if (c == null || type == null) return;
         Context app = c.getApplicationContext();
         long now = System.currentTimeMillis();
-        run(() -> {
-            if (type == BlockEvent.Type.BUDGET_LOCK)
-                CompanionNotifier.trigger(app, Companion.Trigger.LEISURE_ENDED);
-            if (type.isAttempt() || type.isBlock()) addFact(app, new Fact(now, Kind.ATTEMPT, 0));
-        });
+        run(
+                () -> {
+                    if (type == BlockEvent.Type.BUDGET_LOCK)
+                        CompanionNotifier.trigger(app, Companion.Trigger.LEISURE_ENDED);
+                    if (type.isAttempt() || type.isBlock())
+                        addFact(app, new Fact(now, Kind.ATTEMPT, 0));
+                });
     }
 
     /** ACTION_USER_PRESENT: primer desbloqueo después de las 05:00 (DESPERTAR). */
@@ -238,21 +271,24 @@ public final class HomeHub {
         if (c == null) return;
         Context app = c.getApplicationContext();
         long now = System.currentTimeMillis();
-        run(() -> {
-            SharedPreferences p = prefs(app);
-            restCheck(p, now);
-            LocalDateTime t = LocalDateTime.now();
-            String today = t.toLocalDate().toString();
-            if (t.getHour() >= HomeState.WAKE_FROM_HOUR
-                    && !today.equals(p.getString("unlockDay", ""))) {
-                p.edit().putString("unlockDay", today).putLong("unlockAt", now).apply();
-            }
-            nightSummaryIfDue(app);
-            recompute(app);
-        });
+        run(
+                () -> {
+                    SharedPreferences p = prefs(app);
+                    restCheck(p, now);
+                    LocalDateTime t = LocalDateTime.now();
+                    String today = t.toLocalDate().toString();
+                    if (t.getHour() >= HomeState.WAKE_FROM_HOUR
+                            && !today.equals(p.getString("unlockDay", ""))) {
+                        p.edit().putString("unlockDay", today).putLong("unlockAt", now).apply();
+                    }
+                    nightSummaryIfDue(app);
+                    recompute(app);
+                });
     }
 
-    /** Descanso real: pantalla apagada al menos este tiempo. Solo premio visual (Regla 4 intacta). */
+    /**
+     * Descanso real: pantalla apagada al menos este tiempo. Solo premio visual (Regla 4 intacta).
+     */
     public static final long REST_MS = 30 * 60_000L;
 
     /** ACTION_SCREEN_OFF. */
@@ -269,19 +305,23 @@ public final class HomeHub {
         if (off <= 0 || now - off < REST_MS) return;
         String today = LocalDate.now().toString();
         int n = today.equals(p.getString("restDay", "")) ? p.getInt("rests", 0) : 0;
-        p.edit().putString("restDay", today).putInt("rests", n + 1)
-                .putLong("lastRestMin", (now - off) / 60_000).putLong("offAt", -1).apply();
+        p.edit()
+                .putString("restDay", today)
+                .putInt("rests", n + 1)
+                .putLong("lastRestMin", (now - off) / 60_000)
+                .putLong("offAt", -1)
+                .apply();
     }
 
     /** La rutina de la mañana está completa: el inicio deja el modo Despertar. */
     public static void wakeDone(Context c) {
         Context app = c.getApplicationContext();
-        run(() -> {
-            prefs(app).edit().putString("wakeDoneDay", LocalDate.now().toString()).apply();
-            recompute(app);
-        });
+        run(
+                () -> {
+                    prefs(app).edit().putString("wakeDoneDay", LocalDate.now().toString()).apply();
+                    recompute(app);
+                });
     }
-
 
     /** 6.4: ayer hubo más de 15 minutos_extra → hoy no hay bloque gratis. Lectura barata. */
     public static boolean noFreeBlockToday(Context c) {

@@ -50,12 +50,10 @@ public class LeisureStatusTest {
         assertTrue(s.reason.startsWith("Ocio bloqueado"));
     }
 
-
     @Test
     public void worstHourWithoutLeisureHasNoData() {
         assertEquals("Sin datos todavía", LeisureStatus.worstHourLine(0, 14));
         assertEquals("Sin datos todavía", LeisureStatus.worstHourLine(60_000, -1));
         assertEquals("de 14:00 a 15:00", LeisureStatus.worstHourLine(60_000, 14));
     }
-
 }

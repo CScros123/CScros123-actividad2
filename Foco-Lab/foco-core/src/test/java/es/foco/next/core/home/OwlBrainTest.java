@@ -47,8 +47,11 @@ public class OwlBrainTest {
         for (Mode m : Mode.values())
             for (int i = 0; i < 8; i++) {
                 String s = OwlBrain.say(m, f, i, true) + " " + OwlBrain.cta(m, f);
-                assertFalse(s, s.contains("+1 min") || s.contains("+3 min") || s.contains("te sumo"));
-                assertFalse(s, s.toLowerCase().contains("fallaste") || s.toLowerCase().contains("culpa"));
+                assertFalse(
+                        s, s.contains("+1 min") || s.contains("+3 min") || s.contains("te sumo"));
+                assertFalse(
+                        s,
+                        s.toLowerCase().contains("fallaste") || s.toLowerCase().contains("culpa"));
             }
         // v26: ni los retos ni la lectura dan minutos; el búho nunca habla de banco.
         for (Mode m : Mode.values())
@@ -61,7 +64,6 @@ public class OwlBrainTest {
     @Test
     public void neutralToneHasNoBro() {
         OwlBrain.Facts f = facts();
-        // v44: busca el apelativo («, bro»), no la sílaba: «El Libro Total» no es tono cercano.
-        for (Mode m : Mode.values()) assertFalse(OwlBrain.say(m, f, 0, false).contains(", bro"));
+        for (Mode m : Mode.values()) assertFalse(OwlBrain.say(m, f, 0, false).contains("bro"));
     }
 }

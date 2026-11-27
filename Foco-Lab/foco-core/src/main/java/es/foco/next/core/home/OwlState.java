@@ -24,7 +24,11 @@ public final class OwlState {
     }
 
     /** Categoría de la última app en primer plano antes de volver al inicio. */
-    public enum Recent { NONE, LECTURA, OCIO }
+    public enum Recent {
+        NONE,
+        LECTURA,
+        OCIO
+    }
 
     public static final long MEMORY_MS = 4 * 60_000L;
     public static final long NIGHT_NOTICE_COOLDOWN_MS = 45 * 60_000L;
@@ -33,8 +37,15 @@ public final class OwlState {
     public static boolean reading(String pkg, String label) {
         String p = pkg == null ? "" : pkg.toLowerCase(java.util.Locale.ROOT);
         String l = label == null ? "" : label.toLowerCase(java.util.Locale.ROOT);
-        return p.contains("libro") || p.contains("books") || p.contains("kindle") || p.contains("bible") || p.contains("biblia")
-                || l.contains("libro") || l.contains("biblia") || l.contains("bible") || l.contains("kindle");
+        return p.contains("libro")
+                || p.contains("books")
+                || p.contains("kindle")
+                || p.contains("bible")
+                || p.contains("biblia")
+                || l.contains("libro")
+                || l.contains("biblia")
+                || l.contains("bible")
+                || l.contains("kindle");
     }
 
     /**
@@ -42,7 +53,14 @@ public final class OwlState {
      * @param recentOver la app de ocio se usó pasando el límite
      * @param idle postura de azar vigente (si no es de azar, se usa CALM)
      */
-    public static Pose resolve(boolean night, boolean music, Recent recent, long recentAt, boolean recentOver, long now, Pose idle) {
+    public static Pose resolve(
+            boolean night,
+            boolean music,
+            Recent recent,
+            long recentAt,
+            boolean recentOver,
+            long now,
+            Pose idle) {
         if (night) return Pose.SLEEPING;
         if (music) return Pose.LISTENING_MUSIC;
         if (fresh(recentAt, now)) {

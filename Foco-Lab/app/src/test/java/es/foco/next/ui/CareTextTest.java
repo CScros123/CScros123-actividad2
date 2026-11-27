@@ -21,17 +21,21 @@ import org.junit.Test;
  * el del módulo). Rojo = color opaco con mucho rojo y poco verde y azul.
  */
 public class CareTextTest {
-    private static final Pattern HEX = Pattern.compile("(?:0x|#)([0-9A-Fa-f]{8}|[0-9A-Fa-f]{6})\\b");
+    private static final Pattern HEX =
+            Pattern.compile("(?:0x|#)([0-9A-Fa-f]{8}|[0-9A-Fa-f]{6})\\b");
 
     private static List<Path> sources() throws IOException {
         Path root = Paths.get("src/main");
         if (!Files.exists(root)) root = Paths.get("app/src/main");
         List<Path> out = new ArrayList<>();
         try (Stream<Path> s = Files.walk(root)) {
-            s.filter(p -> {
-                        String n = p.toString();
-                        return n.endsWith(".java") || n.endsWith(".kt") || n.endsWith(".xml");
-                    })
+            s.filter(
+                            p -> {
+                                String n = p.toString();
+                                return n.endsWith(".java")
+                                        || n.endsWith(".kt")
+                                        || n.endsWith(".xml");
+                            })
                     .forEach(out::add);
         }
         return out;
@@ -43,7 +47,8 @@ public class CareTextTest {
         for (Path p : sources()) {
             String text = new String(Files.readAllBytes(p), StandardCharsets.UTF_8);
             String low = text.toLowerCase(Locale.ROOT);
-            if (low.contains("fallaste") || low.contains("perdiste")) bad.add(p + ": texto de falla");
+            if (low.contains("fallaste") || low.contains("perdiste"))
+                bad.add(p + ": texto de falla");
             if (text.contains("Color.RED")) bad.add(p + ": Color.RED");
             Matcher m = HEX.matcher(text);
             while (m.find()) {
@@ -53,7 +58,8 @@ public class CareTextTest {
                 int r = Integer.parseInt(rgb.substring(0, 2), 16),
                         g = Integer.parseInt(rgb.substring(2, 4), 16),
                         b = Integer.parseInt(rgb.substring(4, 6), 16);
-                if (alpha >= 0x40 && r >= 0xB0 && g <= 0x70 && b <= 0x70) bad.add(p + ": rojo " + m.group());
+                if (alpha >= 0x40 && r >= 0xB0 && g <= 0x70 && b <= 0x70)
+                    bad.add(p + ": rojo " + m.group());
             }
         }
         assertTrue(String.join("\n", bad), bad.isEmpty());

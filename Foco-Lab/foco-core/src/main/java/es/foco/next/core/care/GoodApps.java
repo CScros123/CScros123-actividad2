@@ -6,10 +6,10 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * Lo bueno que el usuario ya hace y Foco no veía: apps de idiomas, lectura, Biblia, estudio y
- * notas cuentan como tiempo invertido en los resúmenes aunque no estén en la lista de productivas.
- * Solo sirve para MEDIR (informes): no aprueba nada, no da minutos al banco y no cambia la Regla 3.
- * Una app que está en ocio sigue siendo ocio (quien llama lo comprueba antes). Puro.
+ * Lo bueno que el usuario ya hace y Foco no veía: apps de idiomas, lectura, Biblia, estudio y notas
+ * cuentan como tiempo invertido en los resúmenes aunque no estén en la lista de productivas. Solo
+ * sirve para MEDIR (informes): no aprueba nada, no da minutos al banco y no cambia la Regla 3. Una
+ * app que está en ocio sigue siendo ocio (quien llama lo comprueba antes). Puro.
  */
 public final class GoodApps {
     private GoodApps() {}
@@ -35,7 +35,9 @@ public final class GoodApps {
                             "com.blinkslabs.blinkist.android",
                             "com.audible.application"));
 
-    private static final String[] HINTS = {"bible", "biblia", "duolingo", "kindle", "anki", "dictionary", "diccionario"};
+    private static final String[] HINTS = {
+        "bible", "biblia", "duolingo", "kindle", "anki", "dictionary", "diccionario"
+    };
 
     /** Para las frases de "lo bueno primero". */
     public enum Kind {
@@ -51,12 +53,25 @@ public final class GoodApps {
     public static Kind kind(String pkg, String label) {
         String p = pkg == null ? "" : pkg.toLowerCase(Locale.ROOT);
         String l = label == null ? "" : label.toLowerCase(Locale.ROOT);
-        if (p.contains("bible") || p.contains("biblia") || l.contains("biblia") || l.contains("bible")) return Kind.BIBLIA;
-        if (p.contains("duolingo") || p.contains("babbel") || p.contains("memrise")) return Kind.IDIOMAS;
+        if (p.contains("bible")
+                || p.contains("biblia")
+                || l.contains("biblia")
+                || l.contains("bible")) return Kind.BIBLIA;
+        if (p.contains("duolingo") || p.contains("babbel") || p.contains("memrise"))
+            return Kind.IDIOMAS;
         if (p.equals("com.anthropic.claude")) return Kind.IA;
-        if (p.contains("books") || p.contains("kindle") || p.contains("blinkist") || p.contains("audible")
-                || l.contains("libro") || l.contains("lectura") || l.contains("kindle")) return Kind.LECTURA;
-        if (p.contains("keep") || p.contains("notes") || p.contains("onenote") || p.contains("notion") || p.contains("docs")) return Kind.NOTAS;
+        if (p.contains("books")
+                || p.contains("kindle")
+                || p.contains("blinkist")
+                || p.contains("audible")
+                || l.contains("libro")
+                || l.contains("lectura")
+                || l.contains("kindle")) return Kind.LECTURA;
+        if (p.contains("keep")
+                || p.contains("notes")
+                || p.contains("onenote")
+                || p.contains("notion")
+                || p.contains("docs")) return Kind.NOTAS;
         if (good(pkg)) return Kind.ESTUDIO;
         return null;
     }

@@ -5,9 +5,9 @@ import java.time.LocalDateTime;
 /**
  * Etapa 0: lo que dice la tarjeta "Tu tiempo de ocio". Pura (sin Android) para poder probarla.
  *
- * <p>Antes la tarjeta restaba {@code BUDGET - usado}; de noche el motor no cuenta uso (Regla 2), así
- * que a las 6:26 mostraba "5 min 0 s disponibles". Ahora la noche se decide primero y siempre da
- * 0. Foco solo endurece: si hay duda (hora automática apagada) también es noche.
+ * <p>Antes la tarjeta restaba {@code BUDGET - usado}; de noche el motor no cuenta uso (Regla 2),
+ * así que a las 6:26 mostraba "5 min 0 s disponibles". Ahora la noche se decide primero y siempre
+ * da 0. Foco solo endurece: si hay duda (hora automática apagada) también es noche.
  */
 public final class LeisureStatus {
     /** Minutos disponibles en la ventana actual (0 de noche o con ocio bloqueado). */
@@ -46,7 +46,9 @@ public final class LeisureStatus {
         if (AbsoluteRules.night(now, autoTime))
             return new LeisureStatus(
                     0,
-                    autoTime ? "Ocio cerrado hasta las " + AbsoluteRules.nightEnd() + ":00" : NO_AUTOTIME_REASON,
+                    autoTime
+                            ? "Ocio cerrado hasta las " + AbsoluteRules.nightEnd() + ":00"
+                            : NO_AUTOTIME_REASON,
                     true);
         long available = locked ? 0 : Math.max(0, FocusEngine.BUDGET - Math.max(0, usedMs));
         String state =
@@ -61,7 +63,6 @@ public final class LeisureStatus {
                         : " · sin ventana en curso";
         return new LeisureStatus(available, state + window, false);
     }
-
 
     /** "Peor horario": sin ocio no hay peor horario (los bloqueos solos no bastan). */
     public static String worstHourLine(long ocioMs, int hour) {

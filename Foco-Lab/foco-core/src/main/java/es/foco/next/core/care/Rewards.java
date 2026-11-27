@@ -12,14 +12,14 @@ import java.util.List;
  * <ul>
  *   <li><b>Cupón</b>: 1 por cada día con todas las tareas hechas. Abre 30 min una sola app de ocio
  *       que eliges al canjearlo (15 min si es una red social, solo la app). Como mucho 3 guardados;
- *       caducan a los 7 días; 1 al día. Nunca de noche, ni con una pausa por tareas vencidas, ni sin
- *       la rutina de la mañana hecha.
+ *       caducan a los 7 días; 1 al día. Nunca de noche, ni con una pausa por tareas vencidas, ni
+ *       sin la rutina de la mañana hecha.
  *   <li><b>Cupones de semana perfecta</b>: 2, si de lunes a domingo todos los días estuvieron al
  *       100 % (con al menos 2 tareas propias), las tareas que piden foto tienen su foto, sin pausas
  *       por tareas y sin intentos de evasión en el registro. Saltan el límite diario, el Weekend
- *       Lock, la rutina pendiente y la pausa (la persona lo pidió así: «las reglas no tienen sentido
- *       cuando se hace las cosas bien»). La noche sigue siendo la única excepción. Caducan el
- *       domingo siguiente.
+ *       Lock, la rutina pendiente y la pausa (la persona lo pidió así: «las reglas no tienen
+ *       sentido cuando se hace las cosas bien»). La noche sigue siendo la única excepción. Caducan
+ *       el domingo siguiente.
  *   <li><b>Progreso</b>: días seguidos al 100 % que desbloquean cosas del inicio, que nunca se
  *       pierden.
  * </ul>
@@ -27,12 +27,17 @@ import java.util.List;
 public final class Rewards {
     private Rewards() {}
 
-    public static final int COUPON_MIN = 30, SOCIAL_MIN = 15, MAX_SAVED = 3, EXPIRE_DAYS = 7, PER_DAY = 1;
+    public static final int COUPON_MIN = 30,
+            SOCIAL_MIN = 15,
+            MAX_SAVED = 3,
+            EXPIRE_DAYS = 7,
+            PER_DAY = 1;
     public static final int WEEK_COUPONS = 2;
 
     public static final class Coupon {
         public final String id;
         public final LocalDate earned, expires;
+
         /** Cupón de semana perfecta. */
         public final boolean week;
 
@@ -49,7 +54,13 @@ public final class Rewards {
         StringBuilder b = new StringBuilder();
         for (Coupon c : list) {
             if (b.length() > 0) b.append(';');
-            b.append(c.id).append(',').append(c.earned).append(',').append(c.expires).append(',').append(c.week ? 1 : 0);
+            b.append(c.id)
+                    .append(',')
+                    .append(c.earned)
+                    .append(',')
+                    .append(c.expires)
+                    .append(',')
+                    .append(c.week ? 1 : 0);
         }
         return b.toString();
     }
@@ -61,7 +72,12 @@ public final class Rewards {
             String[] f = part.split(",");
             if (f.length < 4) continue;
             try {
-                out.add(new Coupon(f[0], LocalDate.parse(f[1]), LocalDate.parse(f[2]), "1".equals(f[3])));
+                out.add(
+                        new Coupon(
+                                f[0],
+                                LocalDate.parse(f[1]),
+                                LocalDate.parse(f[2]),
+                                "1".equals(f[3])));
             } catch (RuntimeException ignored) {
             }
         }
@@ -101,12 +117,16 @@ public final class Rewards {
         return out;
     }
 
-    /** Los 2 cupones de una semana perfecta (lunes {@code monday}); valen hasta el domingo siguiente. */
+    /**
+     * Los 2 cupones de una semana perfecta (lunes {@code monday}); valen hasta el domingo
+     * siguiente.
+     */
     public static List<Coupon> earnWeek(List<Coupon> list, LocalDate monday, LocalDate today) {
         List<Coupon> out = valid(list, today);
         for (Coupon c : list) if (c.id.startsWith("s" + monday)) return out;
         LocalDate until = monday.plusDays(13); // domingo de la semana siguiente
-        for (int i = 0; i < WEEK_COUPONS; i++) out.add(new Coupon("s" + monday + "-" + i, monday.plusDays(7), until, true));
+        for (int i = 0; i < WEEK_COUPONS; i++)
+            out.add(new Coupon("s" + monday + "-" + i, monday.plusDays(7), until, true));
         return out;
     }
 
@@ -120,7 +140,8 @@ public final class Rewards {
      *
      * @param usedToday cupones normales ya canjeados hoy
      */
-    public static String whyNot(Coupon c, boolean night, boolean penalty, boolean morningPending, int usedToday) {
+    public static String whyNot(
+            Coupon c, boolean night, boolean penalty, boolean morningPending, int usedToday) {
         if (c == null) return "No tienes cupones.";
         if (night) return "De noche no: el sueño va primero.";
         if (c.week) return null;
@@ -150,7 +171,8 @@ public final class Rewards {
     public static final class DayCheck {
         public final int total, done, planned, photosMissing, penalties, evasions;
 
-        public DayCheck(int total, int done, int planned, int photosMissing, int penalties, int evasions) {
+        public DayCheck(
+                int total, int done, int planned, int photosMissing, int penalties, int evasions) {
             this.total = total;
             this.done = done;
             this.planned = planned;
@@ -160,7 +182,12 @@ public final class Rewards {
         }
 
         public boolean perfect() {
-            return total > 0 && done == total && planned >= FocoCore.MIN_TASKS && photosMissing == 0 && penalties == 0 && evasions == 0;
+            return total > 0
+                    && done == total
+                    && planned >= FocoCore.MIN_TASKS
+                    && photosMissing == 0
+                    && penalties == 0
+                    && evasions == 0;
         }
     }
 
@@ -191,7 +218,9 @@ public final class Rewards {
     /** Lo que se desbloquea, por días seguidos. */
     public static final int[] MILESTONES = {3, 7, 14, 30};
 
-    public static final String[] UNLOCK_IDS = {"buho_bufanda", "fondo_aurora", "fondo_mar", "dock_dorado"};
+    public static final String[] UNLOCK_IDS = {
+        "buho_bufanda", "fondo_aurora", "fondo_mar", "dock_dorado"
+    };
 
     public static final String[] UNLOCK_NAMES = {
         "Bufanda para el búho", "Fondo Aurora", "Fondo Mar al alba", "Dock dorado"
@@ -207,12 +236,14 @@ public final class Rewards {
 
     /** Próximo hito {días, índice} o null si ya están todos. */
     public static int[] nextMilestone(java.util.Set<String> have) {
-        for (int i = 0; i < MILESTONES.length; i++) if (!have.contains(UNLOCK_IDS[i])) return new int[] {MILESTONES[i], i};
+        for (int i = 0; i < MILESTONES.length; i++)
+            if (!have.contains(UNLOCK_IDS[i])) return new int[] {MILESTONES[i], i};
         return null;
     }
 
     public static String unlockName(String id) {
-        for (int i = 0; i < UNLOCK_IDS.length; i++) if (UNLOCK_IDS[i].equals(id)) return UNLOCK_NAMES[i];
+        for (int i = 0; i < UNLOCK_IDS.length; i++)
+            if (UNLOCK_IDS[i].equals(id)) return UNLOCK_NAMES[i];
         return id;
     }
 

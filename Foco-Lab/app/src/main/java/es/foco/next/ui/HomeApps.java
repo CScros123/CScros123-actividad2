@@ -58,15 +58,21 @@ public final class HomeApps {
                 out,
                 (a, b) -> {
                     int s = HomeSections.order(a.section) - HomeSections.order(b.section);
-                    return s != 0 ? s : HomeSections.fold(a.label).compareTo(HomeSections.fold(b.label));
+                    return s != 0
+                            ? s
+                            : HomeSections.fold(a.label).compareTo(HomeSections.fold(b.label));
                 });
         return out;
     }
 
-    /** Abre la app como lo haría el lanzador del sistema. Ocio: toque normal; el servicio aplica la regla de 5 min. */
+    /**
+     * Abre la app como lo haría el lanzador del sistema. Ocio: toque normal; el servicio aplica la
+     * regla de 5 min.
+     */
     public static boolean open(Context c, App a) {
         try {
-            c.getSystemService(LauncherApps.class).startMainActivity(a.component, a.user, null, null);
+            c.getSystemService(LauncherApps.class)
+                    .startMainActivity(a.component, a.user, null, null);
             return true;
         } catch (RuntimeException e) {
             return false;

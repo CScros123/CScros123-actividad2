@@ -14,7 +14,9 @@ public class LeisurePolicyTest {
     @Test
     public void laNocheNoLaSaltaNada() {
         assertEquals(Pass.NONE, LeisurePolicy.pass(true, true, true, true, true));
-        assertEquals(LeisurePolicy.Reason.NIGHT, LeisurePolicy.backup(true, true, false, false, Pass.WEEK_COUPON));
+        assertEquals(
+                LeisurePolicy.Reason.NIGHT,
+                LeisurePolicy.backup(true, true, false, false, Pass.WEEK_COUPON));
     }
 
     @Test
@@ -68,9 +70,13 @@ public class LeisurePolicyTest {
     @Test
     public void respaldo() {
         assertNull(LeisurePolicy.backup(false, true, true, true, Pass.NONE));
-        assertEquals(LeisurePolicy.Reason.GATE, LeisurePolicy.backup(true, false, true, false, Pass.NONE));
+        assertEquals(
+                LeisurePolicy.Reason.GATE,
+                LeisurePolicy.backup(true, false, true, false, Pass.NONE));
         assertNull(LeisurePolicy.backup(true, false, true, false, Pass.FREE_HOUR));
-        assertEquals(LeisurePolicy.Reason.ROUTINE, LeisurePolicy.backup(true, false, true, true, Pass.FREE_HOUR));
+        assertEquals(
+                LeisurePolicy.Reason.ROUTINE,
+                LeisurePolicy.backup(true, false, true, true, Pass.FREE_HOUR));
         assertNull(LeisurePolicy.backup(true, false, true, true, Pass.COUPON));
         assertNull(LeisurePolicy.backup(true, false, false, false, Pass.NONE));
     }

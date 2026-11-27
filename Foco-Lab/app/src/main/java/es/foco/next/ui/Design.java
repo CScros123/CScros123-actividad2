@@ -134,18 +134,21 @@ final class Design {
     /** Fondo con relieve: un borde inferior más oscuro y la cara encima (16 dp de radio). */
     static android.graphics.drawable.Drawable gameBackground(Context c, boolean primary) {
         float r = dp(c, 16);
-        android.graphics.drawable.GradientDrawable edge = new android.graphics.drawable.GradientDrawable();
+        android.graphics.drawable.GradientDrawable edge =
+                new android.graphics.drawable.GradientDrawable();
         edge.setCornerRadius(r);
         edge.setColor(primary ? GO_EDGE : 0x40000000);
         android.graphics.drawable.Drawable face;
         if (primary) {
-            android.graphics.drawable.GradientDrawable f = new android.graphics.drawable.GradientDrawable();
+            android.graphics.drawable.GradientDrawable f =
+                    new android.graphics.drawable.GradientDrawable();
             f.setCornerRadius(r);
             f.setColor(GO_FACE);
             face = f;
         } else face = c.getDrawable(R.drawable.button_secondary).mutate();
         android.graphics.drawable.LayerDrawable ld =
-                new android.graphics.drawable.LayerDrawable(new android.graphics.drawable.Drawable[] {edge, face});
+                new android.graphics.drawable.LayerDrawable(
+                        new android.graphics.drawable.Drawable[] {edge, face});
         int d = dp(c, 4);
         ld.setLayerInset(0, 0, d, 0, 0);
         ld.setLayerInset(1, 0, 0, 0, d);

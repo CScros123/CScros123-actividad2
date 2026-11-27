@@ -19,7 +19,9 @@ public final class FocoCoreBackup {
 
     public static final String KEY = "focoCore";
     private static final String[] PREFS = {"foco-rutina", "foco-dinero"};
-    private static final String[] SKIP = {"crono_", "cronoMs_", "castigoHasta", "castigoTarea", "libreHasta", "libreDia", "avisado_"};
+    private static final String[] SKIP = {
+        "crono_", "cronoMs_", "castigoHasta", "castigoTarea", "libreHasta", "libreDia", "avisado_"
+    };
 
     private static boolean skip(String k) {
         for (String s : SKIP) if (k.startsWith(s)) return true;
@@ -30,7 +32,8 @@ public final class FocoCoreBackup {
         JSONObject out = new JSONObject();
         for (String name : PREFS) {
             JSONObject o = new JSONObject();
-            for (Map.Entry<String, ?> e : c.getSharedPreferences(name, Context.MODE_PRIVATE).getAll().entrySet()) {
+            for (Map.Entry<String, ?> e :
+                    c.getSharedPreferences(name, Context.MODE_PRIVATE).getAll().entrySet()) {
                 if (skip(e.getKey())) continue;
                 Object v = e.getValue();
                 JSONObject t = new JSONObject();
@@ -55,7 +58,8 @@ public final class FocoCoreBackup {
         for (String name : PREFS) {
             JSONObject o = in.optJSONObject(name);
             if (o == null) continue;
-            SharedPreferences.Editor e = c.getSharedPreferences(name, Context.MODE_PRIVATE).edit().clear();
+            SharedPreferences.Editor e =
+                    c.getSharedPreferences(name, Context.MODE_PRIVATE).edit().clear();
             java.util.Iterator<String> it = o.keys();
             while (it.hasNext()) {
                 String k = it.next();

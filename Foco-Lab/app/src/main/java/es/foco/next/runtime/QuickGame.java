@@ -11,7 +11,8 @@ public final class QuickGame {
     private QuickGame() {}
 
     private static SharedPreferences p(Context c) {
-        return c.getApplicationContext().getSharedPreferences("foco-quick-game", Context.MODE_PRIVATE);
+        return c.getApplicationContext()
+                .getSharedPreferences("foco-quick-game", Context.MODE_PRIVATE);
     }
 
     public static void save(Context c, String id, String title, int level) {

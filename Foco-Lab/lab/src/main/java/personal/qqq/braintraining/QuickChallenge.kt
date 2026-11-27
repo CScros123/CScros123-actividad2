@@ -46,9 +46,13 @@ class QuickChallenge(
             val candidates =
                 MIND_GAMES.map { it.id } +
                     NetSec.ids.filter { netsecUnlocked(rows, it) && it !in Games.retired }
-            val last = candidates.associateWith { id -> rows.filter { it.game == id }.maxOfOrNull { it.ended } }
+            val last =
+                candidates.associateWith { id ->
+                    rows.filter { it.game == id }.maxOfOrNull { it.ended }
+                }
             val id =
-                candidates.minWithOrNull(compareBy<String> { last[it] ?: Long.MIN_VALUE }) ?: NetSec.ids.first()
+                candidates.minWithOrNull(compareBy<String> { last[it] ?: Long.MIN_VALUE })
+                    ?: NetSec.ids.first()
             val ended = last[id]
             val days = if (ended == null) -1 else ((now - ended) / 86_400_000L).toInt()
             val level = (progress.firstOrNull { it.game == id }?.level ?: 1).coerceIn(1, 10)

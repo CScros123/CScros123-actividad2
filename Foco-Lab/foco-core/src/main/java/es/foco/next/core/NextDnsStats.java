@@ -14,6 +14,7 @@ public final class NextDnsStats {
     private NextDnsStats() {}
 
     public static final String API = "https://api.nextdns.io/profiles/";
+
     /** Como mucho una lectura cada 30 min (la API tiene límite y no hace falta más). */
     public static final long REFRESH_MS = 30 * 60_000L;
 
@@ -43,13 +44,20 @@ public final class NextDnsStats {
 
     /** Dominios bloqueados más consultados. */
     public static String blockedDomainsUrl(String profile, String fromIso, int limit) {
-        return API + profile + "/analytics/domains?status=blocked&from=" + fromIso + "&limit=" + limit;
+        return API
+                + profile
+                + "/analytics/domains?status=blocked&from="
+                + fromIso
+                + "&limit="
+                + limit;
     }
 
     private static final Pattern STATUS =
-            Pattern.compile("\\{[^{}]*\"status\"\\s*:\\s*\"([a-z]+)\"[^{}]*\"queries\"\\s*:\\s*(\\d+)[^{}]*\\}|\\{[^{}]*\"queries\"\\s*:\\s*(\\d+)[^{}]*\"status\"\\s*:\\s*\"([a-z]+)\"[^{}]*\\}");
+            Pattern.compile(
+                    "\\{[^{}]*\"status\"\\s*:\\s*\"([a-z]+)\"[^{}]*\"queries\"\\s*:\\s*(\\d+)[^{}]*\\}|\\{[^{}]*\"queries\"\\s*:\\s*(\\d+)[^{}]*\"status\"\\s*:\\s*\"([a-z]+)\"[^{}]*\\}");
     private static final Pattern DOMAIN =
-            Pattern.compile("\\{[^{}]*\"domain\"\\s*:\\s*\"([^\"]+)\"[^{}]*\"queries\"\\s*:\\s*(\\d+)[^{}]*\\}|\\{[^{}]*\"queries\"\\s*:\\s*(\\d+)[^{}]*\"domain\"\\s*:\\s*\"([^\"]+)\"[^{}]*\\}");
+            Pattern.compile(
+                    "\\{[^{}]*\"domain\"\\s*:\\s*\"([^\"]+)\"[^{}]*\"queries\"\\s*:\\s*(\\d+)[^{}]*\\}|\\{[^{}]*\"queries\"\\s*:\\s*(\\d+)[^{}]*\"domain\"\\s*:\\s*\"([^\"]+)\"[^{}]*\\}");
 
     /** Consultas con un estado ("blocked", "default", "allowed"...). */
     public static long queries(String statusJson, String status) {
@@ -108,12 +116,18 @@ public final class NextDnsStats {
         return out;
     }
 
-    /** Lo que dice el búho. Sin números si la persona los ocultó. Null si no hay nada que contar. */
+    /**
+     * Lo que dice el búho. Sin números si la persona los ocultó. Null si no hay nada que contar.
+     */
     public static String owlLine(long blocked, List<Hit> top, boolean numbers) {
         if (blocked <= 0) return null;
-        String first = top == null || top.isEmpty() ? null : top.get(0).domain.toLowerCase(Locale.ROOT);
+        String first =
+                top == null || top.isEmpty() ? null : top.get(0).domain.toLowerCase(Locale.ROOT);
         if (numbers)
-            return "🦉 NextDNS frenó " + blocked + (blocked == 1 ? " intento" : " intentos") + " hoy"
+            return "🦉 NextDNS frenó "
+                    + blocked
+                    + (blocked == 1 ? " intento" : " intentos")
+                    + " hoy"
                     + (first == null ? "." : ", sobre todo " + first + ".");
         return "🦉 NextDNS te cuidó hoy" + (first == null ? "." : ", sobre todo de " + first + ".");
     }

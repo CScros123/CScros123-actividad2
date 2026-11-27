@@ -23,14 +23,19 @@ public final class NightHours {
         return start >= MIN_START && start <= MAX_START && end >= MIN_END && end <= MAX_END;
     }
 
-    /** Cubre al menos las mismas horas que {@code o} (empieza igual o antes y acaba igual o después). */
+    /**
+     * Cubre al menos las mismas horas que {@code o} (empieza igual o antes y acaba igual o
+     * después).
+     */
     public boolean covers(NightHours o) {
         return start <= o.start && end >= o.end;
     }
 
     @Override
     public boolean equals(Object x) {
-        return x instanceof NightHours && ((NightHours) x).start == start && ((NightHours) x).end == end;
+        return x instanceof NightHours
+                && ((NightHours) x).start == start
+                && ((NightHours) x).end == end;
     }
 
     @Override
@@ -72,7 +77,8 @@ public final class NightHours {
     /** Consolida: si lo pendiente ya empezó, pasa a vigente. */
     public static Setting settle(Setting s, LocalDate today) {
         if (s == null) return Setting.initial();
-        if (s.pending != null && !today.isBefore(s.pendingFrom)) return new Setting(s.pending, null, null);
+        if (s.pending != null && !today.isBefore(s.pendingFrom))
+            return new Setting(s.pending, null, null);
         return s;
     }
 

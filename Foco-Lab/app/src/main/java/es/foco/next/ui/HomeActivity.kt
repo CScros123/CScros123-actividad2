@@ -1,6 +1,5 @@
 package es.foco.next.ui
 
-import android.Manifest
 import android.accessibilityservice.AccessibilityService
 import android.app.AlertDialog
 import android.app.NotificationManager
@@ -9,8 +8,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.BatteryManager
 import android.os.Bundle
 import android.provider.Settings
@@ -29,14 +26,11 @@ import androidx.core.view.WindowCompat
 import es.foco.next.core.home.CompanionMood
 import es.foco.next.core.home.HomeSections
 import es.foco.next.core.home.HomeSections.Section
-import es.foco.next.core.home.HomeState
 import es.foco.next.data.Repository
 import es.foco.next.runtime.AduanaStore
 import es.foco.next.runtime.CompanionNotifier
 import es.foco.next.runtime.FocusAccessibilityService
-import es.foco.next.runtime.HomeHub
 import es.foco.next.runtime.HomeRole
-import java.time.LocalDate
 
 /**
  * Foco Home en Jetpack Compose. Nunca cuenta como ocio ni productiva (el paquete de Foco y los
@@ -61,7 +55,9 @@ class HomeActivity : ComponentActivity(), HomeActions {
     private var bankApp by mutableStateOf<HomeApps.App?>(null)
     private var coreTab by mutableStateOf(-1)
     private var photoFor: Pair<String, Int>? = null
-    private val cameraFile by lazy { java.io.File(java.io.File(cacheDir, "camara").apply { mkdirs() }, "foto.jpg") }
+    private val cameraFile by lazy {
+        java.io.File(java.io.File(cacheDir, "camara").apply { mkdirs() }, "foto.jpg")
+    }
     private val takePhoto =
         registerForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
             val (block, i) = photoFor ?: return@registerForActivityResult
@@ -71,12 +67,22 @@ class HomeActivity : ComponentActivity(), HomeActions {
             if (ok) {
                 val app = applicationContext
                 Thread {
-                    val saved = es.foco.next.runtime.RoutineStore.saveEvidence(app, cameraFile, block, i)
-                    runOnUiThread {
-                        vm.refreshCore()
-                        toast(if (saved) "Hecho, con evidencia" else "Hecho (no se pudo guardar la foto)")
+                        val saved =
+                            es.foco.next.runtime.RoutineStore.saveEvidence(
+                                app,
+                                cameraFile,
+                                block,
+                                i,
+                            )
+                        runOnUiThread {
+                            vm.refreshCore()
+                            toast(
+                                if (saved) "Hecho, con evidencia"
+                                else "Hecho (no se pudo guardar la foto)"
+                            )
+                        }
                     }
-                }.start()
+                    .start()
             } else toast("Hecho, sin foto")
         }
     private var showBreathe by mutableStateOf(false)
@@ -84,7 +90,10 @@ class HomeActivity : ComponentActivity(), HomeActions {
     private var homeTick by mutableStateOf(0)
 
     private val roleLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { HomeRole.check(this); vm.refreshSystem() }
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            HomeRole.check(this)
+            vm.refreshSystem()
+        }
 
     private val battery =
         object : BroadcastReceiver() {
@@ -119,18 +128,38 @@ class HomeActivity : ComponentActivity(), HomeActions {
                 // Iconos de la barra de estado según el cielo del tema (claro u oscuro).
                 val lightBars = vm.lightBars
                 androidx.compose.runtime.LaunchedEffect(lightBars) {
-                    WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = lightBars
+                    WindowCompat.getInsetsController(window, window.decorView)
+                        .isAppearanceLightStatusBars = lightBars
                 }
-                HomeScreen(vm, this, drawerOpen, drawerFocus, homeTick, { focus -> drawerFocus = focus; drawerOpen = true }, { drawerOpen = false })
+                HomeScreen(
+                    vm,
+                    this,
+                    drawerOpen,
+                    drawerFocus,
+                    homeTick,
+                    { focus ->
+                        drawerFocus = focus
+                        drawerOpen = true
+                    },
+                    { drawerOpen = false },
+                )
                 val app = aduanaApp
                 if (app != null) {
-                    androidx.compose.runtime.CompositionLocalProvider(LocalHome provides rememberHomeColors(vm.palette)) {
+                    androidx.compose.runtime.CompositionLocalProvider(
+                        LocalHome provides rememberHomeColors(vm.palette)
+                    ) {
                         val outlook = androidx.compose.runtime.remember(app) { vm.outlook() }
-                        AduanaSheet(app.label, outlook, { m ->
-                            AduanaStore.choose(this, app.pkg, m)
+                        AduanaSheet(
+                            app.label,
+                            outlook,
+                            { m ->
+                                AduanaStore.choose(this, app.pkg, m)
+                                aduanaApp = null
+                                launch(app)
+                            },
+                        ) {
                             aduanaApp = null
-                            launch(app)
-                        }) { aduanaApp = null }
+                        }
                     }
                 }
                 if (showModes)
@@ -140,15 +169,28 @@ class HomeActivity : ComponentActivity(), HomeActions {
                             vm.careMode,
                             vm.focusLeft,
                             es.foco.next.core.care.CareMode.focusEnd(
-                                es.foco.next.core.care.CareMode.Duracion.HASTA_LA_NOCHE, now,
+                                es.foco.next.core.care.CareMode.Duracion.HASTA_LA_NOCHE,
+                                now,
                                 es.foco.next.core.AbsoluteRules.nightStart(),
                             ) >= 0,
                             es.foco.next.core.AbsoluteRules.nightStart(),
-                            onCare = { m -> showModes = false; pendingCareMin = m; chooseCare() },
+                            onCare = { m ->
+                                showModes = false
+                                pendingCareMin = m
+                                chooseCare()
+                            },
                             onNormal = {
                                 showModes = false
-                                if (es.foco.next.runtime.CareStore.choose(this, es.foco.next.core.care.CareMode.Modo.NORMAL, "elegido"))
-                                    toast("Modo Normal: 5 min de ocio por hora, con avisos y sin cierres.")
+                                if (
+                                    es.foco.next.runtime.CareStore.choose(
+                                        this,
+                                        es.foco.next.core.care.CareMode.Modo.NORMAL,
+                                        "elegido",
+                                    )
+                                )
+                                    toast(
+                                        "Modo Normal: 5 min de ocio por hora, con avisos y sin cierres."
+                                    )
                                 vm.refreshCare()
                             },
                             onFocus = { d ->
@@ -171,7 +213,12 @@ class HomeActivity : ComponentActivity(), HomeActions {
                                 "Prefiero no decirlo",
                                 false,
                                 onAnswer = { n, w ->
-                                    es.foco.next.runtime.CareStore.recordMood(this, n, w, "al_elegir_cuidado")
+                                    es.foco.next.runtime.CareStore.recordMood(
+                                        this,
+                                        n,
+                                        w,
+                                        "al_elegir_cuidado",
+                                    )
                                     enterCare("elegido_animo_$n")
                                     toast(es.foco.next.core.care.Mood.reply(n))
                                     false
@@ -186,9 +233,15 @@ class HomeActivity : ComponentActivity(), HomeActions {
                         val k = vm.routineKind
                         if (k != null)
                             RoutineSheet(
-                                k, vm.routineTasks, vm.routineDone, vm::checkRoutine,
-                                if (k == es.foco.next.core.care.Routine.Kind.MORNING) vm.moneyLine else null,
-                            ) { showRoutine = false }
+                                k,
+                                vm.routineTasks,
+                                vm.routineDone,
+                                vm::checkRoutine,
+                                if (k == es.foco.next.core.care.Routine.Kind.MORNING) vm.moneyLine
+                                else null,
+                            ) {
+                                showRoutine = false
+                            }
                     }
                 if (coreTab >= 0)
                     CompositionLocalProvider(LocalHome provides rememberHomeColors(vm.palette)) {
@@ -205,7 +258,10 @@ class HomeActivity : ComponentActivity(), HomeActions {
                                 bankApp = null
                                 launch(app)
                             },
-                            onOpen = { bankApp = null; launch(app) },
+                            onOpen = {
+                                bankApp = null
+                                launch(app)
+                            },
                             onDismiss = { bankApp = null },
                         )
                     }
@@ -239,8 +295,17 @@ class HomeActivity : ComponentActivity(), HomeActions {
         window.decorView.post { runCatching { es.foco.next.log.InspectorLog.drainLab(this) } }
         vm.refresh()
         vm.owlOnResume()
-        runCatching { readBattery(registerReceiver(battery, IntentFilter(Intent.ACTION_BATTERY_CHANGED), Context.RECEIVER_NOT_EXPORTED)) }
-        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = vm.lightBars
+        runCatching {
+            readBattery(
+                registerReceiver(
+                    battery,
+                    IntentFilter(Intent.ACTION_BATTERY_CHANGED),
+                    Context.RECEIVER_NOT_EXPORTED,
+                )
+            )
+        }
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars =
+            vm.lightBars
     }
 
     override fun onPause() {
@@ -250,8 +315,8 @@ class HomeActivity : ComponentActivity(), HomeActions {
     }
 
     /**
-     * Pide el modo más rápido de la pantalla a su resolución (120 Hz en Galaxy S23 Ultra), como hace
-     * Lab. Android puede bajarlo para ahorrar batería.
+     * Pide el modo más rápido de la pantalla a su resolución (120 Hz en Galaxy S23 Ultra), como
+     * hace Lab. Android puede bajarlo para ahorrar batería.
      */
     private fun preferHighRefreshRate() {
         runCatching {
@@ -259,7 +324,10 @@ class HomeActivity : ComponentActivity(), HomeActions {
             val current = d.mode
             val best =
                 d.supportedModes
-                    .filter { it.physicalWidth == current.physicalWidth && it.physicalHeight == current.physicalHeight }
+                    .filter {
+                        it.physicalWidth == current.physicalWidth &&
+                            it.physicalHeight == current.physicalHeight
+                    }
                     .maxByOrNull { it.refreshRate } ?: return
             window.attributes = window.attributes.also { it.preferredDisplayModeId = best.modeId }
         }
@@ -284,16 +352,22 @@ class HomeActivity : ComponentActivity(), HomeActions {
             // Cuidado: en modo CUIDADO el ocio se abre sin peaje; en NORMAL la Aduana solo pregunta
             // (no cierra nada) y en ENFOQUE funciona como siempre.
             Section.OCIO -> {
-                if (es.foco.next.runtime.CareStore.mode(this) == es.foco.next.core.care.CareMode.Modo.CUIDADO) launch(app)
+                if (
+                    es.foco.next.runtime.CareStore.mode(this) ==
+                        es.foco.next.core.care.CareMode.Modo.CUIDADO
+                )
+                    launch(app)
                 else aduanaApp = app
             }
             // Banco: antes de entrar, cuánto vas a sacar o pagar y para qué (se puede saltar).
-            else -> if (es.foco.next.core.SensitiveApps.isBank(app.pkg)) bankApp = app else launch(app)
+            else ->
+                if (es.foco.next.core.SensitiveApps.isBank(app.pkg)) bankApp = app else launch(app)
         }
     }
 
     private fun launch(app: HomeApps.App) {
-        if (!HomeApps.open(this, app)) toast("No se pudo abrir ${app.label}") else drawerOpen = false
+        if (!HomeApps.open(this, app)) toast("No se pudo abrir ${app.label}")
+        else drawerOpen = false
     }
 
     override fun openLab(game: String) {
@@ -306,10 +380,13 @@ class HomeActivity : ComponentActivity(), HomeActions {
 
     override fun requestRole() {
         runCatching {
-            val r = getSystemService(RoleManager::class.java)
-            if (r.isRoleAvailable(RoleManager.ROLE_HOME) && !r.isRoleHeld(RoleManager.ROLE_HOME))
-                roleLauncher.launch(r.createRequestRoleIntent(RoleManager.ROLE_HOME))
-        }.onFailure { openIntent(Intent(Settings.ACTION_HOME_SETTINGS)) }
+                val r = getSystemService(RoleManager::class.java)
+                if (
+                    r.isRoleAvailable(RoleManager.ROLE_HOME) && !r.isRoleHeld(RoleManager.ROLE_HOME)
+                )
+                    roleLauncher.launch(r.createRequestRoleIntent(RoleManager.ROLE_HOME))
+            }
+            .onFailure { openIntent(Intent(Settings.ACTION_HOME_SETTINGS)) }
     }
 
     override fun pickDock(index: Int) {
@@ -317,14 +394,31 @@ class HomeActivity : ComponentActivity(), HomeActions {
         val taken = vm.dock.toSet()
         val options =
             listOf(Section.PRODUCTIVA, Section.HERRAMIENTA).flatMap { s ->
-                // De noche solo se ofrecen las esenciales (las únicas que el dock muestra a esa hora).
-                vm.apps.filter { it.section == s && HomeSections.dockAllowed(cfg, it.pkg) && vm.dockAllowed(it.pkg) && it.pkg !in taken && it.pkg != packageName }
+                // De noche solo se ofrecen las esenciales (las únicas que el dock muestra a esa
+                // hora).
+                vm.apps.filter {
+                    it.section == s &&
+                        HomeSections.dockAllowed(cfg, it.pkg) &&
+                        vm.dockAllowed(it.pkg) &&
+                        it.pkg !in taken &&
+                        it.pkg != packageName
+                }
             }
         if (options.isEmpty())
-            return toast(if (vm.night) "De noche solo caben apps esenciales; las demás se pueden fijar desde las 7:00." else "No hay apps disponibles para el dock.")
+            return toast(
+                if (vm.night)
+                    "De noche solo caben apps esenciales; las demás se pueden fijar desde las 7:00."
+                else "No hay apps disponibles para el dock."
+            )
         AlertDialog.Builder(this)
             .setTitle("Fijar app en el dock")
-            .setItems(options.map { it.label + if (it.section == Section.PRODUCTIVA) "  · productiva" else "" }.toTypedArray()) { _, w ->
+            .setItems(
+                options
+                    .map {
+                        it.label + if (it.section == Section.PRODUCTIVA) "  · productiva" else ""
+                    }
+                    .toTypedArray()
+            ) { _, w ->
                 vm.setDock(index, options[w].pkg)
                 toast("${options[w].label} fijada en tu dock")
             }
@@ -337,7 +431,11 @@ class HomeActivity : ComponentActivity(), HomeActions {
         startActivity(Intent(this, MainActivity::class.java).putExtra(MainActivity.EXTRA_PAGE, 2))
 
     override fun notifications() {
-        if (!FocusAccessibilityService.globalAction(AccessibilityService.GLOBAL_ACTION_NOTIFICATIONS))
+        if (
+            !FocusAccessibilityService.globalAction(
+                AccessibilityService.GLOBAL_ACTION_NOTIFICATIONS
+            )
+        )
             toast("Activa la Accesibilidad de Foco para usar este gesto.")
     }
 
@@ -347,14 +445,19 @@ class HomeActivity : ComponentActivity(), HomeActions {
     }
 
     override fun openIntent(i: Intent) {
-        runCatching { startActivity(i) }.onFailure { toast("Android no permite abrir esta pantalla aquí.") }
+        runCatching { startActivity(i) }
+            .onFailure { toast("Android no permite abrir esta pantalla aquí.") }
     }
 
     override fun setDnd(on: Boolean) {
         val nm = getSystemService(NotificationManager::class.java)
-        if (!nm.isNotificationPolicyAccessGranted) return openIntent(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
+        if (!nm.isNotificationPolicyAccessGranted)
+            return openIntent(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
         runCatching {
-            nm.setInterruptionFilter(if (on) NotificationManager.INTERRUPTION_FILTER_PRIORITY else NotificationManager.INTERRUPTION_FILTER_ALL)
+            nm.setInterruptionFilter(
+                if (on) NotificationManager.INTERRUPTION_FILTER_PRIORITY
+                else NotificationManager.INTERRUPTION_FILTER_ALL
+            )
         }
         vm.refreshSystem()
     }
@@ -367,7 +470,9 @@ class HomeActivity : ComponentActivity(), HomeActions {
         val all = CompanionMood.Variant.values()
         AlertDialog.Builder(this)
             .setTitle("Tu compañero en la colina")
-            .setSingleChoiceItems(all.map { it.label }.toTypedArray(), all.indexOf(vm.variant)) { d, w ->
+            .setSingleChoiceItems(all.map { it.label }.toTypedArray(), all.indexOf(vm.variant)) {
+                d,
+                w ->
                 vm.chooseVariant(all[w])
                 d.dismiss()
             }
@@ -399,7 +504,9 @@ class HomeActivity : ComponentActivity(), HomeActions {
         val motives = es.foco.next.runtime.CareStore.EXIT_MOTIVES
         AlertDialog.Builder(this)
             .setTitle(why)
-            .setItems(motives.map { it[1] }.toTypedArray()) { _, w -> applyCare(motivo + ";motivo_" + motives[w][0]) }
+            .setItems(motives.map { it[1] }.toTypedArray()) { _, w ->
+                applyCare(motivo + ";motivo_" + motives[w][0])
+            }
             .setNegativeButton("Seguir como estoy", null)
             .show()
     }
@@ -426,7 +533,10 @@ class HomeActivity : ComponentActivity(), HomeActions {
         val got = es.foco.next.runtime.CareStore.care(this, 60, "animo_bajo")
         vm.moodDone()
         vm.refreshCare()
-        toast(if (got > 0) "Modo Cuidado durante ${minutes(got)}. Vamos suave." else "Ahora no se pudo pasar a Cuidado.")
+        toast(
+            if (got > 0) "Modo Cuidado durante ${minutes(got)}. Vamos suave."
+            else "Ahora no se pudo pasar a Cuidado."
+        )
     }
 
     override fun skipMood() {
@@ -462,7 +572,6 @@ class HomeActivity : ComponentActivity(), HomeActions {
         coreTab = 1
     }
 
-
     /** El domingo el búho invita a planificar: se abre Foco Core › Semana. */
     override fun planWeek() {
         es.foco.next.runtime.RoutineStore.planSeen(this)
@@ -492,14 +601,26 @@ class HomeActivity : ComponentActivity(), HomeActions {
         startActivity(Intent(this, MainActivity::class.java).putExtra(MainActivity.EXTRA_PAGE, 3))
 
     override fun startFreeHour() {
-        if (es.foco.next.runtime.RoutineStore.startFree(this)) toast("1 h de ocio libre. Disfrútala.")
-        else toast(if (es.foco.next.runtime.RoutineStore.freeUsedToday(this)) "La hora libre de hoy ya se usó." else "Ya no queda tiempo antes de la noche.")
+        if (es.foco.next.runtime.RoutineStore.startFree(this))
+            toast("1 h de ocio libre. Disfrútala.")
+        else
+            toast(
+                if (es.foco.next.runtime.RoutineStore.freeUsedToday(this))
+                    "La hora libre de hoy ya se usó."
+                else "Ya no queda tiempo antes de la noche."
+            )
         vm.refreshCore()
     }
 
     /** v30: «Hecha» marca al momento; si la tarea pide foto, primero la cámara. */
     override fun completeTask(block: String, index: Int) {
-        val t = es.foco.next.runtime.RoutineStore.blockTasks(this, block, es.foco.next.runtime.RoutineStore.today()).getOrNull(index)
+        val t =
+            es.foco.next.runtime.RoutineStore.blockTasks(
+                    this,
+                    block,
+                    es.foco.next.runtime.RoutineStore.today(),
+                )
+                .getOrNull(index)
         if (t != null && t.photo) return photoTask(block, index)
         es.foco.next.runtime.RoutineStore.checkBlock(this, block, index, true)
         vm.refreshRoutine()
@@ -509,14 +630,20 @@ class HomeActivity : ComponentActivity(), HomeActions {
     /** Foto de evidencia: al volver de la cámara la tarea queda hecha con su foto. */
     override fun photoTask(block: String, index: Int) {
         photoFor = block to index
-        val uri = androidx.core.content.FileProvider.getUriForFile(this, "$packageName.evidencias", cameraFile)
-        runCatching { takePhoto.launch(uri) }.onFailure {
-            photoFor = null
-            es.foco.next.runtime.RoutineStore.checkBlock(this, block, index, true)
-            vm.refreshRoutine()
-            vm.refreshCore()
-            toast("No hay cámara disponible: hecha, sin foto")
-        }
+        val uri =
+            androidx.core.content.FileProvider.getUriForFile(
+                this,
+                "$packageName.evidencias",
+                cameraFile,
+            )
+        runCatching { takePhoto.launch(uri) }
+            .onFailure {
+                photoFor = null
+                es.foco.next.runtime.RoutineStore.checkBlock(this, block, index, true)
+                vm.refreshRoutine()
+                vm.refreshCore()
+                toast("No hay cámara disponible: hecha, sin foto")
+            }
     }
 
     override fun uncheckTask(block: String, index: Int) {
@@ -531,28 +658,43 @@ class HomeActivity : ComponentActivity(), HomeActions {
 
     override fun editEvents() = openWeek()
 
-
-
     /** Presupuesto y deuda (desde la tarjeta del gasto). */
     override fun editMoney() {
-        val items = arrayOf(
-            "Presupuesto de la semana · " + es.foco.next.core.care.Money.fmt(es.foco.next.runtime.MoneyStore.budget(this)),
-            "Lo que debo · " + es.foco.next.core.care.Money.fmt(es.foco.next.runtime.MoneyStore.debt(this)),
-            "Anotar un gasto",
-        )
+        val items =
+            arrayOf(
+                "Presupuesto de la semana · " +
+                    es.foco.next.core.care.Money.fmt(es.foco.next.runtime.MoneyStore.budget(this)),
+                "Lo que debo · " +
+                    es.foco.next.core.care.Money.fmt(es.foco.next.runtime.MoneyStore.debt(this)),
+                "Anotar un gasto",
+            )
         AlertDialog.Builder(this)
             .setTitle("Gasto del día")
             .setItems(items) { _, w ->
                 when (w) {
-                    0 -> askAmount("Presupuesto de la semana", "Lo que quieres gastar de lunes a domingo.", es.foco.next.runtime.MoneyStore.budget(this)) {
-                        es.foco.next.runtime.MoneyStore.setBudget(this, it); vm.refreshMoney()
-                    }
-                    1 -> askAmount("Lo que debo", "El total pendiente.", es.foco.next.runtime.MoneyStore.debt(this)) {
-                        es.foco.next.runtime.MoneyStore.setDebt(this, it); vm.refreshMoney()
-                    }
-                    else -> askAmount("Anotar un gasto", "Lo que gastaste o vas a gastar hoy.", 0) {
-                        es.foco.next.runtime.MoneyStore.add(this, it, ""); vm.refreshMoney()
-                    }
+                    0 ->
+                        askAmount(
+                            "Presupuesto de la semana",
+                            "Lo que quieres gastar de lunes a domingo.",
+                            es.foco.next.runtime.MoneyStore.budget(this),
+                        ) {
+                            es.foco.next.runtime.MoneyStore.setBudget(this, it)
+                            vm.refreshMoney()
+                        }
+                    1 ->
+                        askAmount(
+                            "Lo que debo",
+                            "El total pendiente.",
+                            es.foco.next.runtime.MoneyStore.debt(this),
+                        ) {
+                            es.foco.next.runtime.MoneyStore.setDebt(this, it)
+                            vm.refreshMoney()
+                        }
+                    else ->
+                        askAmount("Anotar un gasto", "Lo que gastaste o vas a gastar hoy.", 0) {
+                            es.foco.next.runtime.MoneyStore.add(this, it, "")
+                            vm.refreshMoney()
+                        }
                 }
             }
             .setNegativeButton("Cerrar", null)
@@ -560,11 +702,15 @@ class HomeActivity : ComponentActivity(), HomeActions {
     }
 
     private fun askAmount(title: String, message: String, current: Long, then: (Long) -> Unit) {
-        val input = android.widget.EditText(this).apply {
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
-            hint = "0.00"
-            if (current > 0) setText(es.foco.next.core.care.Money.fmt(current).removePrefix("$"))
-        }
+        val input =
+            android.widget.EditText(this).apply {
+                inputType =
+                    android.text.InputType.TYPE_CLASS_NUMBER or
+                        android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+                hint = "0.00"
+                if (current > 0)
+                    setText(es.foco.next.core.care.Money.fmt(current).removePrefix("$"))
+            }
         AlertDialog.Builder(this)
             .setTitle(title)
             .setMessage(message)
@@ -578,14 +724,20 @@ class HomeActivity : ComponentActivity(), HomeActions {
             .show()
     }
 
-
     override fun pickTheme() {
         // v31: Aurora y Mar al alba solo aparecen cuando la constancia los desbloquea.
         val have = es.foco.next.runtime.RewardStore.unlocked(this)
-        val all = es.foco.next.core.home.PhotoTheme.values().filter { it.unlock() == null || it.unlock() in have }
-        val labels = listOf("Automático (hora y lo que haces)") +
-            all.map { it.label + " · " + it.`when` + if (it.photo == null) " (dibujado)" else "" }
-        val current = if (vm.themeChoice == "AUTO") 0 else all.indexOfFirst { it.name == vm.themeChoice } + 1
+        val all =
+            es.foco.next.core.home.PhotoTheme.values().filter {
+                it.unlock() == null || it.unlock() in have
+            }
+        val labels =
+            listOf("Automático (hora y lo que haces)") +
+                all.map {
+                    it.label + " · " + it.`when` + if (it.photo == null) " (dibujado)" else ""
+                }
+        val current =
+            if (vm.themeChoice == "AUTO") 0 else all.indexOfFirst { it.name == vm.themeChoice } + 1
         AlertDialog.Builder(this)
             .setTitle("Tema del inicio")
             .setSingleChoiceItems(labels.toTypedArray(), current) { d, w ->
@@ -598,23 +750,26 @@ class HomeActivity : ComponentActivity(), HomeActions {
     /** Horario de la noche: endurecer, desde ya; aflojar, desde mañana. */
     override fun nightHours() {
         val n = es.foco.next.runtime.CareStore.night(this)
-        val box = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.HORIZONTAL
-            gravity = android.view.Gravity.CENTER
-            setPadding(24, 24, 24, 0)
-        }
-        val start = android.widget.NumberPicker(this).apply {
-            minValue = es.foco.next.core.care.NightHours.MIN_START
-            maxValue = es.foco.next.core.care.NightHours.MAX_START
-            value = n.start
-            setFormatter { "$it:00" }
-        }
-        val end = android.widget.NumberPicker(this).apply {
-            minValue = es.foco.next.core.care.NightHours.MIN_END
-            maxValue = es.foco.next.core.care.NightHours.MAX_END
-            value = n.end
-            setFormatter { "$it:00" }
-        }
+        val box =
+            android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER
+                setPadding(24, 24, 24, 0)
+            }
+        val start =
+            android.widget.NumberPicker(this).apply {
+                minValue = es.foco.next.core.care.NightHours.MIN_START
+                maxValue = es.foco.next.core.care.NightHours.MAX_START
+                value = n.start
+                setFormatter { "$it:00" }
+            }
+        val end =
+            android.widget.NumberPicker(this).apply {
+                minValue = es.foco.next.core.care.NightHours.MIN_END
+                maxValue = es.foco.next.core.care.NightHours.MAX_END
+                value = n.end
+                setFormatter { "$it:00" }
+            }
         box.addView(start)
         box.addView(android.widget.TextView(this).apply { text = "  a  " })
         box.addView(end)
@@ -647,7 +802,9 @@ class HomeActivity : ComponentActivity(), HomeActions {
     }
 
     override fun openShortPractice() {
-        runCatching { startActivity(personal.qqq.braintraining.LabLaunch.shortSession(this, false)) }
+        runCatching {
+                startActivity(personal.qqq.braintraining.LabLaunch.shortSession(this, false))
+            }
             .onFailure { toast("No se pudo abrir la práctica") }
     }
 
@@ -661,7 +818,11 @@ class HomeActivity : ComponentActivity(), HomeActions {
             "accessibility" -> openIntent(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
             "home" -> requestRole()
             "usage" -> openIntent(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
-            "notifications" -> openIntent(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName))
+            "notifications" ->
+                openIntent(
+                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                        .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                )
             "dnd" -> openIntent(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
         }
     }
@@ -685,10 +846,15 @@ class HomeActivity : ComponentActivity(), HomeActions {
         if (i.getBooleanExtra(es.foco.next.runtime.OwlWatch.EXTRA_WAKE, false)) {
             i.removeExtra(es.foco.next.runtime.OwlWatch.EXTRA_WAKE)
             if (!HomeCrashGuard.minimal(this)) {
-                // El búho abre el día con Foco Core: la rutina de la mañana si toca, si no el plan de hoy.
+                // El búho abre el día con Foco Core: la rutina de la mañana si toca, si no el plan
+                // de hoy.
                 vm.refreshRoutine()
-                if (vm.routineKind == es.foco.next.core.care.Routine.Kind.MORNING) showRoutine = true
-                else { vm.refreshCore(); openCore() }
+                if (vm.routineKind == es.foco.next.core.care.Routine.Kind.MORNING)
+                    showRoutine = true
+                else {
+                    vm.refreshCore()
+                    openCore()
+                }
             }
         }
         if (i.getBooleanExtra(es.foco.next.runtime.RoutineStore.EXTRA_CORE, false)) {
@@ -710,15 +876,19 @@ class HomeActivity : ComponentActivity(), HomeActions {
         CompanionNotifier.closeBanner(this, id) // ya lo leíste en la notificación
         val target = i.getStringExtra(CompanionNotifier.EXTRA_TARGET)
         i.removeExtra(CompanionNotifier.EXTRA_ID)
-        window.decorView.postDelayed({
-            // Cuidado: la sugerencia suave no abre nada (solo trae al inicio).
-            if (target == "cuidado") return@postDelayed
-            if (target == "respirar") {
-                if (!HomeCrashGuard.minimal(this)) showBreathe = true
-                return@postDelayed
-            }
-            if (target == "reto") vm.quick?.let { openLab(it.game) } else if (!HomeCrashGuard.minimal(this)) stepAction()
-        }, 600)
+        window.decorView.postDelayed(
+            {
+                // Cuidado: la sugerencia suave no abre nada (solo trae al inicio).
+                if (target == "cuidado") return@postDelayed
+                if (target == "respirar") {
+                    if (!HomeCrashGuard.minimal(this)) showBreathe = true
+                    return@postDelayed
+                }
+                if (target == "reto") vm.quick?.let { openLab(it.game) }
+                else if (!HomeCrashGuard.minimal(this)) stepAction()
+            },
+            600,
+        )
     }
 
     companion object {

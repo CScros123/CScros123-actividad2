@@ -10,14 +10,18 @@ public final class Aduana {
     private Aduana() {}
 
     public static final long BREATH_MS = 5_000;
+
     /**
      * Una respiración completa (inhalar 1,25 s + exhalar 1,25 s) antes de poder elegir: corta los
      * toques automáticos por memoria muscular sin hacer esperar de más.
      */
     public static final long UNLOCK_MS = 2_500;
+
     /** Opción destacada como recomendada. */
     public static final int RECOMMENDED_MIN = 1;
+
     public static final int[] CHOICES_MIN = {1, 3, 5};
+
     /** Lo elegido vale como mucho una ventana de ocio (60 min) y después se olvida. */
     public static final long VALID_MS = 60 * 60_000L;
 

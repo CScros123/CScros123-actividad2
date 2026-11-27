@@ -1,10 +1,6 @@
 package es.foco.next.ui
 
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -43,15 +39,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import es.foco.next.core.home.Aduana
-import kotlinx.coroutines.delay
 
 /**
- * Peaje de intención ("Aduana"): antes de abrir una app de ocio, 5 s de respiración y elegir 1, 3 o 5
- * min. El bloque se paga igual (Regla 4 intacta); elegir menos solo hace que Foco la cierre antes.
- * De noche o con el ocio apartado en esta red, no ofrece abrir: solo informa.
+ * Peaje de intención ("Aduana"): antes de abrir una app de ocio, 5 s de respiración y elegir 1, 3 o
+ * 5 min. El bloque se paga igual (Regla 4 intacta); elegir menos solo hace que Foco la cierre
+ * antes. De noche o con el ocio apartado en esta red, no ofrece abrir: solo informa.
  */
 @Composable
-fun AduanaSheet(appLabel: String, outlook: LeisureOutlook, onChoose: (Int) -> Unit, onDismiss: () -> Unit) {
+fun AduanaSheet(
+    appLabel: String,
+    outlook: LeisureOutlook,
+    onChoose: (Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
     val c = LocalHome.current
     val haptic = LocalHapticFeedback.current
     val motion = LocalMotion.current
@@ -74,17 +74,34 @@ fun AduanaSheet(appLabel: String, outlook: LeisureOutlook, onChoose: (Int) -> Un
         }
     }
     val ready = phase == 2
-    val enabledAlpha by androidx.compose.animation.core.animateFloatAsState(if (ready) 1f else .38f, tween(300), label = "listo")
+    val enabledAlpha by
+        androidx.compose.animation.core.animateFloatAsState(
+            if (ready) 1f else .38f,
+            tween(300),
+            label = "listo",
+        )
     Box(
         // Velo casi opaco: el cajón de debajo (y su "Filtrar por nombre…") no asoma.
-        Modifier.fillMaxSize().background(Color.Black.copy(alpha = .84f))
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onDismiss),
+        Modifier.fillMaxSize()
+            .background(Color.Black.copy(alpha = .84f))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onDismiss,
+            ),
         contentAlignment = Alignment.BottomCenter,
     ) {
         Column(
-            Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp).padding(bottom = 16.dp)
-                .clip(RoundedCornerShape(28.dp)).background(c.card.copy(alpha = 1f))
-                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
+            Modifier.fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 16.dp)
+                .clip(RoundedCornerShape(28.dp))
+                .background(c.card.copy(alpha = 1f))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                ) {}
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -98,7 +115,8 @@ fun AduanaSheet(appLabel: String, outlook: LeisureOutlook, onChoose: (Int) -> Un
                     drawCircle(lerp(c.card, c.accent, .12f), size.minDimension / 2 * k)
                     drawCircle(lerp(c.card, c.accent, .3f), size.minDimension / 2 * k * .66f)
                 }
-                if (ready) Text("✓", color = c.accent, fontSize = 26.sp, fontWeight = FontWeight.Light)
+                if (ready)
+                    Text("✓", color = c.accent, fontSize = 26.sp, fontWeight = FontWeight.Light)
             }
             Spacer(Modifier.height(10.dp))
             HomeText(
@@ -108,17 +126,28 @@ fun AduanaSheet(appLabel: String, outlook: LeisureOutlook, onChoose: (Int) -> Un
                     closed -> "Ahora no se puede"
                     else -> "¿Cuánto tiempo quieres?"
                 },
-                15.sp, weight = FontWeight.SemiBold,
+                15.sp,
+                weight = FontWeight.SemiBold,
             )
             if (!closed) {
                 Spacer(Modifier.height(14.dp))
-                Row(Modifier.fillMaxWidth().graphicsLayer { alpha = enabledAlpha }, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    Modifier.fillMaxWidth().graphicsLayer { alpha = enabledAlpha },
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
                     for (m in Aduana.CHOICES_MIN) {
                         val recommended = m == Aduana.RECOMMENDED_MIN
                         Box(
-                            Modifier.weight(1f).clip(RoundedCornerShape(16.dp))
-                                .background(if (recommended) c.accent else lerp(c.card, c.accent, .1f))
-                                .border(if (recommended) 2.dp else 1.dp, lerp(c.card, c.accent, if (recommended) .55f else .2f), RoundedCornerShape(16.dp))
+                            Modifier.weight(1f)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(
+                                    if (recommended) c.accent else lerp(c.card, c.accent, .1f)
+                                )
+                                .border(
+                                    if (recommended) 2.dp else 1.dp,
+                                    lerp(c.card, c.accent, if (recommended) .55f else .2f),
+                                    RoundedCornerShape(16.dp),
+                                )
                                 .clickable(enabled = ready) {
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     onChoose(m)
@@ -127,23 +156,42 @@ fun AduanaSheet(appLabel: String, outlook: LeisureOutlook, onChoose: (Int) -> Un
                             contentAlignment = Alignment.Center,
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("$m min", color = if (recommended) c.card.copy(alpha = 1f) else c.accent, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                                if (recommended) Text("recomendado", color = c.card.copy(alpha = .85f), fontSize = 10.sp)
+                                Text(
+                                    "$m min",
+                                    color = if (recommended) c.card.copy(alpha = 1f) else c.accent,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                                if (recommended)
+                                    Text(
+                                        "recomendado",
+                                        color = c.card.copy(alpha = .85f),
+                                        fontSize = 10.sp,
+                                    )
                             }
                         }
                     }
                 }
                 // Una sola frase, debajo de los botones.
                 HomeText(
-                    if (outlook.focus) "Al acabar el tiempo, Foco cierra la app." else "Es tu intención: al acabar te aviso y tú decides.",
-                    11.5.sp, c.muted, modifier = Modifier.padding(top = 8.dp),
+                    if (outlook.focus) "Al acabar el tiempo, Foco cierra la app."
+                    else "Es tu intención: al acabar te aviso y tú decides.",
+                    11.5.sp,
+                    c.muted,
+                    modifier = Modifier.padding(top = 8.dp),
                 )
             }
             Spacer(Modifier.height(12.dp))
             Text(
                 "Mejor no, volver",
-                Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(onClick = onDismiss).padding(10.dp),
-                color = c.accent, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center,
+                Modifier.fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable(onClick = onDismiss)
+                    .padding(10.dp),
+                color = c.accent,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
             )
         }
     }

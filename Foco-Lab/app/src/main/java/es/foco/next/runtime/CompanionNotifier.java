@@ -84,10 +84,15 @@ public final class CompanionNotifier extends BroadcastReceiver {
             String text = Companion.fill(m.text, min, step, game);
             if (t == Trigger.NIGHT_SUMMARY) text = nightSummary(app, text);
             // Destino del botón: próximo paso (inicio), reto (Lab) o la app productiva.
-            String target = t == Trigger.RESTLESS ? "respirar"
-                    : t == Trigger.CARE_SUGGESTION ? "cuidado"
-                    : t.category == Companion.Category.PROPUESTA && (now / 60_000) % 2 == 0
-                    ? "reto" : "inicio";
+            String target =
+                    t == Trigger.RESTLESS
+                            ? "respirar"
+                            : t == Trigger.CARE_SUGGESTION
+                                    ? "cuidado"
+                                    : t.category == Companion.Category.PROPUESTA
+                                                    && (now / 60_000) % 2 == 0
+                                            ? "reto"
+                                            : "inicio";
             Intent open =
                     new Intent()
                             .setClassName(app, "es.foco.next.ui.HomeActivity")
@@ -96,16 +101,22 @@ public final class CompanionNotifier extends BroadcastReceiver {
                             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             PendingIntent tap =
                     PendingIntent.getActivity(
-                            app, m.id.hashCode(), open,
+                            app,
+                            m.id.hashCode(),
+                            open,
                             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             PendingIntent ignored =
                     PendingIntent.getBroadcast(
-                            app, m.id.hashCode(),
-                            new Intent(app, CompanionNotifier.class).setAction(ACTION_IGNORED).putExtra(EXTRA_ID, m.id),
+                            app,
+                            m.id.hashCode(),
+                            new Intent(app, CompanionNotifier.class)
+                                    .setAction(ACTION_IGNORED)
+                                    .putExtra(EXTRA_ID, m.id),
                             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             NotificationManager nm = app.getSystemService(NotificationManager.class);
             NotificationChannel ch =
-                    new NotificationChannel(CHANNEL, "Acompañamiento", NotificationManager.IMPORTANCE_LOW);
+                    new NotificationChannel(
+                            CHANNEL, "Acompañamiento", NotificationManager.IMPORTANCE_LOW);
             ch.setSound(null, null);
             ch.enableVibration(false);
             nm.createNotificationChannel(ch);
@@ -143,31 +154,48 @@ public final class CompanionNotifier extends BroadcastReceiver {
                     p.edit().putString("history", hist.toString()).putString("day", today);
             if (t.inLeisure) {
                 JSONArray kept = new JSONArray();
-                for (long at : b.leisureRemindersLastHour) if (now - at < 60 * 60_000L) kept.put(at);
+                for (long at : b.leisureRemindersLastHour)
+                    if (now - at < 60 * 60_000L) kept.put(at);
                 kept.put(now);
                 e.putLong("leisureAt", now).putString("leisureHour", kept.toString());
             } else e.putInt("shown", b.shownToday + 1);
             e.apply();
-            InspectorLog.event(app, InspectorLog.MENSAJE_MOSTRADO, pkg == null ? "" : pkg, now, 0, 1, 0,
-                    t.name().toLowerCase() + ":" + m.id, null);
+            InspectorLog.event(
+                    app,
+                    InspectorLog.MENSAJE_MOSTRADO,
+                    pkg == null ? "" : pkg,
+                    now,
+                    0,
+                    1,
+                    0,
+                    t.name().toLowerCase() + ":" + m.id,
+                    null);
         } catch (Exception ignored) {
         }
     }
 
     /** Último mensaje del búho si es reciente (30 min) y no se cerró; si no, null. */
     public static String[] lastForBanner(Context c) {
-        SharedPreferences p = c.getApplicationContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        SharedPreferences p =
+                c.getApplicationContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         long at = p.getLong("lastAt", -1);
         String id = p.getString("lastId", "");
         if (at < 0 || System.currentTimeMillis() - at > 30 * 60_000L) return null;
         if (id.equals(p.getString("bannerClosed", ""))) return null;
         return new String[] {
-            p.getString("lastTitle", ""), p.getString("lastText", ""), p.getString("lastTarget", "inicio"), id
+            p.getString("lastTitle", ""),
+            p.getString("lastText", ""),
+            p.getString("lastTarget", "inicio"),
+            id
         };
     }
 
     public static void closeBanner(Context c, String id) {
-        c.getApplicationContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString("bannerClosed", id).apply();
+        c.getApplicationContext()
+                .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .edit()
+                .putString("bannerClosed", id)
+                .apply();
     }
 
     private static String title(Trigger t) {
@@ -195,8 +223,11 @@ public final class CompanionNotifier extends BroadcastReceiver {
         HomeHub.EstadoActual ea = HomeHub.last();
         StringBuilder s = new StringBuilder(text);
         if (ea != null)
-            s.append("\nInvertido: ").append(ea.minutosInvertidosHoy).append(" min · ocio: ")
-                    .append(ea.ocioHoyMin).append(" min.");
+            s.append("\nInvertido: ")
+                    .append(ea.minutosInvertidosHoy)
+                    .append(" min · ocio: ")
+                    .append(ea.ocioHoyMin)
+                    .append(" min.");
         s.append("\nOcio cerrado hasta las 7:00.");
         return s.toString();
     }
@@ -217,7 +248,8 @@ public final class CompanionNotifier extends BroadcastReceiver {
         try {
             NotificationManager nm = c.getSystemService(NotificationManager.class);
             return nm != null
-                    && nm.getCurrentInterruptionFilter() != NotificationManager.INTERRUPTION_FILTER_ALL;
+                    && nm.getCurrentInterruptionFilter()
+                            != NotificationManager.INTERRUPTION_FILTER_ALL;
         } catch (RuntimeException e) {
             return false;
         }
@@ -226,13 +258,22 @@ public final class CompanionNotifier extends BroadcastReceiver {
     /** mensaje_tocado: lo llama HomeActivity al abrirse desde la notificación. */
     public static void tapped(Context c, String id) {
         if (id == null || id.isEmpty()) return;
-        InspectorLog.event(c, InspectorLog.MENSAJE_TOCADO, "", System.currentTimeMillis(), 0, 1, 0, id, null);
+        InspectorLog.event(
+                c, InspectorLog.MENSAJE_TOCADO, "", System.currentTimeMillis(), 0, 1, 0, id, null);
     }
 
     @Override
     public void onReceive(Context c, Intent i) {
         if (i != null && ACTION_IGNORED.equals(i.getAction()))
-            InspectorLog.event(c, InspectorLog.MENSAJE_IGNORADO, "", System.currentTimeMillis(), 0, 1, 0,
-                    String.valueOf(i.getStringExtra(EXTRA_ID)), null);
+            InspectorLog.event(
+                    c,
+                    InspectorLog.MENSAJE_IGNORADO,
+                    "",
+                    System.currentTimeMillis(),
+                    0,
+                    1,
+                    0,
+                    String.valueOf(i.getStringExtra(EXTRA_ID)),
+                    null);
     }
 }

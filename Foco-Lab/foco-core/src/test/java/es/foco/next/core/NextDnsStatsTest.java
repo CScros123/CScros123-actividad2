@@ -30,7 +30,8 @@ public class NextDnsStatsTest {
 
     @Test
     public void encodeRoundTrip() {
-        List<NextDnsStats.Hit> d = NextDnsStats.decode(NextDnsStats.encode(NextDnsStats.domains(DOMAINS, 5)));
+        List<NextDnsStats.Hit> d =
+                NextDnsStats.decode(NextDnsStats.encode(NextDnsStats.domains(DOMAINS, 5)));
         assertEquals("instagram.com", d.get(1).domain);
         assertEquals(20, d.get(0).queries);
     }
@@ -38,7 +39,9 @@ public class NextDnsStatsTest {
     @Test
     public void owlLineRespectsHiddenNumbers() {
         List<NextDnsStats.Hit> d = NextDnsStats.domains(DOMAINS, 5);
-        assertEquals("🦉 NextDNS frenó 34 intentos hoy, sobre todo tiktok.com.", NextDnsStats.owlLine(34, d, true));
+        assertEquals(
+                "🦉 NextDNS frenó 34 intentos hoy, sobre todo tiktok.com.",
+                NextDnsStats.owlLine(34, d, true));
         assertFalse(NextDnsStats.owlLine(34, d, false).matches(".*\\d.*"));
         assertNull(NextDnsStats.owlLine(0, d, true));
     }
@@ -53,7 +56,8 @@ public class NextDnsStatsTest {
 
     @Test
     public void urls() {
-        assertEquals("https://api.nextdns.io/profiles/96916b/analytics/status?from=2026-11-22T05:00:00Z",
+        assertEquals(
+                "https://api.nextdns.io/profiles/96916b/analytics/status?from=2026-11-22T05:00:00Z",
                 NextDnsStats.statusUrl("96916b", "2026-11-22T05:00:00Z"));
     }
 }

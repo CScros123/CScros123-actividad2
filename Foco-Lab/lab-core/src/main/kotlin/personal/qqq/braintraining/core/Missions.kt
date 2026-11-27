@@ -5,9 +5,9 @@ import kotlin.random.Random
 
 /**
  * Lote C, misiones diarias: 3 retos cortos al día, sacados de los juegos ya desbloqueados. STREAK:
- * aciertos en una partida de ese juego (antes seguidos; 12 rondas o Relámpago). SCORE: aciertos de una partida de 12
- * rondas. FLASH: puntos en una partida de Relámpago. SHORT: aciertos en una Práctica 3 min. Sin
- * rachas que castiguen: las misiones de ayer simplemente desaparecen.
+ * aciertos en una partida de ese juego (antes seguidos; 12 rondas o Relámpago). SCORE: aciertos de
+ * una partida de 12 rondas. FLASH: puntos en una partida de Relámpago. SHORT: aciertos en una
+ * Práctica 3 min. Sin rachas que castiguen: las misiones de ayer simplemente desaparecen.
  */
 enum class MissionKind {
     STREAK,

@@ -33,7 +33,8 @@ public class RoutineTest {
 
     @Test
     public void windows() {
-        assertEquals(Routine.Kind.MORNING, Routine.window(LocalDateTime.of(2026, 11, 22, 6, 12), 21));
+        assertEquals(
+                Routine.Kind.MORNING, Routine.window(LocalDateTime.of(2026, 11, 22, 6, 12), 21));
         assertNull(Routine.window(LocalDateTime.of(2026, 11, 22, 13, 0), 21));
         assertEquals(Routine.Kind.NIGHT, Routine.window(LocalDateTime.of(2026, 11, 22, 19, 0), 21));
         assertEquals(Routine.Kind.NIGHT, Routine.window(LocalDateTime.of(2026, 11, 22, 23, 0), 21));
@@ -47,7 +48,8 @@ public class RoutineTest {
         long start = 1_000_000;
         assertTrue(Routine.blocks(true, t, done, start, start + 60 * 60_000));
         for (int i = 0; i < t.size(); i++) done.add(i);
-        assertTrue(Routine.blocks(true, t, done, start, start + 5 * 60_000)); // todo marcado en 5 min
+        assertTrue(
+                Routine.blocks(true, t, done, start, start + 5 * 60_000)); // todo marcado en 5 min
         assertFalse(Routine.blocks(true, t, done, start, start + 14 * 60_000));
         assertFalse(Routine.blocks(false, t, new HashSet<>(), start, start));
     }
@@ -57,7 +59,8 @@ public class RoutineTest {
         List<Routine.Task> t = Routine.parse("Bañarte · 10\nBarba · 5");
         Set<Integer> done = new HashSet<>();
         done.add(0);
-        assertEquals("Primero tu rutina de la noche: falta 1 (~5 min). Márcala en el inicio.",
+        assertEquals(
+                "Primero tu rutina de la noche: falta 1 (~5 min). Márcala en el inicio.",
                 Routine.gateText(Routine.Kind.NIGHT, t, done, 0, 0));
     }
 
@@ -68,11 +71,14 @@ public class RoutineTest {
         assertEquals(Routine.DEFAULT_MORNING, Routine.resolve(Routine.Kind.MORNING, mon, m::get));
         m.put(Routine.generalKey(Routine.Kind.MORNING), "General · 5");
         assertEquals("General · 5", Routine.resolve(Routine.Kind.MORNING, mon, m::get));
-        m.put(Routine.weekdayKey(Routine.Kind.MORNING, java.time.DayOfWeek.MONDAY), "Gimnasio · 45");
+        m.put(
+                Routine.weekdayKey(Routine.Kind.MORNING, java.time.DayOfWeek.MONDAY),
+                "Gimnasio · 45");
         assertEquals("Gimnasio · 45", Routine.resolve(Routine.Kind.MORNING, mon, m::get));
         m.put(Routine.dateKey(Routine.Kind.MORNING, mon), "Médico · 30");
         assertEquals("Médico · 30", Routine.resolve(Routine.Kind.MORNING, mon, m::get));
-        assertEquals("Gimnasio · 45", Routine.resolve(Routine.Kind.MORNING, mon.plusWeeks(1), m::get));
+        assertEquals(
+                "Gimnasio · 45", Routine.resolve(Routine.Kind.MORNING, mon.plusWeeks(1), m::get));
     }
 
     @Test
@@ -90,8 +96,12 @@ public class RoutineTest {
         assertEquals(60, t.minutes);
         assertEquals(630, t.window);
         assertEquals(3, t.difficulty);
-        assertEquals("Estudiar · 60 · 10:30 · difícil", Routine.encode(Routine.parse("Estudiar · 60 · 10:30 · difícil")));
-        assertEquals(LocalDateTime.of(2026, 11, 22, 3, 0).toLocalDate().minusDays(1), Routine.logicalDay(LocalDateTime.of(2026, 11, 22, 3, 0)));
+        assertEquals(
+                "Estudiar · 60 · 10:30 · difícil",
+                Routine.encode(Routine.parse("Estudiar · 60 · 10:30 · difícil")));
+        assertEquals(
+                LocalDateTime.of(2026, 11, 22, 3, 0).toLocalDate().minusDays(1),
+                Routine.logicalDay(LocalDateTime.of(2026, 11, 22, 3, 0)));
     }
 
     // v30 (escrito sin ejecutar, por indicación del usuario).
@@ -109,7 +119,9 @@ public class RoutineTest {
         Routine.Task t = Routine.parse("Gimnasio · 45 · 7:30 · media · foto").get(0);
         assertTrue(t.photo);
         assertEquals(450, t.window);
-        assertEquals("Gimnasio · 45 · 7:30 · media · foto", Routine.encode(Routine.parse("Gimnasio · 45 · 7:30 · media · foto")));
+        assertEquals(
+                "Gimnasio · 45 · 7:30 · media · foto",
+                Routine.encode(Routine.parse("Gimnasio · 45 · 7:30 · media · foto")));
         assertFalse(Routine.parse("Leer · 10").get(0).photo);
     }
 

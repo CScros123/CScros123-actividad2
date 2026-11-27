@@ -495,9 +495,6 @@ public final class Repository {
                 : 0;
     }
 
-
-
-
     // Uso real de una app productiva: delante, con la pantalla encendida y con actividad al menos
     // cada 2 minutos.
     private volatile String productivePkg = "";
@@ -519,9 +516,7 @@ public final class Repository {
         }
     }
 
-    /**
-     * Cierra el tramo en curso: solo cuentan tramos de 60 s o más, y quedan en el registro.
-     */
+    /** Cierra el tramo en curso: solo cuentan tramos de 60 s o más, y quedan en el registro. */
     private void closeProductive(long elapsed) {
         String pkg = productivePkg;
         long ms = Math.min(elapsed, productiveTouch + IDLE_CUT) - productiveSince;

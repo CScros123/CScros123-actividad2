@@ -435,7 +435,9 @@ class BrainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun today(): LocalDate = LabDay.today(zone)
 
-    /** Check-in de energía de hoy (un toque; NORMAL si no se elige). Solo recorta el plan del día. */
+    /**
+     * Check-in de energía de hoy (un toque; NORMAL si no se elige). Solo recorta el plan del día.
+     */
     var energy by mutableStateOf(Energy.NORMAL)
         private set
 
@@ -566,8 +568,6 @@ class BrainViewModel(app: Application) : AndroidViewModel(app) {
                         feedbackEvents.tryEmit(FeedbackCue.UNLOCK)
                     }
                 }
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                throw e // v44: no tragarse la cancelación
             } catch (e: Exception) {}
         }
     }
@@ -598,8 +598,6 @@ class BrainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             try {
                 writes.withLock { saveWallet(readWallet().equip(id)) }
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                throw e // v44: no tragarse la cancelación
             } catch (e: Exception) {}
         }
     }
@@ -609,8 +607,6 @@ class BrainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             try {
                 ChestSummary.write(getApplication(), readWallet().pending.size)
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                throw e // v44: no tragarse la cancelación
             } catch (e: Exception) {}
         }
     }
@@ -749,8 +745,6 @@ class BrainViewModel(app: Application) : AndroidViewModel(app) {
                         feedbackEvents.tryEmit(FeedbackCue.UNLOCK)
                     }
                 }
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                throw e // v44: no tragarse la cancelación
             } catch (e: Exception) {}
         }
     }

@@ -11,8 +11,8 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 
 /**
- * De control a cuidado: modo actual (CUIDADO, NORMAL, ENFOQUE), horario de la noche, ánimo del
- * día y preferencias de "lo bueno primero".
+ * De control a cuidado: modo actual (CUIDADO, NORMAL, ENFOQUE), horario de la noche, ánimo del día
+ * y preferencias de "lo bueno primero".
  *
  * <p>Se guarda en SharedPreferences y no en DataStore a propósito: el servicio de Accesibilidad lee
  * el modo en cada evaluación, de forma síncrona y sin corrutinas, y el resto de Foco ya guarda así
@@ -54,9 +54,9 @@ public final class CareStore {
     }
 
     /**
-     * v32 (R13): AbsoluteRules lee el horario de la noche de estas preferencias en cada consulta, en
-     * cualquier proceso y desde cualquier punto de entrada (alarma, receptor, servicio). Barato e
-     * idempotente.
+     * v32 (R13): AbsoluteRules lee el horario de la noche de estas preferencias en cada consulta,
+     * en cualquier proceso y desde cualquier punto de entrada (alarma, receptor, servicio). Barato
+     * e idempotente.
      */
     public static void install(Context c) {
         if (c == null || AbsoluteRules.hasNightSource()) return;
@@ -127,7 +127,8 @@ public final class CareStore {
             }
             if (ch.a == CareMode.Modo.CUIDADO) {
                 long from = p.getLong("cuidadoDesde", 0);
-                if (ch.de == CareMode.Modo.CUIDADO && from > 0) addCareUsed(p, e, from, now); // ampliar
+                if (ch.de == CareMode.Modo.CUIDADO && from > 0)
+                    addCareUsed(p, e, from, now); // ampliar
                 e.putLong("cuidadoDesde", now);
             }
             e.putString("modo", ch.next.modo.name())
@@ -142,7 +143,8 @@ public final class CareStore {
         notifyChanged();
     }
 
-    private static void addCareUsed(SharedPreferences p, SharedPreferences.Editor e, long from, long end) {
+    private static void addCareUsed(
+            SharedPreferences p, SharedPreferences.Editor e, long from, long end) {
         String day = LocalDate.now().toString();
         long acc = day.equals(p.getString("cuidadoDia", "")) ? p.getLong("cuidadoMs", 0) : 0;
         e.putString("cuidadoDia", day).putLong("cuidadoMs", acc + (end - from));
@@ -151,7 +153,10 @@ public final class CareStore {
     /** Tiempo en CUIDADO hoy (lo cerrado más el tramo en curso). */
     public static long careUsedToday(Context c) {
         SharedPreferences p = prefs(c);
-        long acc = LocalDate.now().toString().equals(p.getString("cuidadoDia", "")) ? p.getLong("cuidadoMs", 0) : 0;
+        long acc =
+                LocalDate.now().toString().equals(p.getString("cuidadoDia", ""))
+                        ? p.getLong("cuidadoMs", 0)
+                        : 0;
         long from = p.getLong("cuidadoDesde", 0), now = System.currentTimeMillis();
         if (from > 0 && mode(c) == CareMode.Modo.CUIDADO) {
             long until = p.getLong("cuidadoHasta", -1);
@@ -167,7 +172,9 @@ public final class CareStore {
 
     /** v32 (R8): motivos de la entrada consciente en Cuidado {clave, texto}. */
     public static final String[][] EXIT_MOTIVES = {
-        {"cansancio", "Estoy cansado"}, {"animo_bajo", "Ánimo bajo"}, {"imprevisto", "Un imprevisto"}
+        {"cansancio", "Estoy cansado"},
+        {"animo_bajo", "Ánimo bajo"},
+        {"imprevisto", "Un imprevisto"}
     };
 
     /**
@@ -186,8 +193,8 @@ public final class CareStore {
     }
 
     /**
-     * CUIDADO durante {@code minutes} (15, 60 o 180), recortado al tope diario. Devuelve los minutos
-     * concedidos, o 0 si hoy ya no queda Cuidado.
+     * CUIDADO durante {@code minutes} (15, 60 o 180), recortado al tope diario. Devuelve los
+     * minutos concedidos, o 0 si hoy ya no queda Cuidado.
      */
     public static long care(Context c, int minutes, String motivo) {
         long now = System.currentTimeMillis();
@@ -201,8 +208,8 @@ public final class CareStore {
     // ---------------- Enfriamiento del modo Normal ----------------
 
     /**
-     * 5 min y 30 min de enfriamiento en Normal. Afloja (más ocio posible por hora), así que se aplica
-     * desde el día siguiente a instalar esta versión.
+     * 5 min y 30 min de enfriamiento en Normal. Afloja (más ocio posible por hora), así que se
+     * aplica desde el día siguiente a instalar esta versión.
      */
     public static long normalCooldownMs(Context c) {
         try {
@@ -213,7 +220,9 @@ public final class CareStore {
                 p.edit().putString("enfriamientoDesde", today.plusDays(1).toString()).apply();
                 return 0;
             }
-            return today.isBefore(LocalDate.parse(from)) ? 0 : es.foco.next.core.FocusEngine.NORMAL_COOLDOWN;
+            return today.isBefore(LocalDate.parse(from))
+                    ? 0
+                    : es.foco.next.core.FocusEngine.NORMAL_COOLDOWN;
         } catch (RuntimeException e) {
             return 0;
         }
@@ -260,7 +269,9 @@ public final class CareStore {
         return new NightHours.Setting(active, pend, d);
     }
 
-    /** Horario de noche que vale hoy; lo deja puesto en AbsoluteRules. Barato: se llama a menudo. */
+    /**
+     * Horario de noche que vale hoy; lo deja puesto en AbsoluteRules. Barato: se llama a menudo.
+     */
     public static NightHours night(Context c) {
         try {
             NightHours n = NightHours.effective(nightSetting(c), LocalDate.now());
@@ -296,13 +307,23 @@ public final class CareStore {
                 InspectorLog.CATEGORIA,
                 "",
                 0,
-                "noche:" + before.active.label() + ">" + start + "-" + end + (after.pending == null ? ":ya" : ":manana"),
+                "noche:"
+                        + before.active.label()
+                        + ">"
+                        + start
+                        + "-"
+                        + end
+                        + (after.pending == null ? ":ya" : ":manana"),
                 null);
         night(c);
         notifyChanged();
         return after.pending == null
                 ? "Listo: la noche va de " + after.active.label() + " desde ya."
-                : "Hecho. Como suelta horas, la noche irá de " + after.pending.label() + " desde mañana. Hoy sigue de " + after.active.label() + ".";
+                : "Hecho. Como suelta horas, la noche irá de "
+                        + after.pending.label()
+                        + " desde mañana. Hoy sigue de "
+                        + after.active.label()
+                        + ".";
     }
 
     // ---------------- Ánimo ----------------
@@ -327,7 +348,9 @@ public final class CareStore {
 
     public static int moodToday(Context c) {
         SharedPreferences p = prefs(c);
-        return LocalDate.now().toString().equals(p.getString("animoDia", "")) ? p.getInt("animo", 0) : 0;
+        return LocalDate.now().toString().equals(p.getString("animoDia", ""))
+                ? p.getInt("animo", 0)
+                : 0;
     }
 
     /** Guarda el ánimo (solo en el teléfono) y devuelve si conviene sugerir CUIDADO. */
@@ -343,7 +366,15 @@ public final class CareStore {
         if (!today.equals(p.getString("animoDia", ""))) e.putInt("animoPrimero", score);
         e.apply();
         InspectorLog.event(
-                c, InspectorLog.ANIMO, "", now, 0, 1, score, (where == null ? "" : where) + (w.isEmpty() ? "" : ":" + w), "animo|" + now);
+                c,
+                InspectorLog.ANIMO,
+                "",
+                now,
+                0,
+                1,
+                score,
+                (where == null ? "" : where) + (w.isEmpty() ? "" : ":" + w),
+                "animo|" + now);
         notifyChanged();
         return Mood.suggestCare(score);
     }

@@ -77,9 +77,18 @@ class AwarenessActivity : ComponentActivity() {
         @JvmStatic
         fun open(c: Context, pkg: String, sessionMs: Long): Boolean = open(c, pkg, sessionMs, 0L, 0)
 
-        /** v34: con el ocio de hoy (cambia el texto y cuánto dura el «sí»); v35: y los videos vistos. */
+        /**
+         * v34: con el ocio de hoy (cambia el texto y cuánto dura el «sí»); v35: y los videos
+         * vistos.
+         */
         @JvmStatic
-        fun open(c: Context, pkg: String, sessionMs: Long, leisureTodayMs: Long, videos: Int): Boolean =
+        fun open(
+            c: Context,
+            pkg: String,
+            sessionMs: Long,
+            leisureTodayMs: Long,
+            videos: Int,
+        ): Boolean =
             runCatching {
                     c.startActivity(
                         Intent(c, AwarenessActivity::class.java)
@@ -87,7 +96,9 @@ class AwarenessActivity : ComponentActivity() {
                             .putExtra(EXTRA_SESSION, sessionMs)
                             .putExtra(EXTRA_LEISURE, leisureTodayMs)
                             .putExtra(EXTRA_VIDEOS, videos)
-                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                            .addFlags(
+                                Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                            )
                     )
                     true
                 }
@@ -110,7 +121,8 @@ class AwarenessActivity : ComponentActivity() {
         sessionMs = intent.getLongExtra(EXTRA_SESSION, 0)
         leisureMs = intent.getLongExtra(EXTRA_LEISURE, 0)
         videos = intent.getIntExtra(EXTRA_VIDEOS, 0)
-        // Doble seguro para el video: la tecla de pausa (si la app la obedece) y la música, que pide
+        // Doble seguro para el video: la tecla de pausa (si la app la obedece) y la música, que
+        // pide
         // el foco de audio. Además esta ventana tapa la app y la deja en segundo plano.
         runCatching { MediaPause.pauseOthers(this) }
         AwarenessStore.musicOn(this)
@@ -122,32 +134,40 @@ class AwarenessActivity : ComponentActivity() {
         setContent {
             // v41: letra del modo juego en toda la ventana (los títulos piden Rubik aparte).
             androidx.compose.runtime.CompositionLocalProvider(
-                androidx.compose.material3.LocalTextStyle provides androidx.compose.ui.text.TextStyle(fontFamily = Lexend)
+                androidx.compose.material3.LocalTextStyle provides
+                    androidx.compose.ui.text.TextStyle(fontFamily = Lexend)
             ) {
-            AwarenessScreen(
-                label = label,
-                sessionMs = sessionMs,
-                todayMs = today,
-                leisureMs = leisureMs,
-                videos = videos,
-                sinceNo = sinceNo,
-                productiveLabel = productiveLabel,
-                onNo = { answerNo() },
-                onYes = { kind, note -> answerYes(label, kind, note) },
-                onProductive = { go(productive?.let { packageManager.getLaunchIntentForPackage(it) }) },
-                onTasks = {
-                    go(Intent().setClassName(this, "es.foco.next.ui.HomeActivity").putExtra(RoutineStore.EXTRA_CORE, true))
-                },
-                onAlternative = { what -> alternative(what) },
-                onHome = { goHome() },
-            )
+                AwarenessScreen(
+                    label = label,
+                    sessionMs = sessionMs,
+                    todayMs = today,
+                    leisureMs = leisureMs,
+                    videos = videos,
+                    sinceNo = sinceNo,
+                    productiveLabel = productiveLabel,
+                    onNo = { answerNo() },
+                    onYes = { kind, note -> answerYes(label, kind, note) },
+                    onProductive = {
+                        go(productive?.let { packageManager.getLaunchIntentForPackage(it) })
+                    },
+                    onTasks = {
+                        go(
+                            Intent()
+                                .setClassName(this, "es.foco.next.ui.HomeActivity")
+                                .putExtra(RoutineStore.EXTRA_CORE, true)
+                        )
+                    },
+                    onAlternative = { what -> alternative(what) },
+                    onHome = { goHome() },
+                )
             }
         }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        // Otra pregunta mientras esta sigue abierta: se queda la que está (no se pierde lo escrito).
+        // Otra pregunta mientras esta sigue abierta: se queda la que está (no se pierde lo
+        // escrito).
     }
 
     override fun onDestroy() {
@@ -165,19 +185,39 @@ class AwarenessActivity : ComponentActivity() {
 
     private fun answerYes(label: String, kind: Awareness.Kind, note: String) {
         decided = true
-        AwarenessStore.answerYes(this, pkg, label, kind, note, sessionMs, Awareness.extendMs(leisureMs))
+        AwarenessStore.answerYes(
+            this,
+            pkg,
+            label,
+            kind,
+            note,
+            sessionMs,
+            Awareness.extendMs(leisureMs),
+        )
         AwarenessStore.musicOff(0)
         go(packageManager.getLaunchIntentForPackage(pkg))
     }
 
     private fun alternative(what: String) {
         es.foco.next.log.InspectorLog.event(
-            this, es.foco.next.log.InspectorLog.ALTERNATIVA, "", System.currentTimeMillis(), 0, 1, 0, "conciencia_$what", null
+            this,
+            es.foco.next.log.InspectorLog.ALTERNATIVA,
+            "",
+            System.currentTimeMillis(),
+            0,
+            1,
+            0,
+            "conciencia_$what",
+            null,
         )
         if (what == "leer") {
             // Leer: una app de lectura instalada si la hay; si no, el inicio.
             val reader =
-                listOf("com.google.android.apps.books", "com.amazon.kindle", "com.sirma.mobile.bible.android")
+                listOf(
+                        "com.google.android.apps.books",
+                        "com.amazon.kindle",
+                        "com.sirma.mobile.bible.android",
+                    )
                     .firstNotNullOfOrNull { packageManager.getLaunchIntentForPackage(it) }
             if (reader != null) {
                 go(reader)
@@ -202,11 +242,14 @@ class AwarenessActivity : ComponentActivity() {
 
     /** Tiempo de hoy en esa app (Acceso de uso); 0 si no hay permiso. */
     private fun todayMs(pkg: String): Long {
-        if (!runCatching { es.foco.next.log.UsageContrast.allowed(this) }.getOrDefault(false)) return 0L
+        if (!runCatching { es.foco.next.log.UsageContrast.allowed(this) }.getOrDefault(false))
+            return 0L
         return runCatching {
-                val start = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                val start =
+                    LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
                 val usm = getSystemService(UsageStatsManager::class.java)
-                usm.queryAndAggregateUsageStats(start, System.currentTimeMillis())[pkg]?.totalTimeInForeground ?: 0L
+                usm.queryAndAggregateUsageStats(start, System.currentTimeMillis())[pkg]
+                    ?.totalTimeInForeground ?: 0L
             }
             .getOrDefault(0L)
     }
@@ -216,7 +259,7 @@ private val AwBg = Color(0xFF121014)
 private val AwCardBg = Color(0xFF1C1A1F)
 private val AwInk = Color(0xFFF2EEE9)
 private val AwSoft = Color(0xFFB9B2AC)
-private val AwCoral = Color(0xFFE8806F)
+private val AwCoral = Color(0xFFE4574B)
 private val AwGreenBg = Color(0xFF2E3B34)
 private val AwGreenLine = Color(0xFF3F6B52)
 private val AwGreenInk = Color(0xFF9FE3B8)
@@ -252,26 +295,51 @@ private fun AwarenessScreen(
         }
     }
     val bg =
-        if (step == AwarenessStep.DONE) Brush.radialGradient(listOf(Color(0xFF2A3A33), Color(0xFF121417)))
+        if (step == AwarenessStep.DONE)
+            Brush.radialGradient(listOf(Color(0xFF2A3A33), Color(0xFF121417)))
         else Brush.verticalGradient(listOf(Color(0xFF2A1A20), AwBg))
-    Box(Modifier.fillMaxSize().background(bg).statusBarsPadding().navigationBarsPadding().imePadding()) {
+    Box(
+        Modifier.fillMaxSize()
+            .background(bg)
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .imePadding()
+    ) {
         when (step) {
             AwarenessStep.ASK ->
-                Ask(label, sessionMs, todayMs, leisureMs, videos, sinceNo, onNo = {
-                    decisions = onNo()
-                    step = AwarenessStep.DONE
-                }, onYes = { step = AwarenessStep.NOTE })
+                Ask(
+                    label,
+                    sessionMs,
+                    todayMs,
+                    leisureMs,
+                    videos,
+                    sinceNo,
+                    onNo = {
+                        decisions = onNo()
+                        step = AwarenessStep.DONE
+                    },
+                    onYes = { step = AwarenessStep.NOTE },
+                )
             AwarenessStep.NOTE ->
-                Note(extendMin = Awareness.extendMs(leisureMs) / Awareness.MIN, onYes = onYes, onNo = {
-                    decisions = onNo()
-                    step = AwarenessStep.DONE
-                })
-            AwarenessStep.DONE -> Done(decisions, productiveLabel, onProductive, onTasks, onAlternative, onHome)
+                Note(
+                    extendMin = Awareness.extendMs(leisureMs) / Awareness.MIN,
+                    onYes = onYes,
+                    onNo = {
+                        decisions = onNo()
+                        step = AwarenessStep.DONE
+                    },
+                )
+            AwarenessStep.DONE ->
+                Done(decisions, productiveLabel, onProductive, onTasks, onAlternative, onHome)
         }
     }
 }
 
-private enum class AwarenessStep { ASK, NOTE, DONE }
+private enum class AwarenessStep {
+    ASK,
+    NOTE,
+    DONE,
+}
 
 @Composable
 private fun OwlBadge(size: Int) {
@@ -279,28 +347,50 @@ private fun OwlBadge(size: Int) {
         Modifier.size(size.dp).clip(CircleShape).background(Color(0xFFC8754A)),
         contentAlignment = Alignment.Center,
     ) {
-        Image(painterResource(es.foco.next.R.drawable.owl_face), null, Modifier.size((size * 0.78f).dp))
+        Image(
+            painterResource(es.foco.next.R.drawable.owl_face),
+            null,
+            Modifier.size((size * 0.78f).dp),
+        )
     }
 }
 
 @Composable
 private fun Card(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Column(
-        modifier.fillMaxWidth().padding(16.dp).clip(RoundedCornerShape(28.dp)).background(AwCardBg).padding(22.dp),
+        modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+            .clip(RoundedCornerShape(28.dp))
+            .background(AwCardBg)
+            .padding(22.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-    ) { content() }
+    ) {
+        content()
+    }
 }
 
 @Composable
 private fun Big(text: String, act: Act, enabled: Boolean = true, onClick: () -> Unit) {
     // v41: botón del modo juego (relieve y color de acción).
-    GameButton(text, act, Modifier.fillMaxWidth().padding(top = 10.dp), enabled = enabled, height = 56.dp, onClick = onClick)
+    GameButton(
+        text,
+        act,
+        Modifier.fillMaxWidth().padding(top = 10.dp),
+        enabled = enabled,
+        height = 56.dp,
+        onClick = onClick,
+    )
 }
 
 @Composable
 private fun MusicRow(text: String) {
     Row(
-        Modifier.fillMaxWidth().padding(top = 14.dp).clip(RoundedCornerShape(14.dp)).background(AwChip).padding(horizontal = 12.dp, vertical = 10.dp),
+        Modifier.fillMaxWidth()
+            .padding(top = 14.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(AwChip)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text("🎵  $text", color = AwSoft, fontSize = 13.sp)
@@ -319,37 +409,69 @@ private fun Ask(
     onYes: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
-        Column(Modifier.fillMaxWidth().padding(top = 40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            Modifier.fillMaxWidth().padding(top = 40.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             Text(
                 "⏸  Pausé $label",
                 color = Color(0xFFFFD9CF),
                 fontSize = 13.sp,
-                modifier = Modifier.clip(RoundedCornerShape(99.dp)).background(Color(0x1AFFFFFF)).padding(horizontal = 14.dp, vertical = 6.dp),
+                modifier =
+                    Modifier.clip(RoundedCornerShape(99.dp))
+                        .background(Color(0x1AFFFFFF))
+                        .padding(horizontal = 14.dp, vertical = 6.dp),
             )
             if (sinceNo >= 0) {
-                Text("Volviste", color = Color.White, fontSize = 46.sp, fontWeight = FontWeight.ExtraBold, fontFamily = Rubik, modifier = Modifier.padding(top = 14.dp))
+                Text(
+                    "Volviste",
+                    color = Color.White,
+                    fontSize = 46.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontFamily = Rubik,
+                    modifier = Modifier.padding(top = 14.dp),
+                )
                 Text(
                     "Hace ${if (sinceNo < 1) "menos de 1" else sinceNo} min elegiste salir de $label.",
-                    color = AwSoft, fontSize = 14.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 24.dp),
+                    color = AwSoft,
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 24.dp),
                 )
             } else {
-                Text(Awareness.duration(sessionMs), color = Color.White, fontSize = 58.sp, fontWeight = FontWeight.Black, fontFamily = Rubik, modifier = Modifier.padding(top = 14.dp))
                 Text(
-                    "seguidos en $label" + if (todayMs > 0) " · hoy ${Awareness.duration(todayMs)}" else "",
-                    color = AwSoft, fontSize = 14.sp,
+                    Awareness.duration(sessionMs),
+                    color = Color.White,
+                    fontSize = 58.sp,
+                    fontWeight = FontWeight.Black,
+                    fontFamily = Rubik,
+                    modifier = Modifier.padding(top = 14.dp),
+                )
+                Text(
+                    "seguidos en $label" +
+                        if (todayMs > 0) " · hoy ${Awareness.duration(todayMs)}" else "",
+                    color = AwSoft,
+                    fontSize = 14.sp,
                 )
             }
             // v35: cuántos videos y a qué ritmo (si se pudo medir).
             val pace = Awareness.videosText(sessionMs, videos)
             if (sinceNo < 0 && pace.isNotEmpty()) {
-                Text(pace, color = AwSoft, fontSize = 13.sp, modifier = Modifier.padding(top = 4.dp))
+                Text(
+                    pace,
+                    color = AwSoft,
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
             }
             // v34: el tramo del día (desde 1 h de ocio hoy).
             val stage = Awareness.stageText(leisureMs)
             if (stage.isNotEmpty()) {
                 Text(
                     stage,
-                    color = Color(0xFFFFB4A2), fontSize = 13.sp, textAlign = TextAlign.Center,
+                    color = Color(0xFFFFB4A2),
+                    fontSize = 13.sp,
+                    textAlign = TextAlign.Center,
                     modifier = Modifier.padding(top = 10.dp, start = 24.dp, end = 24.dp),
                 )
             }
@@ -359,7 +481,11 @@ private fun Ask(
             Spacer(Modifier.height(10.dp))
             Text(
                 "¿Te aporta?",
-                color = AwInk, fontSize = 26.sp, fontWeight = FontWeight.Black, fontFamily = Rubik, textAlign = TextAlign.Center,
+                color = AwInk,
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Black,
+                fontFamily = Rubik,
+                textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(8.dp))
             Big("No, ya está", Act.STOP, onClick = onNo)
@@ -375,12 +501,24 @@ private fun Note(extendMin: Long, onYes: (Awareness.Kind, String) -> Unit, onNo:
     var text by remember { mutableStateOf("") }
     val words = Awareness.words(text)
     val ok = words >= Awareness.MIN_WORDS
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.Center) {
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.Center,
+    ) {
         Card {
-            Text("¿Qué te aporta?", color = AwInk, fontSize = 21.sp, fontWeight = FontWeight.ExtraBold, fontFamily = Rubik)
+            Text(
+                "¿Qué te aporta?",
+                color = AwInk,
+                fontSize = 21.sp,
+                fontWeight = FontWeight.ExtraBold,
+                fontFamily = Rubik,
+            )
             Text(
                 "Escríbelo con tus palabras. Se guarda en tu informe.",
-                color = AwSoft, fontSize = 13.5.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 6.dp, bottom = 12.dp),
+                color = AwSoft,
+                fontSize = 13.5.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 6.dp, bottom = 12.dp),
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 for (k in Awareness.Kind.values()) {
@@ -392,7 +530,11 @@ private fun Note(extendMin: Long, onYes: (Awareness.Kind, String) -> Unit, onNo:
                         modifier =
                             Modifier.clip(RoundedCornerShape(99.dp))
                                 .background(AwChip)
-                                .border(1.dp, if (on) Color(0xFF5FD08A) else AwLine, RoundedCornerShape(99.dp))
+                                .border(
+                                    1.dp,
+                                    if (on) Color(0xFF5FD08A) else AwLine,
+                                    RoundedCornerShape(99.dp),
+                                )
                                 .clickable { kind = k }
                                 .padding(horizontal = 11.dp, vertical = 6.dp),
                     )
@@ -414,27 +556,50 @@ private fun Note(extendMin: Long, onYes: (Awareness.Kind, String) -> Unit, onNo:
                             Awareness.Kind.RELAJA -> "Me relaja porque…"
                             Awareness.Kind.CONECTA -> "Estoy hablando con… sobre…"
                         },
-                        color = AwSoft.copy(alpha = .6f), fontSize = 15.sp,
+                        color = AwSoft.copy(alpha = .6f),
+                        fontSize = 15.sp,
                     )
                 BasicTextField(
                     value = text,
                     onValueChange = { text = it.take(600) },
                     textStyle = androidx.compose.ui.text.TextStyle(color = AwInk, fontSize = 15.sp),
                     cursorBrush = SolidColor(AwGreenInk),
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                    keyboardOptions =
+                        KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-            Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("${minOf(words, Awareness.MIN_WORDS)} de ${Awareness.MIN_WORDS} palabras", color = AwSoft, fontSize = 12.5.sp)
-                Text(if (ok) "listo" else "faltan ${Awareness.MIN_WORDS - words}", color = if (ok) AwGreenInk else AwSoft, fontSize = 12.5.sp)
+            Row(
+                Modifier.fillMaxWidth().padding(top = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    "${minOf(words, Awareness.MIN_WORDS)} de ${Awareness.MIN_WORDS} palabras",
+                    color = AwSoft,
+                    fontSize = 12.5.sp,
+                )
+                Text(
+                    if (ok) "listo" else "faltan ${Awareness.MIN_WORDS - words}",
+                    color = if (ok) AwGreenInk else AwSoft,
+                    fontSize = 12.5.sp,
+                )
             }
             val f = (words.toFloat() / Awareness.MIN_WORDS).coerceIn(0f, 1f)
-            Box(Modifier.fillMaxWidth().padding(top = 6.dp).height(6.dp).clip(RoundedCornerShape(6.dp)).background(AwLine)) {
+            Box(
+                Modifier.fillMaxWidth()
+                    .padding(top = 6.dp)
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(AwLine)
+            ) {
                 Box(
                     Modifier.fillMaxWidth(f)
                         .height(6.dp)
-                        .background(Brush.horizontalGradient(listOf(AwCoral, Color(0xFFE9B44C), Color(0xFF5FD08A))))
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(AwCoral, Color(0xFFE9B44C), Color(0xFF5FD08A))
+                            )
+                        )
                 )
             }
             Spacer(Modifier.height(6.dp))
@@ -466,28 +631,61 @@ private fun Done(
         if (SystemClock.elapsedRealtime() - start >= 29_000) onHome()
     }
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
-        Column(Modifier.fillMaxWidth().padding(top = 70.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            Modifier.fillMaxWidth().padding(top = 70.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             OwlBadge(70)
-            Text("Buena decisión", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Black, fontFamily = Rubik, modifier = Modifier.padding(top = 12.dp))
+            Text(
+                "Buena decisión",
+                color = Color.White,
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Black,
+                fontFamily = Rubik,
+                modifier = Modifier.padding(top = 12.dp),
+            )
         }
         Card {
-            Text("¿Y ahora?", color = AwSoft, fontSize = 14.sp, modifier = Modifier.padding(bottom = 10.dp))
+            Text(
+                "¿Y ahora?",
+                color = AwSoft,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(bottom = 10.dp),
+            )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                for ((key, icon, name) in listOf(Triple("caminar", "🚶", "Caminar\ncon música"), Triple("leer", "📖", "Leer"), Triple("cocinar", "🍳", "Cocinar"))) {
+                for ((key, icon, name) in
+                    listOf(
+                        Triple("caminar", "🚶", "Caminar\ncon música"),
+                        Triple("leer", "📖", "Leer"),
+                        Triple("cocinar", "🍳", "Cocinar"),
+                    )) {
                     Column(
-                        Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(AwChip).clickable { onAlternative(key) }.padding(vertical = 14.dp, horizontal = 8.dp),
+                        Modifier.weight(1f)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(AwChip)
+                            .clickable { onAlternative(key) }
+                            .padding(vertical = 14.dp, horizontal = 8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(icon, fontSize = 24.sp)
-                        Text(name, color = AwInk, fontSize = 13.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp))
+                        Text(
+                            name,
+                            color = AwInk,
+                            fontSize = 13.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
                     }
                 }
             }
-            if (productiveLabel != null) Big("Abrir $productiveLabel", Act.GO, onClick = onProductive)
+            if (productiveLabel != null)
+                Big("Abrir $productiveLabel", Act.GO, onClick = onProductive)
             Big("Mis tareas", Act.DONE, onClick = onTasks)
             Text(
                 "+1 decisión consciente · llevas $decisions",
-                color = Act.GO.face, fontSize = 13.sp, modifier = Modifier.padding(top = 12.dp),
+                color = Act.GO.face,
+                fontSize = 13.sp,
+                modifier = Modifier.padding(top = 12.dp),
             )
             MusicRow("Música tranquila · ${Awareness.MUSIC_MS / Awareness.MIN} min")
         }

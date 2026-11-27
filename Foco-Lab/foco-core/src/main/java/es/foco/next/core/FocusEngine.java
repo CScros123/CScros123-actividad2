@@ -23,8 +23,9 @@ public final class FocusEngine {
         public boolean gated;
 
         /**
-         * Modo Normal: enfriamiento tras gastar los 5 minutos (0 = la ventana de 1 hora de siempre).
-         * Al agotarse, la ventana termina como mucho en este tiempo. Solo acorta la espera.
+         * Modo Normal: enfriamiento tras gastar los 5 minutos (0 = la ventana de 1 hora de
+         * siempre). Al agotarse, la ventana termina como mucho en este tiempo. Solo acorta la
+         * espera.
          */
         public long cooldownMs;
     }
@@ -43,7 +44,13 @@ public final class FocusEngine {
             this(blocked, warning, left, budget, next, false);
         }
 
-        Decision(boolean blocked, boolean warning, long left, long budget, long next, boolean noBalance) {
+        Decision(
+                boolean blocked,
+                boolean warning,
+                long left,
+                long budget,
+                long next,
+                boolean noBalance) {
             this.blocked = blocked;
             this.warning = warning;
             this.left = left;

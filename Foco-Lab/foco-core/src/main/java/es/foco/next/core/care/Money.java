@@ -28,7 +28,8 @@ public final class Money {
     /** "12", "12.50", "12,5", "$ 12", "B/. 7" → céntimos; -1 si no es un monto válido. */
     public static long parse(String raw) {
         if (raw == null) return -1;
-        String t = raw.trim().replace("B/.", "").replace("$", "").replace(" ", "").replace(",", ".");
+        String t =
+                raw.trim().replace("B/.", "").replace("$", "").replace(" ", "").replace(",", ".");
         if (!t.matches("\\d{1,7}(\\.\\d{1,2})?")) return -1;
         int dot = t.indexOf('.');
         if (dot < 0) return Long.parseLong(t) * 100;
@@ -39,7 +40,10 @@ public final class Money {
     public static String fmt(long cents) {
         boolean neg = cents < 0;
         long a = Math.abs(cents);
-        String s = a % 100 == 0 ? "$" + a / 100 : String.format(Locale.ROOT, "$%d.%02d", a / 100, a % 100);
+        String s =
+                a % 100 == 0
+                        ? "$" + a / 100
+                        : String.format(Locale.ROOT, "$%d.%02d", a / 100, a % 100);
         return neg ? "-" + s : s;
     }
 
@@ -49,7 +53,8 @@ public final class Money {
 
     public static long spent(List<Entry> entries, LocalDate from, LocalDate toInclusive) {
         long n = 0;
-        for (Entry e : entries) if (!e.day.isBefore(from) && !e.day.isAfter(toInclusive)) n += e.cents;
+        for (Entry e : entries)
+            if (!e.day.isBefore(from) && !e.day.isAfter(toInclusive)) n += e.cents;
         return n;
     }
 
@@ -61,7 +66,10 @@ public final class Money {
         return spent(entries, weekStart(today), today);
     }
 
-    /** Lo que toca hoy: lo que queda de la semana (sin contar hoy) repartido entre hoy y los días que faltan. */
+    /**
+     * Lo que toca hoy: lo que queda de la semana (sin contar hoy) repartido entre hoy y los días
+     * que faltan.
+     */
     public static long dailyAllowance(long weekBudget, List<Entry> entries, LocalDate today) {
         if (weekBudget <= 0) return 0;
         long before = spent(entries, weekStart(today), today.minusDays(1));
@@ -76,9 +84,20 @@ public final class Money {
     /** Idea para lo que se debe: apartar un poco cada día. null si no hay deuda. */
     public static String debtIdea(long debt, long daily) {
         if (debt <= 0) return null;
-        long step = Math.max(100, ((daily / 10) + 99) / 100 * 100); // ~10 % de lo diario, mínimo $1, redondeado a dólares
+        long step =
+                Math.max(
+                        100,
+                        ((daily / 10) + 99)
+                                / 100
+                                * 100); // ~10 % de lo diario, mínimo $1, redondeado a dólares
         long days = (debt + step - 1) / step;
-        return "Si apartas " + fmt(step) + " al día, saldas " + fmt(debt) + " en " + days + (days == 1 ? " día." : " días.");
+        return "Si apartas "
+                + fmt(step)
+                + " al día, saldas "
+                + fmt(debt)
+                + " en "
+                + days
+                + (days == 1 ? " día." : " días.");
     }
 
     /** Lo que dice el búho (al despertar y en el inicio). Nunca regaña. */
@@ -86,11 +105,20 @@ public final class Money {
         StringBuilder b = new StringBuilder();
         if (weekBudget <= 0) {
             long t = spentToday(entries, today);
-            b.append(t > 0 ? "Hoy llevas " + fmt(t) + "." : "Pon un presupuesto semanal y te digo cuánto tienes cada día.");
+            b.append(
+                    t > 0
+                            ? "Hoy llevas " + fmt(t) + "."
+                            : "Pon un presupuesto semanal y te digo cuánto tienes cada día.");
         } else {
             long left = leftToday(weekBudget, entries, today);
-            if (left >= 0) b.append("Para hoy te quedan ").append(fmt(left)).append(left > 0 ? ". Vas bien." : ". Justo.");
-            else b.append("Hoy vas ").append(fmt(-left)).append(" por encima; se reparte solo en los días que quedan, sin drama.");
+            if (left >= 0)
+                b.append("Para hoy te quedan ")
+                        .append(fmt(left))
+                        .append(left > 0 ? ". Vas bien." : ". Justo.");
+            else
+                b.append("Hoy vas ")
+                        .append(fmt(-left))
+                        .append(" por encima; se reparte solo en los días que quedan, sin drama.");
         }
         String idea = debtIdea(debt, dailyAllowance(weekBudget, entries, today));
         if (idea != null) b.append(' ').append(idea);
@@ -103,7 +131,11 @@ public final class Money {
         StringBuilder b = new StringBuilder();
         for (Entry e : entries) {
             if (b.length() > 0) b.append('\n');
-            b.append(e.day).append('|').append(e.cents).append('|').append(e.note.replace("\n", " ").replace("|", "/"));
+            b.append(e.day)
+                    .append('|')
+                    .append(e.cents)
+                    .append('|')
+                    .append(e.note.replace("\n", " ").replace("|", "/"));
         }
         return b.toString();
     }
@@ -115,7 +147,11 @@ public final class Money {
             String[] p = line.split("\\|", 3);
             if (p.length < 2) continue;
             try {
-                out.add(new Entry(LocalDate.parse(p[0]), Long.parseLong(p[1]), p.length > 2 ? p[2] : ""));
+                out.add(
+                        new Entry(
+                                LocalDate.parse(p[0]),
+                                Long.parseLong(p[1]),
+                                p.length > 2 ? p[2] : ""));
             } catch (RuntimeException ignored) {
             }
         }

@@ -72,7 +72,8 @@ public class PhotoThemeTest {
     @Test
     public void paletasSinRojoNiNegroYDockLegible() {
         for (PhotoTheme t : PhotoTheme.values()) {
-            for (int c : t.palette.all()) assertTrue(t + " " + Integer.toHexString(c), HomePalette.safe(c));
+            for (int c : t.palette.all())
+                assertTrue(t + " " + Integer.toHexString(c), HomePalette.safe(c));
             int on = t.palette.onHill;
             int lum = (((on >> 16) & 255) * 3 + ((on >> 8) & 255) * 6 + (on & 255)) / 10;
             assertTrue(t + ": texto claro sobre el velo del dock", lum > 140);

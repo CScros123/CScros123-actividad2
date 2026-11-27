@@ -14,7 +14,10 @@ object Consistency {
     /** Semanas anteriores que forman la línea base (aprox. "hace un mes"). */
     const val BASELINE_WEEKS = 4
 
-    /** Margen de tolerancia: quedarse hasta este número de días por debajo de la media sigue contando como ritmo mantenido. */
+    /**
+     * Margen de tolerancia: quedarse hasta este número de días por debajo de la media sigue
+     * contando como ritmo mantenido.
+     */
     const val STEADY_MARGIN = 1.0
 
     data class Summary(
@@ -22,7 +25,9 @@ object Consistency {
         val practicedDays: Int,
         /** Días con práctica en la semana actual. */
         val recentDays: Int,
-        /** Media de días por semana en las [BASELINE_WEEKS] anteriores; null sin historia previa. */
+        /**
+         * Media de días por semana en las [BASELINE_WEEKS] anteriores; null sin historia previa.
+         */
         val baselineDays: Double?,
     ) {
         /** Ritmo mantenido respecto a la propia media (o primera semana: siempre en positivo). */
@@ -34,7 +39,8 @@ object Consistency {
             when {
                 practicedDays == 0 -> "Cuando quieras empezar, aquí estará."
                 baselineDays == null -> "Empezando a construir tu ritmo."
-                recentDays > baselineDays + STEADY_MARGIN -> "Esta semana vas por encima de tu media."
+                recentDays > baselineDays + STEADY_MARGIN ->
+                    "Esta semana vas por encima de tu media."
                 steady -> "Mantienes tu ritmo habitual."
                 else -> "Semana más tranquila que tu media: lo practicado sigue sumando."
             }
@@ -52,7 +58,8 @@ object Consistency {
                 // Solo las semanas en las que ya existía historia cuentan en la media.
                 val first = maxOf(before.min(), baseStart)
                 val span = java.time.temporal.ChronoUnit.DAYS.between(first, weekStart)
-                val weeks = ((span + WEEK_DAYS - 1) / WEEK_DAYS).coerceIn(1, BASELINE_WEEKS.toLong())
+                val weeks =
+                    ((span + WEEK_DAYS - 1) / WEEK_DAYS).coerceIn(1, BASELINE_WEEKS.toLong())
                 val from = weekStart.minusDays(weeks * WEEK_DAYS)
                 before.count { !it.isBefore(from) }.toDouble() / weeks
             }
