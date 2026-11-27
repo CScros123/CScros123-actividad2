@@ -640,7 +640,8 @@ private fun WeekTab(tick: Int, k: CoreColors, onMoney: () -> Unit, onEdit: (Edit
             }
         }
     }
-    HomeText("Toca una tarea para cambiarla o quitarla. Quitar una de hoy vale desde mañana.", 11.5.sp, c.muted, modifier = Modifier.padding(start = 4.dp))
+    // v40: más corto y con aire abajo para que el botón «Tarea» no lo tape.
+    HomeText("Toca una tarea para cambiarla. Quitar vale desde mañana.", 11.5.sp, c.muted, modifier = Modifier.padding(start = 4.dp, bottom = 64.dp))
 }
 
 // ----------------------------------- Reportes -----------------------------------
@@ -843,8 +844,8 @@ private fun CouponsCard(tick: Int, k: CoreColors, onUse: (Boolean) -> Unit) {
                 )
                 val next = list.filter { !it.week }.minByOrNull { it.expires }
                 HomeText(
-                    if (inUse.isNotEmpty()) "En uso: $inUse · quedan ${(left + 59_999) / 60_000} min"
-                    else if (next != null) "El más antiguo caduca el ${Routine.dayName(next.expires.dayOfWeek)} ${next.expires.dayOfMonth}. Redes: 15 min."
+                    if (inUse.isNotEmpty()) "$inUse · quedan ${(left + 59_999) / 60_000}′"
+                    else if (next != null) "Caduca ${Routine.dayName(next.expires.dayOfWeek)} ${next.expires.dayOfMonth} · redes 15′"
                     else "Valen hasta el domingo y saltan las reglas (menos la noche).",
                     12.sp, c.muted,
                 )

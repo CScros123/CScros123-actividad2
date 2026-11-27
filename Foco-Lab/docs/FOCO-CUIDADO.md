@@ -576,3 +576,10 @@ Primera parte del diseño aprobado («modo juego»). El fondo (foto o paisaje de
   (amarillo). Tareas como fichas con casilla cuadrada; hora límite en chip naranja; minutos con «′».
   Textos más cortos: sin la línea «Más que 2+2», cupones «Todo hecho → 30′…», el consejo de
   mantener pulsado solo hasta la primera edición, hoja «¿Cómo? (opcional)» con Foto/Hecha.
+
+## v40: ajustes tras ver la v39 en el teléfono
+
+- Con foto de fondo, el búho ya no dibuja su luna: la foto (Cumbre, Luna, Aurora) trae la suya y
+  salían dos.
+- Cupones: «Caduca mar 1 · redes 15′» y «TikTok · quedan 12′» en vez de frases largas.
+- Semana: ayuda más corta y con aire abajo para que el botón «Tarea» no la tape.
