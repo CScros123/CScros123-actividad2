@@ -52,7 +52,51 @@ Accesibilidad observa cambios de ventana para identificar la app activa. No lee 
 ./gradlew :app:assembleRelease
 ```
 
-En Windows, usar `gradlew.bat`. La APK debug aparece en `app/build/outputs/apk/debug/`. Sin configuración de firma, release genera una APK sin firmar en `app/build/outputs/apk/release/`.
+En Windows, usar `gradlew.bat`. La APK debug aparece en `app/build/outputs/apk/debug/`. Sin llave configurada, release (y perf) se firman con la llave de depuración.
+
+## Llave de firma (v47)
+
+Android solo instala una actualización encima (sin borrar datos) si va firmada con **la misma llave**. Si la pierdes o la cambias, hay que desinstalar y se pierden los datos de Foco. Por eso hay una sola llave estable, `foco`, para debug, release y perf.
+
+1. Escribe en `local.properties` (en la raíz del proyecto; **no se sube a git**, está en `.gitignore`):
+
+   ```properties
+   foco.storeFile=~/claves/foco-release.jks
+   foco.keyAlias=foco
+   foco.storePassword=TU_CONTRASEÑA
+   foco.keyPassword=TU_CONTRASEÑA
+   ```
+
+   Nunca pongas la contraseña en el código, en un commit ni en un chat. Si no quieres tenerla en un archivo, deja solo `foco.storeFile` y `foco.keyAlias` y exporta `FOCO_STORE_PASSWORD` en la terminal antes de compilar.
+2. Sin `local.properties` valen las variables de siempre (`FOCO_KEYSTORE`, `FOCO_STORE_PASSWORD`, `FOCO_KEY_ALIAS`, `FOCO_KEY_PASSWORD`). Sin ninguna, se usa la llave de depuración.
+
+**Respaldar la llave.** Copia `foco-release.jks` a dos sitios fuera del PC (un USB y tu nube personal) y guarda la contraseña en un gestor de contraseñas. Sin la llave **y** su contraseña no se puede actualizar Foco sin desinstalar.
+
+```sh
+cp ~/claves/foco-release.jks /media/TU_USB/
+```
+
+**Huella SHA-1** (la pide Google Cloud para la copia en Drive). La contraseña se escribe en tu terminal, no se muestra:
+
+```sh
+keytool -list -v -keystore ~/claves/foco-release.jks -alias foco | grep SHA1
+```
+
+## Copia nocturna en Google Drive y NextDNS (v47)
+
+Se configura una sola vez:
+
+**Google Cloud** (para el permiso de Drive; Foco no lleva claves de Google):
+
+1. En console.cloud.google.com crea un proyecto (p. ej. «Foco personal»).
+2. «APIs y servicios › Biblioteca»: activa **Google Drive API** y **Google Sheets API**.
+3. «Pantalla de consentimiento de OAuth» (Google Auth Platform): tipo **Externo**, nombre «Foco», tu correo como soporte. En «Acceso a datos» añade el permiso `.../auth/drive.file`. En «Público», deja la app en **Prueba** y añade tu cuenta de Google como **usuario de prueba**.
+4. «Clientes › Crear cliente › Android»: paquete `es.foco.next` y la huella **SHA-1** de tu llave (arriba). Si también instalas builds debug con otra llave, crea otro cliente con esa SHA-1.
+5. En Foco: Ajustes › «Copia nocturna en Google Drive» › **Conectar Google Drive**.
+
+Con la app en «Prueba», Google puede pedir que vuelvas a conectar cada 7 días; Foco avisa con «Vuelve a conectar Drive…». Para evitarlo, publica la app («En producción»): con `drive.file` no hace falta verificación de Google para uso personal, aunque verás un aviso de «app no verificada» al conectar.
+
+**NextDNS:** Ajustes › «NextDNS: control por modo» › escribe la **clave de API** (my.nextdns.io › Cuenta › API) y el **ID de perfil** (my.nextdns.io › Configuración) › **Probar conexión**. La clave se guarda cifrada con el Android Keystore y no se vuelve a mostrar.
 
 ## Firma y actualizaciones
 

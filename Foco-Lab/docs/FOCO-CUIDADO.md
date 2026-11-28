@@ -641,3 +641,40 @@ La ventana de conciencia salía también en Cuidado y, al ser una pantalla propi
 en plena partida. Cuidado es relajarse sin que te vigilen: ahí ya no se abre (se sigue midiendo el
 ocio como `ocio_cuidado`). Lo que sí cierra el ocio en Cuidado, a propósito: la noche y la rutina
 obligatoria de mañana o de noche si falta.
+
+## v47: copia nocturna en Drive, hoja de historial y NextDNS por modo
+
+Motivo: al cambiar la llave de firma se perdieron todos los datos. Ahora:
+
+- **Llave estable** (`app/build.gradle`, firma `foco`): ruta, alias y contraseñas en
+  `local.properties` (fuera de git) o en las variables `FOCO_*`; sin ellas, llave de depuración.
+  Vale para debug, release y perf. Cómo respaldarla y sacar la SHA-1: README.
+- **Conexiones** (Ajustes): Google Drive con `AuthorizationClient` y solo `drive.file`
+  (`GoogleDrive`); NextDNS con clave cifrada en el Android Keystore (`SecretBox`, la clave plana
+  anterior se migra y se borra) e ID de perfil (vacío = el del DNS privado). «Probar conexión».
+- **NextDNS por modo** (`core/backup/NextDnsPlan`, `NextDnsControl`, `NextDnsWorker`): redes por
+  servicio del control parental (tiktok, instagram, facebook, youtube, reddit, pinterest, snapchat,
+  twitter) en Enfoque y de noche (horario de la noche de Foco, 21–7 por defecto); Telegram siempre
+  en la lista de bloqueo. Sin «desbloquear ahora». Cada 30 min, al cambiar de modo y en cada borde
+  (fin de Enfoque, inicio y fin de la noche) se compara y corrige; si el cambio vino de fuera se
+  apunta `nextdns_cambiado`. Sin PATCH: activar = POST, quitar = DELETE.
+- **Reporte del día** (`core/backup/DayReport`, `DayCollector`, `ReportChart`): JSON con versión
+  de formato y PNG de 1080 px (verdes). El ánimo solo si se activa en Ajustes.
+- **Drive y hoja** (`DriveBackup`, `core/backup/SheetLayout`, `SheetRows`): `Foco/Reportes/AAAA-MM`
+  con `AAAA-MM-DD.json` y `.png` (se reemplazan); hoja «Foco · Historial» con Panel (tarjetas,
+  semana vs anterior y 4 gráficos), Diario, Por hora (escala de verdes), Apps, Rastreadores,
+  Eventos (30 días) y Ánimo (opcional). Reenviar un día borra antes sus filas: nada se duplica.
+- **Cada noche** (`BackupWorker`, `core/backup/ReportQueue`): WorkManager cada 24 h desde las
+  23:30, con red y batería no baja, reintentos con espera creciente; sube en orden los días que
+  falten (7 por vuelta). El día de hoy se vuelve a subir cerrado la noche siguiente.
+- **El búho** (`core/backup/BackupLines`, `BackupNotifier`): 10 frases sin repetir en 3 días, con
+  «Ver hoja» y «Ver gráfico»; un solo aviso suave si falla; «Vuelve a conectar Drive…» si caduca el
+  permiso. En llamada o No molestar llega en silencio.
+- **Recuperar** (`DriveRestore`): con Drive conectado y el registro vacío, Ajustes ofrece
+  «Recuperar historial desde Drive» (resúmenes diarios: tiempo por app, retos y minutos).
+- **Privacidad**: todo lo exportado pasa por `Secrets.redact`; la clave y los tokens nunca van al
+  log, al JSON ni a la hoja.
+
+Dependencias nuevas (justificadas): `androidx.work:work-runtime` (trabajo nocturno con red,
+batería y reintentos que sobreviven a reinicios) y `play-services-auth` (permiso de Drive sin
+secretos en el APK). Drive y Sheets van por REST con `HttpURLConnection`, sin sus librerías.

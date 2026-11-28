@@ -73,6 +73,8 @@ public final class MainActivity extends Activity {
                 es.foco.next.log.InspectorLog.drainLab(this); // retos y logros de Lab al registro
                 es.foco.next.runtime.CategoryInspector.daily(this);
                 es.foco.next.runtime.Inspector.maybeWrite(this, false);
+                // v47: copia nocturna en Drive y comprobación de NextDNS (idempotente).
+                es.foco.next.runtime.BackupStore.ensureScheduled(this);
             };
 
     private final Runnable update =
@@ -788,6 +790,7 @@ public final class MainActivity extends Activity {
         StrictModeCard.add(this, body); // Modo estricto
         SoundSettingsCard.add(this, body); // Fase 6: volumen de música/efectos y "sin sonido"
         DnsSettings.render(this, body); // Fase 3: proveedor, vigilancia y paso de Chrome
+        BackupSettings.render(this, body); // v47: Google Drive y API de NextDNS
         LinearLayout data = Design.card(body, "Tus datos");
         data.addView(
                 Design.button(
@@ -1211,6 +1214,14 @@ public final class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data);
+        // v47: vuelta del permiso de Google Drive (no trae Uri).
+        if (request == es.foco.next.runtime.GoogleDrive.REQUEST_CODE) {
+            if (result == RESULT_OK && data != null)
+                es.foco.next.runtime.GoogleDrive.onResult(
+                        this, data, msg -> BackupSettings.done(this, msg));
+            else message("No se conectó Drive. Puedes intentarlo cuando quieras.");
+            return;
+        }
         if (result != RESULT_OK || data == null || data.getData() == null) return;
         if (request == 14 || request == 15) {
             BlocksScreen.onResult(this, request, data.getData());

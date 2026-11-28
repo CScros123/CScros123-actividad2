@@ -1,28 +1,54 @@
 // Foco Home en Kotlin + Compose (mismas versiones que :lab); el resto de Foco sigue en Java.
 plugins { id 'com.android.application'; id 'org.jetbrains.kotlin.android' }
+// v47: datos de la llave de firma (local.properties: foco.storeFile, foco.storePassword,
+// foco.keyAlias, foco.keyPassword). "~" se expande a tu carpeta personal.
+def focoProps = new Properties()
+def focoLocal = rootProject.file('local.properties')
+if (focoLocal.exists()) focoLocal.withInputStream { focoProps.load(it) }
+def focoStorePath = focoProps.getProperty('foco.storeFile') ?: System.getenv('FOCO_KEYSTORE')
+if (focoStorePath) focoStorePath = focoStorePath.trim().replaceFirst('^~', System.getProperty('user.home'))
+def focoStorePass = focoProps.getProperty('foco.storePassword') ?: System.getenv('FOCO_STORE_PASSWORD')
+ext.focoSigning = [
+ store: (focoStorePath && new File(focoStorePath).exists()) ? focoStorePath : null,
+ storePassword: focoStorePass,
+ alias: focoProps.getProperty('foco.keyAlias') ?: System.getenv('FOCO_KEY_ALIAS') ?: 'foco',
+ keyPassword: focoProps.getProperty('foco.keyPassword') ?: System.getenv('FOCO_KEY_PASSWORD') ?: focoStorePass,
+]
 android {
  namespace 'es.foco.next'
  compileSdk 35
  buildToolsVersion '35.0.0'
- defaultConfig { applicationId 'es.foco.next'; minSdk 33; targetSdk 35; versionCode 71; versionName '1.11'; testInstrumentationRunner 'android.test.InstrumentationTestRunner' }
+ defaultConfig { applicationId 'es.foco.next'; minSdk 33; targetSdk 35; versionCode 72; versionName '1.12'; testInstrumentationRunner 'android.test.InstrumentationTestRunner' }
  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
  kotlinOptions { jvmTarget = '17' }
  buildFeatures { compose true }
  composeOptions { kotlinCompilerExtensionVersion '1.5.15' }
- signingConfigs { release { def storePath=System.getenv('FOCO_KEYSTORE'); if(storePath) { storeFile file(storePath); storePassword System.getenv('FOCO_STORE_PASSWORD'); keyAlias System.getenv('FOCO_KEY_ALIAS') ?: 'foco'; keyPassword System.getenv('FOCO_KEY_PASSWORD') ?: System.getenv('FOCO_STORE_PASSWORD') } } }
+ // v47 (paso 0): una sola llave de firma estable, "foco". Ruta, alias y contraseñas salen de
+ // local.properties (no está en git) o, si no, de las variables FOCO_* de siempre. Nunca en el código.
+ // Sin llave configurada se firma con la de depuración. Ver README («Llave de firma»).
+ signingConfigs { foco {
+  if (focoSigning.store) {
+   storeFile file(focoSigning.store)
+   storePassword focoSigning.storePassword
+   keyAlias focoSigning.alias
+   keyPassword focoSigning.keyPassword
+  }
+ } }
  buildTypes {
+  debug { if (focoSigning.store) signingConfig signingConfigs.foco }
   release {
    debuggable false
    minifyEnabled true
    shrinkResources true
    proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-   if(System.getenv('FOCO_KEYSTORE')) signingConfig signingConfigs.release
+   signingConfig focoSigning.store ? signingConfigs.foco : signingConfigs.debug
   }
   // Para medir la fluidez real (120 Hz): como release (R8, sin depuración) pero firmada con la
   // clave de depuración. ./gradlew :app:assemblePerf. Compose en debug va bastante más lento.
   perf {
    initWith release
-   signingConfig signingConfigs.debug
+   // v47: con la llave "foco" configurada, la misma firma que release (se instala encima sin borrar datos).
+   signingConfig focoSigning.store ? signingConfigs.foco : signingConfigs.debug
    matchingFallbacks = ['release']
   }
  }
@@ -40,4 +66,9 @@ android {
 }
 dependencies { implementation project(':foco-core'); implementation project(':lab');
  // Foco Home (Compose). No son dependencias nuevas del APK: :lab ya las incluye con estas versiones.
- implementation platform('androidx.compose:compose-bom:2024.09.03'); implementation 'androidx.activity:activity-compose:1.9.3'; implementation 'androidx.compose.material3:material3'; implementation 'androidx.compose.material:material-icons-extended'; implementation 'androidx.lifecycle:lifecycle-runtime-compose:2.8.7'; implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7'; implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'; testImplementation 'junit:junit:4.13.2'; testImplementation 'org.json:json:20240303'; testImplementation 'org.robolectric:robolectric:4.14.1' }
+ implementation platform('androidx.compose:compose-bom:2024.09.03'); implementation 'androidx.activity:activity-compose:1.9.3'; implementation 'androidx.compose.material3:material3'; implementation 'androidx.compose.material:material-icons-extended'; implementation 'androidx.lifecycle:lifecycle-runtime-compose:2.8.7'; implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7'; implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'; 
+ // v47: copia nocturna en segundo plano con red y batería (reintentos con espera creciente).
+ implementation 'androidx.work:work-runtime:2.9.1'
+ // v47: permiso de Google Drive (Google Identity Services, AuthorizationClient). Sin claves en el APK.
+ implementation 'com.google.android.gms:play-services-auth:21.2.0'
+ testImplementation 'junit:junit:4.13.2'; testImplementation 'org.json:json:20240303'; testImplementation 'org.robolectric:robolectric:4.14.1' }

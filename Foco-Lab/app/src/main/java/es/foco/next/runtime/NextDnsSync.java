@@ -4,11 +4,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import es.foco.next.core.DnsGuard;
 import es.foco.next.core.NextDnsStats;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
@@ -16,7 +11,7 @@ import java.util.List;
 /**
  * Lee las estadísticas de hoy del perfil de NextDNS con la clave de API que la persona pega una
  * vez. Solo habla con api.nextdns.io, solo con clave guardada y como mucho cada 30 min. La clave se
- * guarda en las preferencias privadas de Foco y no se exporta ni se registra.
+ * guarda cifrada con el Android Keystore (v47, {@link SecretBox}) y no se exporta ni se registra.
  */
 public final class NextDnsSync {
     private NextDnsSync() {}
@@ -46,20 +41,84 @@ public final class NextDnsSync {
         return c.getApplicationContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
-    public static boolean hasKey(Context c) {
-        return NextDnsStats.validKey(prefs(c).getString("key", ""));
+    // v47: la clave va cifrada (SecretBox, Android Keystore). Se guarda en memoria descifrada para
+    // no tocar el Keystore en cada vuelta al inicio.
+    private static final String SECRET = "nextdns_key";
+    private static volatile String cached;
+
+    /** La clave de API (descifrada) o "". Nunca se escribe en el log. */
+    static String key(Context c) {
+        String k = cached;
+        if (k != null) return k;
+        SharedPreferences p = prefs(c);
+        String plain = p.getString("key", "");
+        // v47: antes se guardaba en texto plano; se pasa al Keystore y se borra la copia plana.
+        if (!plain.isEmpty() && SecretBox.put(c, SECRET, plain.trim()))
+            p.edit().remove("key").apply();
+        k = SecretBox.get(c, SECRET);
+        if (k.isEmpty() && !plain.isEmpty()) k = plain.trim();
+        cached = k;
+        return k;
     }
 
-    public static void setKey(Context c, String key) {
-        SharedPreferences.Editor e = prefs(c).edit().putLong("at", 0).remove("error");
-        if (key == null || key.trim().isEmpty())
-            e.remove("key").remove("blocked").remove("total").remove("top").remove("day");
-        else e.putString("key", key.trim());
+    public static boolean hasKey(Context c) {
+        return NextDnsStats.validKey(key(c));
+    }
+
+    /** Guarda la clave cifrada (o la quita con null). false si el Keystore no pudo cifrarla. */
+    public static boolean setKey(Context c, String key) {
+        SharedPreferences.Editor e = prefs(c).edit().putLong("at", 0).remove("error").remove("key");
+        boolean ok = true;
+        if (key == null || key.trim().isEmpty()) {
+            SecretBox.put(c, SECRET, null);
+            e.remove("blocked").remove("total").remove("top").remove("day");
+            cached = "";
+        } else {
+            ok = SecretBox.put(c, SECRET, key.trim());
+            cached = ok ? key.trim() : null;
+        }
         e.apply();
+        if (ok) NextDnsControl.request(c);
+        return ok;
+    }
+
+    /** v47: ID de perfil escrito a mano para la API (vacío = el del DNS privado vigilado). */
+    public static String manualProfile(Context c) {
+        return prefs(c).getString("perfil_api", "");
+    }
+
+    public static void setManualProfile(Context c, String id) {
+        String v = id == null ? "" : id.trim().toLowerCase(java.util.Locale.ROOT);
+        prefs(c).edit().putString("perfil_api", v).putLong("at", 0).apply();
+        NextDnsControl.request(c);
+    }
+
+    /**
+     * v47: «Probar conexión». Lee el perfil con la clave guardada y devuelve un texto para la
+     * persona (sin la clave). Hilo de fondo.
+     */
+    public static String test(Context c) {
+        String k = key(c), id = profile(c);
+        if (!NextDnsStats.validKey(k)) return "Falta la clave de API.";
+        if (id == null) return "Falta el ID de perfil (p. ej. 96916b).";
+        try {
+            NextDnsApi.get(NextDnsApi.BASE + id, k);
+            return "Conexión correcta con el perfil " + id + ".";
+        } catch (NextDnsApi.HttpError e) {
+            return e.code == 401 || e.code == 403
+                    ? "La clave de API no es válida o no tiene acceso a este perfil."
+                    : e.code == 404
+                            ? "NextDNS no encuentra el perfil " + id + "."
+                            : "NextDNS respondió " + e.code + ".";
+        } catch (Exception e) {
+            return "Sin conexión con NextDNS. Prueba con internet.";
+        }
     }
 
     /** ID del perfil a partir del DNS privado que Foco vigila; null si no es NextDNS. */
     public static String profile(Context c) {
+        String manual = manualProfile(c);
+        if (NextDnsStats.validProfile(manual)) return manual;
         String host = DnsMonitor.provider(c);
         // Con un cambio a NextDNS pedido (modo estricto, 24 h), las estadísticas ya pueden leerse.
         if (!DnsGuard.nextDns(host)) host = DnsMonitor.pendingProvider(c);
@@ -94,7 +153,7 @@ public final class NextDnsSync {
     public static void refresh(Context c, boolean force) {
         Context app = c.getApplicationContext();
         SharedPreferences p = prefs(app);
-        String key = p.getString("key", "");
+        String key = key(app);
         String id = profile(app);
         if (!NextDnsStats.validKey(key) || id == null || running.get()) return;
         long now = System.currentTimeMillis();
@@ -123,7 +182,7 @@ public final class NextDnsSync {
                                                         NextDnsStats.domains(domains, 5)))
                                         .remove("error")
                                         .apply();
-                            } catch (HttpError e) {
+                            } catch (NextDnsApi.HttpError e) {
                                 p.edit()
                                         .putLong("at", System.currentTimeMillis())
                                         .putString(
@@ -151,32 +210,7 @@ public final class NextDnsSync {
                 .start();
     }
 
-    private static final class HttpError extends Exception {
-        final int code;
-
-        HttpError(int code) {
-            this.code = code;
-        }
-    }
-
     private static String get(String url, String key) throws Exception {
-        HttpURLConnection h = (HttpURLConnection) new URL(url).openConnection();
-        try {
-            h.setConnectTimeout(8_000);
-            h.setReadTimeout(8_000);
-            h.setRequestProperty("X-Api-Key", key);
-            h.setRequestProperty("Accept", "application/json");
-            int code = h.getResponseCode();
-            if (code != 200) throw new HttpError(code);
-            try (InputStream in = h.getInputStream()) {
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
-                byte[] b = new byte[8192];
-                int n;
-                while ((n = in.read(b)) > 0 && out.size() < 256_000) out.write(b, 0, n);
-                return out.toString(StandardCharsets.UTF_8.name());
-            }
-        } finally {
-            h.disconnect();
-        }
+        return NextDnsApi.get(url, key);
     }
 }

@@ -102,6 +102,7 @@ public final class DailyReminder extends BroadcastReceiver {
     public void onReceive(Context c, Intent i) {
         if (i == null) return;
         Inspector.maybeWrite(c, false); // Foco Inspector: resumen diario opcional
+        BackupStore.ensureScheduled(c); // v47: copia nocturna y NextDNS (tras reiniciar)
         if (Intent.ACTION_BOOT_COMPLETED.equals(i.getAction()))
             es.foco.next.log.InspectorLog.event(
                     c,

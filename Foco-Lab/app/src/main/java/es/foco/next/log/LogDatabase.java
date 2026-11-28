@@ -277,6 +277,45 @@ public final class LogDatabase extends SQLiteOpenHelper {
         return out;
     }
 
+    /** v47: ¿la base no tiene nada del Inspector? (recién instalado o datos borrados). */
+    public boolean inspectorEmpty() {
+        try (Cursor c =
+                getReadableDatabase()
+                        .rawQuery(
+                                "SELECT (SELECT COUNT(*) FROM inspector_event)+(SELECT COUNT(*) FROM inspector_day)",
+                                null)) {
+            return !c.moveToFirst() || c.getLong(0) == 0;
+        }
+    }
+
+    /**
+     * v47: recuperar desde Drive. Escribe resúmenes diarios (día, tipo, app) sin pisar lo que ya
+     * hay. Devuelve cuántas filas entraron.
+     */
+    public int restoreSummary(List<InspectorRow> rows) {
+        SQLiteDatabase db = getWritableDatabase();
+        int n = 0;
+        db.beginTransaction();
+        try {
+            for (InspectorRow r : rows) {
+                ContentValues v = new ContentValues();
+                v.put("day", r.day);
+                v.put("type", r.type);
+                v.put("pkg", r.pkg);
+                v.put("ms", r.ms);
+                v.put("times", r.times);
+                v.put("value", r.value);
+                if (db.insertWithOnConflict(
+                                "inspector_day", null, v, SQLiteDatabase.CONFLICT_IGNORE)
+                        != -1) n++;
+            }
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
+        return n;
+    }
+
     /**
      * El detalle anterior a {@code firstDetailDay} pasa al resumen diario y se borra; el resumen
      * anterior a {@code firstSummaryDay} se borra.

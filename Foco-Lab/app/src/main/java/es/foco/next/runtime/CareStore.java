@@ -141,6 +141,8 @@ public final class CareStore {
         } catch (RuntimeException ignored) {
         }
         notifyChanged();
+        // v47: NextDNS sigue al modo (Enfoque bloquea redes por servicio). Solo con clave.
+        NextDnsControl.request(c);
     }
 
     private static void addCareUsed(

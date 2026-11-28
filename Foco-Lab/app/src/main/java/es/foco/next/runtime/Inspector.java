@@ -123,6 +123,14 @@ public final class Inspector {
         }
     }
 
+    /** v47: primer modo apuntado ese día ("NORMAL" si no hay dato). */
+    static String firstMode(Context c, LocalDate day) {
+        String m = prefs(c).getString("modos_" + day, "");
+        if (m.isEmpty()) return "NORMAL";
+        int i = m.indexOf(',');
+        return (i < 0 ? m : m.substring(0, i)).toUpperCase(java.util.Locale.ROOT);
+    }
+
     private static String seen(Context c, LocalDate day, String what) {
         SharedPreferences p = prefs(c);
         if ("weekend".equals(what)) return Boolean.toString(p.getBoolean("weekend_" + day, false));

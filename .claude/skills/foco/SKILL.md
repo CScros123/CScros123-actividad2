@@ -118,3 +118,14 @@ Compose necesitan `imePadding()`).
 3. Pide las líneas `e:` / `error:` si sale «BUILD FAILED» y corrígelas sin cambiar nada más.
 4. Resumen final: archivos modificados, qué quedó conectado, qué quedó pendiente, riesgos y qué
    probar en el teléfono.
+
+## v47: respaldo nocturno y NextDNS por modo
+
+- Reglas puras en `foco-core/.../core/backup/` (JSON del día, cola de días, plan de NextDNS, diseño
+  de la hoja, frases del búho, `Secrets.redact`). La app solo hace HTTP, WorkManager y UI.
+- La clave de NextDNS va en `SecretBox` (Keystore). Nunca la escribas en logs ni textos exportados.
+- Endpoints de NextDNS verificados en nextdns.github.io/api; los ids de servicio que no aparecen en
+  la doc (instagram, youtube…) se prueban y, si NextDNS responde 400, se marcan «no admitidos».
+- Firma: `local.properties` (`foco.storeFile`, `foco.keyAlias`, `foco.storePassword`,
+  `foco.keyPassword`) o las variables `FOCO_*`. Nunca pidas la contraseña.
+

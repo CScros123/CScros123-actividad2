@@ -147,8 +147,13 @@ public final class RewardStore {
 
     /** Días seguidos al 100 %: hasta hoy si hoy está completo; si no, hasta ayer. */
     public static int streak(Context c) {
+        return streakAt(c, RoutineStore.today());
+    }
+
+    /** v47: la racha tal como estaba al cerrar el día {@code day} (para el respaldo). */
+    public static int streakAt(Context c, LocalDate day) {
         Set<String> days = completeDays(c);
-        LocalDate d = RoutineStore.today();
+        LocalDate d = day;
         if (!days.contains(d.toString())) d = d.minusDays(1);
         int n = 0;
         while (days.contains(d.toString()) && n < 400) {

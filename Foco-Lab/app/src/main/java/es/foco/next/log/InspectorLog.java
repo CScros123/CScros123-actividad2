@@ -57,6 +57,10 @@ public final class InspectorLog {
             WEB_SOCIAL = "bloqueo_web_red_social",
             // v37: intento de abrir la app o la web de NextDNS en este teléfono.
             INTENTO_NEXTDNS = "intento_panel_nextdns",
+            // v47: el perfil de NextDNS no estaba como Foco lo dejó y se restauró (sin culpa).
+            NEXTDNS_CAMBIADO = "nextdns_cambiado",
+            // v47: copia nocturna en Drive (detalle: día y si salió bien).
+            RESPALDO = "respaldo_drive",
             // Foco Home (etapas 1, 5 y 6).
             LAUNCHER_CAMBIADO = "launcher_cambiado",
             DNS_AUTO = "dns_automatico",
