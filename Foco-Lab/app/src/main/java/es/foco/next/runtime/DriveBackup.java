@@ -16,8 +16,8 @@ import java.util.Set;
 /**
  * v47: sube un día a Drive: «Foco/Reportes/AAAA-MM/AAAA-MM-DD.json» y «.png» (si ya existen, se
  * reemplazan) y sus filas en la hoja «Foco · Historial» (antes de escribir, se borran las filas que
- * ese día ya tenía: nada se duplica). La hoja se crea la primera vez, con su diseño; después solo se
- * añaden filas. Todo lo que sale pasa por {@link Secrets#redact}. Hilo de fondo.
+ * ese día ya tenía: nada se duplica). La hoja se crea la primera vez, con su diseño; después solo
+ * se añaden filas. Todo lo que sale pasa por {@link Secrets#redact}. Hilo de fondo.
  */
 final class DriveBackup {
     private final Context c;
@@ -85,8 +85,7 @@ final class DriveBackup {
             // sin formato): se reescriben el Panel y los encabezados y se da formato a la fecha.
             if (BackupStore.prefs(c).getInt("diseno", 1) < SheetLayout.DESIGN) {
                 pace();
-                GoogleApi.valuesBatchUpdate(
-                        token, sheet, SheetLayout.headersAndPanelBody(moodTab));
+                GoogleApi.valuesBatchUpdate(token, sheet, SheetLayout.headersAndPanelBody(moodTab));
                 pace();
                 GoogleApi.batchUpdate(token, sheet, SheetLayout.repairBody(moodTab));
                 BackupStore.prefs(c).edit().putInt("diseno", SheetLayout.DESIGN).apply();
@@ -154,8 +153,7 @@ final class DriveBackup {
             List<List<Object>> rows = clean(SheetLayout.rowsFor(tab, d));
             if (rows.isEmpty()) continue;
             pace();
-            GoogleApi.append(
-                    token, sheet, SheetLayout.a1(tab, "A1"), SheetLayout.appendBody(rows));
+            GoogleApi.append(token, sheet, SheetLayout.a1(tab, "A1"), SheetLayout.appendBody(rows));
         }
         return png;
     }

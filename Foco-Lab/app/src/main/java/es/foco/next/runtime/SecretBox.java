@@ -31,11 +31,13 @@ public final class SecretBox {
     private static SecretKey key() throws Exception {
         KeyStore ks = KeyStore.getInstance(STORE);
         ks.load(null);
-        if (ks.containsAlias(ALIAS)) return ((KeyStore.SecretKeyEntry) ks.getEntry(ALIAS, null)).getSecretKey();
+        if (ks.containsAlias(ALIAS))
+            return ((KeyStore.SecretKeyEntry) ks.getEntry(ALIAS, null)).getSecretKey();
         KeyGenerator g = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, STORE);
         g.init(
                 new KeyGenParameterSpec.Builder(
-                                ALIAS, KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
+                                ALIAS,
+                                KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
                         .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                         .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
                         .setKeySize(256)
@@ -65,7 +67,9 @@ public final class SecretBox {
         }
     }
 
-    /** El secreto, o "" si no hay o no se pudo descifrar (p. ej. tras restaurar en otro teléfono). */
+    /**
+     * El secreto, o "" si no hay o no se pudo descifrar (p. ej. tras restaurar en otro teléfono).
+     */
     public static synchronized String get(Context c, String name) {
         String packed = prefs(c).getString(name, "");
         int i = packed.indexOf(':');

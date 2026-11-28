@@ -311,7 +311,8 @@ public final class DayReport {
                         .put("apps_productivas", items(productiveApps, "app", "min", 30));
         Json.Arr changes = new Json.Arr();
         for (String[] c : modeChanges)
-            changes.add(Json.obj().put("hora", Integer.parseInt(c[0])).put("de", c[1]).put("a", c[2]));
+            changes.add(
+                    Json.obj().put("hora", Integer.parseInt(c[0])).put("de", c[1]).put("a", c[2]));
         o.put(
                 "modos",
                 Json.obj()

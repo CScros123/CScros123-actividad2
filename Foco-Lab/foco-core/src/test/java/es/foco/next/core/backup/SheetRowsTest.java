@@ -13,7 +13,9 @@ import org.junit.Test;
 public class SheetRowsTest {
     @Test
     public void reenviarUnDiaNoDuplicaFilas() {
-        List<String> a = new ArrayList<>(List.of("Fecha", "2026-11-26", "2026-11-27", "2026-11-27", "2026-11-28"));
+        List<String> a =
+                new ArrayList<>(
+                        List.of("Fecha", "2026-11-26", "2026-11-27", "2026-11-27", "2026-11-28"));
         List<int[]> del = SheetRows.rowsOf(a, "2026-11-27");
         assertEquals(1, del.size());
         assertArrayEquals(new int[] {2, 4}, del.get(0));
@@ -23,7 +25,8 @@ public class SheetRowsTest {
         assertEquals(1, a.stream().filter("2026-11-27"::equals).count());
         assertTrue(SheetRows.rowsOf(List.of("Fecha"), "2026-11-27").isEmpty());
         // La hoja puede devolver la fecha con hora.
-        assertEquals(1, SheetRows.rowsOf(List.of("Fecha", "2026-11-27 00:00:00"), "2026-11-27").size());
+        assertEquals(
+                1, SheetRows.rowsOf(List.of("Fecha", "2026-11-27 00:00:00"), "2026-11-27").size());
     }
 
     @Test
@@ -51,7 +54,9 @@ public class SheetRowsTest {
 
     @Test
     public void tramosDelUltimoAlPrimero() {
-        List<int[]> del = SheetRows.olderThan(List.of("Fecha", "2026-10-01", "2026-10-02", "2026-11-01"), "2026-10-29");
+        List<int[]> del =
+                SheetRows.olderThan(
+                        List.of("Fecha", "2026-10-01", "2026-10-02", "2026-11-01"), "2026-10-29");
         assertArrayEquals(new int[] {1, 3}, del.get(0));
         List<int[]> two = SheetRows.rowsOf(List.of("Fecha", "x", "d", "y", "d"), "d");
         assertArrayEquals(new int[] {4, 5}, two.get(0));
@@ -64,7 +69,8 @@ public class SheetRowsTest {
         files.put("id1", "2026-11-27.json");
         files.put("id2", "2026-11-27.png");
         files.put("id3", "2026-11-27.json");
-        assertArrayEquals(new String[] {"id1", "id3"}, SheetRows.replaceTarget(files, "2026-11-27.json"));
+        assertArrayEquals(
+                new String[] {"id1", "id3"}, SheetRows.replaceTarget(files, "2026-11-27.json"));
         assertEquals(0, SheetRows.replaceTarget(files, "2026-11-28.json").length);
     }
 

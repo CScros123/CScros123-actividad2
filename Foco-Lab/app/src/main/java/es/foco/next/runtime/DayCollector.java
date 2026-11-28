@@ -16,9 +16,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * v47: junta los datos de un día de Foco (04:00 → 04:00) para el respaldo: el mismo registro que
- * el informe diario (con Acceso de uso, el tiempo sale del sistema) y lo de NextDNS en ese tramo.
- * Hilo de fondo.
+ * v47: junta los datos de un día de Foco (04:00 → 04:00) para el respaldo: el mismo registro que el
+ * informe diario (con Acceso de uso, el tiempo sale del sistema) y lo de NextDNS en ese tramo. Hilo
+ * de fondo.
  */
 final class DayCollector {
     private DayCollector() {}
@@ -40,8 +40,7 @@ final class DayCollector {
                                     r.type, r.pkg, r.hour, r.ms, r.times, r.value, r.detail));
         // Bloqueos e intentos: salen del registro de bloqueos (como el CSV del informe).
         List<es.foco.next.log.BlockEvent> blocks =
-                es.foco.next.log.BlockLog.await(
-                        c, db -> db.events(day.toString()), 20_000);
+                es.foco.next.log.BlockLog.await(c, db -> db.events(day.toString()), 20_000);
         if (blocks != null)
             for (es.foco.next.log.BlockEvent e : blocks) {
                 if (e.type == null || !(e.type.isBlock() || e.type.isAttempt())) continue;
@@ -108,7 +107,8 @@ final class DayCollector {
         if (!NextDnsStats.validKey(key) || id == null) return null;
         ZoneId z = ZoneId.systemDefault();
         String from = day.atTime(4, 0).atZone(z).toInstant().toString();
-        String to = complete ? day.plusDays(1).atTime(4, 0).atZone(z).toInstant().toString() : "now";
+        String to =
+                complete ? day.plusDays(1).atTime(4, 0).atZone(z).toInstant().toString() : "now";
         String base = NextDnsApi.BASE + id + "/analytics/";
         String range = "from=" + from + "&to=" + to;
         try {

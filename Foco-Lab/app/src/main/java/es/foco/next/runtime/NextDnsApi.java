@@ -12,8 +12,8 @@ import java.nio.charset.StandardCharsets;
  * habla con ese servidor. La clave nunca se escribe en el log ni en los mensajes de error.
  *
  * <p>Endpoints usados (documentación oficial, nextdns.github.io/api): analytics/status,
- * analytics/domains (status, root, limit, from, to), parentalControl/services y denylist (GET,
- * POST {id, active}, DELETE …/id). No se usa PATCH: HttpURLConnection no lo admite; para cambiar
+ * analytics/domains (status, root, limit, from, to), parentalControl/services y denylist (GET, POST
+ * {id, active}, DELETE …/id). No se usa PATCH: HttpURLConnection no lo admite; para cambiar
  * "activo" se borra y se vuelve a añadir.
  */
 public final class NextDnsApi {
@@ -86,7 +86,8 @@ public final class NextDnsApi {
     }
 
     /** id → activo de una lista (services o denylist): {"data":[{"id":"x","active":true}]}. */
-    public static java.util.Map<String, Boolean> actives(String json) throws org.json.JSONException {
+    public static java.util.Map<String, Boolean> actives(String json)
+            throws org.json.JSONException {
         java.util.Map<String, Boolean> out = new java.util.HashMap<>();
         org.json.JSONArray a = new org.json.JSONObject(json).optJSONArray("data");
         if (a == null) return out;
@@ -94,7 +95,8 @@ public final class NextDnsApi {
             org.json.JSONObject o = a.optJSONObject(i);
             if (o == null) continue;
             String id = o.optString("id", "");
-            if (!id.isEmpty()) out.put(id.toLowerCase(java.util.Locale.ROOT), o.optBoolean("active", true));
+            if (!id.isEmpty())
+                out.put(id.toLowerCase(java.util.Locale.ROOT), o.optBoolean("active", true));
         }
         return out;
     }

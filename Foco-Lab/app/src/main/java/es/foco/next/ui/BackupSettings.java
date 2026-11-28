@@ -55,7 +55,9 @@ final class BackupSettings {
                 "Conectado"
                         + (account.isEmpty() ? "" : " como " + account)
                         + ". "
-                        + (sent > 0 ? "Último envío: " + when(sent) + "." : "Aún no hay envíos: el primero es esta noche."));
+                        + (sent > 0
+                                ? "Último envío: " + when(sent) + "."
+                                : "Aún no hay envíos: el primero es esta noche."));
         if (BackupStore.needsReconnect(a)) {
             Design.note(card, "Vuelve a conectar Drive para seguir guardando tus reportes.");
             card.addView(
@@ -68,11 +70,7 @@ final class BackupSettings {
         String sheet = BackupStore.sheetUrl(a);
         if (!sheet.isEmpty())
             card.addView(
-                    Design.button(
-                            a,
-                            "Ver hoja «Foco · Historial»",
-                            false,
-                            () -> open(a, sheet)));
+                    Design.button(a, "Ver hoja «Foco · Historial»", false, () -> open(a, sheet)));
         card.addView(
                 Design.button(
                         a,
@@ -169,7 +167,8 @@ final class BackupSettings {
                 card,
                 "Con tu clave de API, Foco bloquea en tu perfil las redes sociales durante Enfoque y de noche, y Telegram siempre. Lo comprueba cada 30 min: si se cambia desde la web, lo vuelve a poner. No hay botón para desbloquear.");
         boolean key = NextDnsSync.hasKey(a);
-        Design.note(card, key ? "Clave de API: guardada y cifrada ✓" : "Clave de API: sin guardar.");
+        Design.note(
+                card, key ? "Clave de API: guardada y cifrada ✓" : "Clave de API: sin guardar.");
         card.addView(
                 Design.button(
                         a,
@@ -246,7 +245,11 @@ final class BackupSettings {
                 .setPositiveButton(
                         "Guardar",
                         (d, w) -> {
-                            String id = in.getText().toString().trim().toLowerCase(java.util.Locale.ROOT);
+                            String id =
+                                    in.getText()
+                                            .toString()
+                                            .trim()
+                                            .toLowerCase(java.util.Locale.ROOT);
                             if (!id.isEmpty() && !NextDnsStats.validProfile(id)) {
                                 a.message("Ese ID no parece válido. Ejemplo: 96916b");
                                 return;

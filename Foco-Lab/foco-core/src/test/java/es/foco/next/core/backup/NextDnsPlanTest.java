@@ -63,7 +63,10 @@ public class NextDnsPlanTest {
         // El siguiente cambio se programa justo a las 21:00 y luego a las 07:00.
         ZonedDateTime evening = ZonedDateTime.of(2026, 11, 28, 18, 10, 0, 0, Z);
         assertEquals(at21, NextDnsPlan.nextBoundary(evening, -1, 21, 7));
-        assertEquals(at7, NextDnsPlan.nextBoundary(ZonedDateTime.of(2026, 11, 28, 21, 0, 0, 0, Z), -1, 21, 7));
+        assertEquals(
+                at7,
+                NextDnsPlan.nextBoundary(
+                        ZonedDateTime.of(2026, 11, 28, 21, 0, 0, 0, Z), -1, 21, 7));
         // Un Enfoque que acaba antes manda.
         long focusEnd = evening.plusMinutes(50).toInstant().toEpochMilli();
         assertEquals(focusEnd, NextDnsPlan.nextBoundary(evening, focusEnd, 21, 7));
@@ -80,7 +83,9 @@ public class NextDnsPlanTest {
         assertEquals("tiktok", ops.get(1).id);
         assertTrue(NextDnsPlan.changedOutside(ops, applied, true));
         // Un cambio de modo no es un cambio desde fuera.
-        assertFalse(NextDnsPlan.changedOutside(NextDnsPlan.diff(false, services(true), telegram()), applied, false));
+        assertFalse(
+                NextDnsPlan.changedOutside(
+                        NextDnsPlan.diff(false, services(true), telegram()), applied, false));
     }
 
     @Test

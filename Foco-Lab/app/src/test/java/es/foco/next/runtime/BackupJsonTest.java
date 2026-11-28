@@ -41,7 +41,8 @@ public class BackupJsonTest {
         rows.add(new DayReport.Row("ocio", "com.instagram.android", 21, 15 * 60_000L, 1, 0, ""));
         rows.add(new DayReport.Row("reto_completado", "", 10, 0, 0, 1, ""));
         DayReport day =
-                DayReport.build(LocalDate.of(2026, 11, 28), rows, false, p -> p, "NORMAL", 28, false);
+                DayReport.build(
+                        LocalDate.of(2026, 11, 28), rows, false, p -> p, "NORMAL", 28, false);
         List<LogDatabase.InspectorRow> out = new ArrayList<>();
         assertTrue(DriveRestore.parse(new JSONObject(day.toJson(false)), out));
         assertEquals(3, out.size());

@@ -124,7 +124,9 @@ public final class NextDnsPlan {
         if (!start.isAfter(t)) start = start.plusDays(1);
         if (!end.isAfter(t)) end = end.plusDays(1);
         long best =
-                Math.min(start.atZone(z).toInstant().toEpochMilli(), end.atZone(z).toInstant().toEpochMilli());
+                Math.min(
+                        start.atZone(z).toInstant().toEpochMilli(),
+                        end.atZone(z).toInstant().toEpochMilli());
         long n = now.toInstant().toEpochMilli();
         if (focusUntil > n && focusUntil < best) best = focusUntil;
         return best;
@@ -139,7 +141,14 @@ public final class NextDnsPlan {
     // ---------------- Lectura del día para el reporte ----------------
 
     private static final String[][] SOCIAL = {
-        {"tiktok", "tiktok.com", "tiktokv.com", "tiktokcdn.com", "byteoversea.com", "ibytedtos.com"},
+        {
+            "tiktok",
+            "tiktok.com",
+            "tiktokv.com",
+            "tiktokcdn.com",
+            "byteoversea.com",
+            "ibytedtos.com"
+        },
         {"instagram", "instagram.com", "cdninstagram.com"},
         {"facebook", "facebook.com", "facebook.net", "fbcdn.net", "fb.com", "messenger.com"},
         {"youtube", "youtube.com", "youtu.be", "ytimg.com", "googlevideo.com"},
