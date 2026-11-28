@@ -20,7 +20,7 @@ import es.foco.next.core.backup.BackupLines;
 final class BackupNotifier {
     private BackupNotifier() {}
 
-    static final String CHANNEL = "foco-respaldo";
+    static final String CHANNEL = "foco-respaldo", CHANNEL_QUIET = "foco-respaldo-silencio";
     static final int ID = 7471;
 
     static void done(Context c) {
@@ -109,7 +109,19 @@ final class BackupNotifier {
                     new NotificationChannel(
                             CHANNEL, "Copia nocturna en Drive", NotificationManager.IMPORTANCE_DEFAULT);
             nm.createNotificationChannel(ch);
-            if (quiet(app)) b.setSilent(true);
+            // En llamada o No molestar: el mismo aviso por un canal silencioso (sin sonido ni
+            // vibración). Notification.Builder no tiene setSilent; eso es de NotificationCompat.
+            if (quiet(app)) {
+                NotificationChannel calm =
+                        new NotificationChannel(
+                                CHANNEL_QUIET,
+                                "Copia nocturna en Drive (en silencio)",
+                                NotificationManager.IMPORTANCE_LOW);
+                calm.setSound(null, null);
+                calm.enableVibration(false);
+                nm.createNotificationChannel(calm);
+                b.setChannelId(CHANNEL_QUIET);
+            }
             nm.notify(ID, b.build());
         } catch (RuntimeException ignored) {
         }
