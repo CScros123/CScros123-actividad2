@@ -63,10 +63,17 @@ public final class NextDnsControl {
                                     NextDnsWorker.class,
                                     NextDnsPlan.CHECK_EVERY_MS,
                                     TimeUnit.MILLISECONDS)
-                            .setConstraints(online())
+                            // v49 (batería): la comprobación periódica espera a tener batería; los
+                            // cambios de modo y de horario se aplican igual al momento.
+                            .setConstraints(
+                                    new Constraints.Builder()
+                                            .setRequiredNetworkType(NetworkType.CONNECTED)
+                                            .setRequiresBatteryNotLow(true)
+                                            .build())
                             .build();
             WorkManager.getInstance(c.getApplicationContext())
-                    .enqueueUniquePeriodicWork(WORK_PERIODIC, ExistingPeriodicWorkPolicy.KEEP, w);
+                    .enqueueUniquePeriodicWork(
+                            WORK_PERIODIC, ExistingPeriodicWorkPolicy.UPDATE, w);
         } catch (RuntimeException ignored) {
             // WorkManager no disponible (pruebas): el bloqueo por Accesibilidad sigue igual.
         }

@@ -275,8 +275,9 @@ fun Owl(
     LaunchedEffect(mode, pose) { wake(if (away || pose == Pose.STRETCH) 7f else 4f) }
     // Ahorro: despierto, fotograma a fotograma; dormido, no se redibuja nada salvo un parpadeo cada
     // pocos segundos (y comprueba 10 veces por segundo si alguien lo despertó, sin dibujar).
-    LaunchedEffect(motion) {
-        if (!motion) return@LaunchedEffect
+    // v49: solo mientras el inicio se ve (antes seguía despertando el procesador en segundo plano).
+    WhileVisible(motion) {
+        if (!motion) return@WhileVisible
         var last = -1L
         var nextBlink = now() + 3f
         while (true) {

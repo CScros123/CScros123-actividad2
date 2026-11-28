@@ -703,3 +703,18 @@ gráficos que Google dejó sin series se rehacen tras cada copia.
   `playFromUri` si Apple Music lo admite). Suena al entrar en Enfoque (si lo activas), en la pausa
   (si eliges Apple Music) y desde «Mi música» en el menú del búho. Sin MusicKit: no hacen falta
   cuenta de desarrollador ni claves.
+
+## v49: auditoría de batería y la copia a las 21:00
+
+- **Accesibilidad con los eventos justos** (`FocusAccessibilityService.updateEventMask`): los
+  cambios de contenido (decenas por segundo en vídeos y juegos) solo se piden con delante un
+  navegador, una app con secciones, Google Play, Ajustes o una app productiva; el deslizar, solo en
+  apps de ocio. El cambio de ventana se pide siempre.
+- **Bucles del inicio solo con el inicio a la vista** (`WhileVisible`): el búho dormido redibujaba a
+  15 fps y seguía despertando el procesador con Foco Home en segundo plano; también el reloj, el
+  widget de Foco Core y las frases del búho.
+- **NextDNS cada 30 min** solo con batería no baja (los cambios de modo y de horario, al momento).
+- **Copia en Drive una vez por noche a las 21:00** (antes 23:30); el día se vuelve a subir cerrado
+  la noche siguiente. El trabajo ya programado se reprograma solo una vez.
+- **Quitado**: la exportación CSV de Registro (30/90 días) y el segundo sitio donde se pedía la clave
+  de NextDNS (queda en «NextDNS: control por modo»).

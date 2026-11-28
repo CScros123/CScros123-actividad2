@@ -365,7 +365,7 @@ private fun CenterPanel(vm: HomeViewModel, a: HomeActions, openDrawer: (Boolean)
             // Foco Core: un solo widget para tareas 2+2, penalización, hora libre y dinero.
             vm.core?.let { s -> CoreWidget(s, a::openCore, a::startFreeHour, vm.urgent) }
             // Cuenta atrás del widget: se refresca cada minuto con el inicio a la vista.
-            androidx.compose.runtime.LaunchedEffect(Unit) {
+            WhileVisible {
                 while (true) {
                     kotlinx.coroutines.delay(60_000)
                     vm.refreshCore()
@@ -467,7 +467,7 @@ private fun Header(vm: HomeViewModel, a: HomeActions) {
     val c = LocalHome.current
     val haptic = LocalHapticFeedback.current
     var now by remember { mutableStateOf(LocalDateTime.now()) }
-    androidx.compose.runtime.LaunchedEffect(Unit) {
+    WhileVisible {
         while (true) {
             now = LocalDateTime.now()
             kotlinx.coroutines.delay(1000L * (60 - now.second).coerceAtLeast(1))
@@ -561,7 +561,7 @@ private fun Header(vm: HomeViewModel, a: HomeActions) {
             }
             onDispose { runCatching { ctx.unregisterReceiver(r) } }
         }
-        androidx.compose.runtime.LaunchedEffect(Unit) {
+        WhileVisible {
             while (true) {
                 kotlinx.coroutines.delay(6 * 60_000L)
                 vm.reshuffleOwl()

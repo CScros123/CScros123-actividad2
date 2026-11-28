@@ -7,15 +7,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * v47: qué días faltan por subir y cuándo intentarlo. Cada noche (~23:30) se sube el día en curso;
+ * v47: qué días faltan por subir y cuándo intentarlo. Cada noche (21:00) se sube el día en curso;
  * como el día de Foco acaba a las 04:00, se sube otra vez la noche siguiente ya cerrado (y entonces
  * cuenta como completo). Si hubo días sin red, se suben todos en orden al volver.
  */
 public final class ReportQueue {
     private ReportQueue() {}
 
-    /** Hora a la que se intenta el envío (23:30). */
-    public static final LocalTime SEND_AT = LocalTime.of(23, 30);
+    /** Hora a la que se intenta el envío (v49: 21:00, una vez por noche). */
+    public static final LocalTime SEND_AT = LocalTime.of(21, 0);
 
     /** Como mucho este número de días por vuelta (el registro detallado guarda 30). */
     public static final int MAX_DAYS = 30;
@@ -51,7 +51,7 @@ public final class ReportQueue {
         return lastComplete == null || day.isAfter(lastComplete) ? day : lastComplete;
     }
 
-    /** Minutos hasta el próximo 23:30 (para el retraso inicial del trabajo periódico). */
+    /** Minutos hasta el próximo envío (para el retraso inicial del trabajo periódico). */
     public static long minutesUntilSend(LocalDateTime now) {
         LocalDateTime next = now.toLocalDate().atTime(SEND_AT);
         if (!next.isAfter(now)) next = next.plusDays(1);

@@ -359,7 +359,7 @@ fun FocoCoreScreen(vm: HomeViewModel, a: HomeActions, startTab: Int, onClose: ()
     var doing by remember { mutableStateOf<Doing?>(null) }
     val motion = !(vm.reduceMotion || vm.saving)
     // Cronómetros y cuenta atrás: se refresca cada 30 s mientras está abierta.
-    LaunchedEffect(Unit) {
+    WhileVisible {
         while (true) {
             kotlinx.coroutines.delay(30_000)
             clock++

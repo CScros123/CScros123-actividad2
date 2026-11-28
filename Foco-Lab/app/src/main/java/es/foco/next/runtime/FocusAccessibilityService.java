@@ -844,6 +844,8 @@ public final class FocusAccessibilityService extends AccessibilityService
                         ? focusedPkg
                         : ForegroundWindows.current(
                                 this, overlay.visible(), p -> FocusEngine.watched(watchCfg, p));
+        // v49 (batería): pedir a Android solo los eventos que hacen falta con esta app delante.
+        updateEventMask(focusedPkg, current);
         if (current.isEmpty()) {
             // Own overlay events aren't evidence that the underlying app has changed.
             if (pkg.equals(getPackageName()) && overlay.visible()) return;
@@ -901,6 +903,51 @@ public final class FocusAccessibilityService extends AccessibilityService
             sectionBacks = 0;
         }
         evaluate(true);
+    }
+
+    /** v49: tipos de evento pedidos ahora (-1 = los del XML, todos). */
+    private int eventMask = -1;
+
+    /**
+     * v49 (batería): los cambios de contenido llegan decenas de veces por segundo en cualquier app
+     * (vídeos, juegos). Solo se piden con delante una app que los necesita: navegadores (filtro web),
+     * apps con secciones (WhatsApp…), Google Play (compras), Ajustes (modo estricto) y apps
+     * productivas (medir el tiempo activo). El deslizar (corte entre vídeos) solo en apps de ocio.
+     * El cambio de ventana se pide siempre: con él se decide todo lo demás.
+     */
+    private void updateEventMask(String focusedPkg, String current) {
+        try {
+            AppConfig cfg = repository == null ? null : repository.config();
+            boolean content = needsContent(cfg, focusedPkg) || needsContent(cfg, current);
+            boolean scroll =
+                    cfg != null
+                            && ((!current.isEmpty() && FocusEngine.watched(cfg, current))
+                                    || (!focusedPkg.isEmpty()
+                                            && FocusEngine.watched(cfg, focusedPkg)));
+            int mask =
+                    AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+                            | AccessibilityEvent.TYPE_WINDOWS_CHANGED
+                            | (content ? AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED : 0)
+                            | (scroll ? AccessibilityEvent.TYPE_VIEW_SCROLLED : 0);
+            if (mask == eventMask) return;
+            android.accessibilityservice.AccessibilityServiceInfo info = getServiceInfo();
+            if (info == null) return;
+            info.eventTypes = mask;
+            setServiceInfo(info);
+            eventMask = mask;
+        } catch (RuntimeException ignored) {
+            // Si Android no deja cambiarlo, siguen llegando todos (como antes).
+        }
+    }
+
+    private static boolean needsContent(AppConfig cfg, String pkg) {
+        if (pkg == null || pkg.isEmpty()) return false;
+        return WebFilter.supported(pkg)
+                || InAppFilter.supported(pkg)
+                || PurchaseGuard.PLAY.equals(pkg)
+                || StrictGuard.guardedPackage(pkg)
+                || es.foco.next.core.care.GoodApps.good(pkg)
+                || (cfg != null && cfg.productiveApps.contains(pkg));
     }
 
     private boolean essential(AppConfig c, String pkg) {

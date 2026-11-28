@@ -97,14 +97,11 @@ final class DnsSettings {
                                                 + snap.total
                                                 + " consultas."
                                         : "Estadísticas: leyendo…");
-            card.addView(
-                    Design.button(
-                            a,
-                            key
-                                    ? "Estadísticas automáticas · cambiar clave"
-                                    : "Ver estadísticas automáticas",
-                            !key,
-                            () -> askApiKey(a, key)));
+            // v49: la clave de API se escribe en una sola tarjeta («NextDNS: control por modo»).
+            if (!key)
+                Design.note(
+                        card,
+                        "Para ver lo bloqueado hoy, escribe tu clave de API en «NextDNS: control por modo», más abajo.");
         }
         card.addView(
                 Design.button(
@@ -270,54 +267,6 @@ final class DnsSettings {
                 .format(
                         java.time.format.DateTimeFormatter.ofPattern(
                                 "EEEE H:mm", new java.util.Locale("es")));
-    }
-
-    /** Clave de API de NextDNS (my.nextdns.io › Cuenta › API). Solo se usa con api.nextdns.io. */
-    private static void askApiKey(MainActivity a, boolean hasKey) {
-        android.widget.EditText in = new android.widget.EditText(a);
-        in.setHint("Clave de API");
-        in.setSingleLine(true);
-        in.setInputType(
-                android.text.InputType.TYPE_CLASS_TEXT
-                        | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
-        android.app.AlertDialog.Builder b =
-                new android.app.AlertDialog.Builder(a)
-                        .setTitle("Estadísticas de NextDNS")
-                        .setMessage(
-                                "En my.nextdns.io › Cuenta, abajo del todo: API. Copia la clave y pégala aquí. Foco solo lee lo de hoy de tu perfil, cada 30 min, y la clave no sale del teléfono salvo hacia NextDNS.")
-                        .setView(in)
-                        .setPositiveButton(
-                                "Guardar",
-                                (d, w) -> {
-                                    String k = in.getText().toString().trim();
-                                    if (!es.foco.next.core.NextDnsStats.validKey(k)) {
-                                        a.message(
-                                                "Esa clave no parece válida: solo letras y números, sin espacios.");
-                                        return;
-                                    }
-                                    es.foco.next.runtime.NextDnsSync.setKey(a, k);
-                                    // Una sola vez: al llegar la primera lectura se repinta la
-                                    // página.
-                                    Runnable[] once = new Runnable[1];
-                                    once[0] =
-                                            () -> {
-                                                es.foco.next.runtime.NextDnsSync.removeListener(
-                                                        once[0]);
-                                                a.runOnUiThread(a::render);
-                                            };
-                                    es.foco.next.runtime.NextDnsSync.addListener(once[0]);
-                                    es.foco.next.runtime.NextDnsSync.refresh(a, true);
-                                    a.render();
-                                })
-                        .setNegativeButton("Cancelar", null);
-        if (hasKey)
-            b.setNeutralButton(
-                    "Quitar clave",
-                    (d, w) -> {
-                        es.foco.next.runtime.NextDnsSync.setKey(a, null);
-                        a.render();
-                    });
-        b.show();
     }
 
     /**

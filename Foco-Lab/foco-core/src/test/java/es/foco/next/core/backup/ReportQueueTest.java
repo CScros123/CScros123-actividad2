@@ -31,8 +31,10 @@ public class ReportQueueTest {
     }
 
     @Test
-    public void seIntentaALasOnceYMedia() {
-        assertEquals(30, ReportQueue.minutesUntilSend(LocalDateTime.of(2026, 11, 28, 23, 0)));
-        assertTrue(ReportQueue.minutesUntilSend(LocalDateTime.of(2026, 11, 28, 23, 45)) > 23 * 60);
+    public void seEnviaUnaVezALasNueve() {
+        assertEquals(30, ReportQueue.minutesUntilSend(LocalDateTime.of(2026, 11, 28, 20, 30)));
+        // Pasadas las 21:00 (hoy ya se envió), el próximo es mañana a las 21:00.
+        assertEquals(
+                23 * 60 + 45, ReportQueue.minutesUntilSend(LocalDateTime.of(2026, 11, 28, 21, 15)));
     }
 }

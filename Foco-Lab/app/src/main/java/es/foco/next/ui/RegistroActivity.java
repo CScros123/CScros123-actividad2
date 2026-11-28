@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -13,14 +12,10 @@ import android.widget.Toast;
 import es.foco.next.R;
 import es.foco.next.data.Repository;
 import es.foco.next.log.BlockLog;
-import es.foco.next.log.LogCsv;
 import es.foco.next.log.LogRetention;
 import es.foco.next.log.LogSummary;
 import es.foco.next.log.ObservedSnapshot;
 import es.foco.next.log.UsageContrast;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -33,7 +28,7 @@ import java.util.Map;
  * observed numbers only.
  */
 public final class RegistroActivity extends Activity {
-    static final int SHOWN_DAYS = 30, EXPORT_30 = 30, EXPORT_90 = 90, MAX_APPS = 6;
+    static final int SHOWN_DAYS = 30, MAX_APPS = 6;
     private static final DateTimeFormatter DAY =
             DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", Locale.forLanguageTag("es"));
     private LinearLayout body;
@@ -98,14 +93,11 @@ public final class RegistroActivity extends Activity {
         LinearLayout days = Design.card(body, "Últimos " + SHOWN_DAYS + " días");
         Design.note(days, "Cargando el registro…");
         StabilityPermissions.card(body, this);
-        LinearLayout export = Design.card(body, "Exportar o borrar");
+        // v49: la exportación CSV se quitó: tu historial ya va cada noche a tu Drive (hoja y JSON).
+        LinearLayout export = Design.card(body, "Borrar el registro");
         Design.note(
                 export,
-                "CSV con cada evento (fecha, hora, tipo, app) y el contraste diario de tiempos. Nada sale del teléfono salvo que tú guardes el archivo.");
-        export.addView(
-                Design.button(this, "Exportar 30 días · CSV", false, () -> create(EXPORT_30)));
-        export.addView(
-                Design.button(this, "Exportar 90 días · CSV", false, () -> create(EXPORT_90)));
+                "Tu historial completo está en tu Drive (hoja «Foco · Historial») si lo conectaste.");
         export.addView(Design.button(this, "Borrar el registro", false, this::confirmClear));
 
         ObservedSnapshot snapshot = null;
@@ -190,50 +182,6 @@ public final class RegistroActivity extends Activity {
                 access
                         ? "Android cuenta como uso el tiempo en que la pausa de Foco cubre una app, por eso su cifra puede ser mayor. Foco no inventa tiempo si su servicio estuvo dormido: ahí Android puede mostrar más."
                         : "Concede Acceso de uso para comparar con el historial de Android.");
-    }
-
-    private void create(int days) {
-        try {
-            startActivityForResult(
-                    new Intent(Intent.ACTION_CREATE_DOCUMENT)
-                            .setType("text/csv")
-                            .addCategory(Intent.CATEGORY_OPENABLE)
-                            .putExtra(
-                                    Intent.EXTRA_TITLE,
-                                    "Foco-registro-" + days + "d-" + LocalDate.now() + ".csv"),
-                    days);
-        } catch (RuntimeException e) {
-            message(this, "No se pudo abrir el selector de archivos.");
-        }
-    }
-
-    @Override
-    protected void onActivityResult(int request, int result, Intent data) {
-        super.onActivityResult(request, result, data);
-        if (result != RESULT_OK
-                || data == null
-                || data.getData() == null
-                || (request != EXPORT_30 && request != EXPORT_90)) return;
-        Uri uri = data.getData();
-        Context app = getApplicationContext();
-        String from = LogRetention.firstDay(LocalDate.now(), request);
-        BlockLog.query(
-                this,
-                db -> {
-                    String csv =
-                            LogCsv.build(
-                                    db.events(from), db.usage(from), p -> AppPicker.label(app, p));
-                    try (OutputStream out = app.getContentResolver().openOutputStream(uri, "wt")) {
-                        if (out == null) throw new IOException("Sin destino");
-                        out.write(csv.getBytes(StandardCharsets.UTF_8));
-                    }
-                    return Boolean.TRUE;
-                },
-                ok -> message(app, "Registro exportado. Puedes abrirlo en una hoja de cálculo."),
-                () ->
-                        message(
-                                app,
-                                "No se pudo exportar el registro. El bloqueo no se ve afectado."));
     }
 
     private void confirmClear() {

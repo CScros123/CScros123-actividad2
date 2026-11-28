@@ -209,7 +209,7 @@ public final class BackupStore {
     }
 
     /**
-     * Trabajo de cada noche (cada 24 h, empezando a las ~23:30) con red y batería no baja, y
+     * Trabajo de cada noche (cada 24 h, empezando a las 21:00) con red y batería no baja, y
      * reintentos con espera creciente. Idempotente: se llama en cada arranque.
      */
     public static void schedule(Context c) {
@@ -222,8 +222,17 @@ public final class BackupStore {
                             .setInitialDelay(delay, TimeUnit.MINUTES)
                             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 15, TimeUnit.MINUTES)
                             .build();
+            // v49: si cambió la hora de envío (23:30 → 21:00), se vuelve a programar una vez.
+            String at = ReportQueue.SEND_AT.toString();
+            boolean moved = !at.equals(prefs(c).getString("hora_envio", ""));
             WorkManager.getInstance(c.getApplicationContext())
-                    .enqueueUniquePeriodicWork(WORK_NIGHTLY, ExistingPeriodicWorkPolicy.KEEP, w);
+                    .enqueueUniquePeriodicWork(
+                            WORK_NIGHTLY,
+                            moved
+                                    ? ExistingPeriodicWorkPolicy.CANCEL_AND_REENQUEUE
+                                    : ExistingPeriodicWorkPolicy.KEEP,
+                            w);
+            if (moved) prefs(c).edit().putString("hora_envio", at).apply();
         } catch (RuntimeException ignored) {
         }
     }
