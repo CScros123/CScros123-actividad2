@@ -71,12 +71,49 @@ final class DriveBackup {
             } catch (GoogleApi.HttpError e) {
                 if (e.code == 401) throw e;
             }
-        } else if (mood && tabs != null && !tabs.contains(SheetLayout.ANIMO)) {
-            pace();
-            GoogleApi.batchUpdate(token, sheet, SheetLayout.addMoodBody());
-            pace();
-            GoogleApi.valuesBatchUpdate(token, sheet, SheetLayout.moodHeadersBody());
+            BackupStore.prefs(c).edit().putInt("diseno", SheetLayout.DESIGN).apply();
+        } else {
+            boolean moodTab = tabs != null && tabs.contains(SheetLayout.ANIMO);
+            if (mood && !moodTab) {
+                pace();
+                GoogleApi.batchUpdate(token, sheet, SheetLayout.addMoodBody());
+                pace();
+                GoogleApi.valuesBatchUpdate(token, sheet, SheetLayout.moodHeadersBody());
+                moodTab = true;
+            }
+            // v47b: hoja creada con el diseño 1 (fórmulas que se movían al añadir filas y fecha
+            // sin formato): se reescriben el Panel y los encabezados y se da formato a la fecha.
+            if (BackupStore.prefs(c).getInt("diseno", 1) < SheetLayout.DESIGN) {
+                pace();
+                GoogleApi.valuesBatchUpdate(
+                        token, sheet, SheetLayout.headersAndPanelBody(moodTab));
+                pace();
+                GoogleApi.batchUpdate(token, sheet, SheetLayout.repairBody(moodTab));
+                BackupStore.prefs(c).edit().putInt("diseno", SheetLayout.DESIGN).apply();
+            }
         }
+    }
+
+    /**
+     * v47b: Google quita las series de un gráfico si se creó sin datos. Tras subir los días, los
+     * gráficos rotos o que falten se rehacen (si aún no hay datos, se vuelve a intentar mañana).
+     */
+    void fixCharts() throws Exception {
+        List<Object[]> charts = GoogleApi.charts(token, sheet, SheetLayout.ID_PANEL);
+        List<String> redo = new ArrayList<>();
+        List<Integer> delete = new ArrayList<>();
+        for (String title : SheetLayout.CHART_TITLES) {
+            boolean ok = false;
+            for (Object[] ch : charts)
+                if (title.equals(ch[1])) {
+                    if ((Integer) ch[2] > 0) ok = true;
+                    else delete.add((Integer) ch[0]);
+                }
+            if (!ok) redo.add(title);
+        }
+        if (redo.isEmpty()) return;
+        pace();
+        GoogleApi.batchUpdate(token, sheet, SheetLayout.chartsBody(redo, delete));
     }
 
     static String zone() {

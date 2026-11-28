@@ -63,6 +63,11 @@ public final class BackupWorker extends Worker {
                 BackupStore.setLastComplete(c, last);
                 sent = day;
             }
+            try {
+                up.fixCharts();
+            } catch (GoogleApi.HttpError e) {
+                if (e.code == 401) throw e; // los datos ya subieron; un gráfico no frena la copia
+            }
             if (sent != null) {
                 BackupStore.sent(c, sent, png);
                 InspectorLog.event(

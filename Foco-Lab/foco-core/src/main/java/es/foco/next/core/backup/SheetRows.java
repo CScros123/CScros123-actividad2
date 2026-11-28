@@ -46,6 +46,12 @@ public final class SheetRows {
     static String norm(String v) {
         if (v == null) return "";
         String s = v.trim();
+        // v47b: una fecha sin formato llega como número de serie de la hoja (46353 = 2026-11-27).
+        if (s.matches("\\d{5}(\\.\\d+)?")) {
+            long n = (long) Double.parseDouble(s);
+            if (n >= 20_000 && n <= 80_000)
+                return java.time.LocalDate.of(1899, 12, 30).plusDays(n).toString();
+        }
         return s.length() >= 10 && looksLikeDay(s.substring(0, 10)) ? s.substring(0, 10) : s;
     }
 

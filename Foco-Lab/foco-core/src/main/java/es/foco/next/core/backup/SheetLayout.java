@@ -337,7 +337,9 @@ public final class SheetLayout {
     /** Filas (0 = fila 1) de los bloques de datos que leen los gráficos. */
     static final int HELP_HEAD = 48, HELP_FIRST = 49, HOURS_ROW = 44;
 
-    static final String LAST = "MAX(Diario!$A$2:$A)";
+    // v47b: columnas enteras (Diario!$A:$A): añadir o borrar filas nunca mueve las referencias. El
+    // encabezado es texto y MAX, SUMIFS y VLOOKUP lo ignoran.
+    static final String LAST = "MAX(Diario!$A:$A)";
 
     /** Valores y fórmulas del Panel (USER_ENTERED), como lista de {rango, filas}. */
     public static List<Object[]> panelValues() {
@@ -362,21 +364,21 @@ public final class SheetLayout {
                                     "",
                                     "Rastreo bloqueado hoy"),
                             row(
-                                    "=IFERROR(VLOOKUP(" + LAST + ",Diario!$A$2:$I,3,FALSE),0)",
+                                    "=IFERROR(VLOOKUP(" + LAST + ",Diario!$A:$I,3,FALSE),0)",
                                     "",
-                                    "=IFERROR(VLOOKUP(" + LAST + ",Diario!$A$2:$I,5,FALSE),0)",
+                                    "=IFERROR(VLOOKUP(" + LAST + ",Diario!$A:$I,5,FALSE),0)",
                                     "",
-                                    "=IFERROR(VLOOKUP(" + LAST + ",Diario!$A$2:$I,9,FALSE),0)",
+                                    "=IFERROR(VLOOKUP(" + LAST + ",Diario!$A:$I,9,FALSE),0)",
                                     "",
                                     "=IF(MAX($B$45:$Y$45)=0,\"—\",TEXT(MATCH(MAX($B$45:$Y$45),$B$45:$Y$45,0)-1,\"00\")&\":00\")",
                                     "",
-                                    "=IFERROR(VLOOKUP(" + LAST + ",Diario!$A$2:$I,8,FALSE)/100,0)"))
+                                    "=IFERROR(VLOOKUP(" + LAST + ",Diario!$A:$I,8,FALSE)/100,0)"))
                 });
-        String thisWeek = "Diario!$A$2:$A,\">\"&(" + LAST + "-7)";
+        String thisWeek = "Diario!$A:$A,\">\"&(" + LAST + "-7)";
         String lastWeek =
-                "Diario!$A$2:$A,\">\"&("
+                "Diario!$A:$A,\">\"&("
                         + LAST
-                        + "-14),Diario!$A$2:$A,\"<=\"&("
+                        + "-14),Diario!$A:$A,\"<=\"&("
                         + LAST
                         + "-7)";
         out.add(
@@ -400,9 +402,9 @@ public final class SheetLayout {
             hoursSum.add(
                     "=SUMIFS('Por hora'!"
                             + col
-                            + "$2:"
+                            + ":"
                             + col
-                            + ",'Por hora'!$A$2:$A,\">=\"&("
+                            + ",'Por hora'!$A:$A,\">=\"&("
                             + LAST
                             + "-6))");
         }
@@ -415,9 +417,9 @@ public final class SheetLayout {
                     rows(
                             row("Fecha", "Invertido", "Ocio"),
                             row(
-                                    "=IFERROR(SORT(FILTER({Diario!$A$2:$A,Diario!$C$2:$C,Diario!$E$2:$E},Diario!$A$2:$A>"
+                                    "=IFERROR(SORT(FILTER({Diario!$A:$A,Diario!$C:$C,Diario!$E:$E},ISNUMBER(Diario!$A:$A),Diario!$A:$A>"
                                             + LAST
-                                            + "-14,Diario!$A$2:$A<>\"\"),1,TRUE),\"\")"))
+                                            + "-14),1,TRUE),\"\")"))
                 });
         List<List<Object>> weeks = new ArrayList<>();
         weeks.add(row("Semana desde", "Ocio (min)"));
@@ -426,9 +428,9 @@ public final class SheetLayout {
             weeks.add(
                     row(
                             "=" + LAST + "-" + (7 * (8 - k) + 6),
-                            "=SUMIFS(Diario!$E$2:$E,Diario!$A$2:$A,\">=\"&E"
+                            "=SUMIFS(Diario!$E:$E,Diario!$A:$A,\">=\"&E"
                                     + r
-                                    + ",Diario!$A$2:$A,\"<=\"&(E"
+                                    + ",Diario!$A:$A,\"<=\"&(E"
                                     + r
                                     + "+6))"));
         }
@@ -446,17 +448,20 @@ public final class SheetLayout {
         return out;
     }
 
+    /** Top 5 de los últimos 7 días. FILTER quita el encabezado (solo filas con fecha). */
     static String top(String tab) {
-        return "=IFERROR(QUERY("
+        return "=IFERROR(QUERY(FILTER("
                 + tab
-                + "!$A$2:$C,\"select B, sum(C) where A >= date '\"&TEXT("
+                + "!$A:$C,ISNUMBER("
+                + tab
+                + "!$A:$A)),\"select Col2, sum(Col3) where Col1 >= date '\"&TEXT("
                 + LAST
-                + "-6,\"yyyy-mm-dd\")&\"' group by B order by sum(C) desc limit 5 label sum(C) ''\",0),\"\")";
+                + "-6,\"yyyy-mm-dd\")&\"' group by Col2 order by sum(Col3) desc limit 5 label sum(Col3) ''\",0),\"\")";
     }
 
     private static List<Object> weekRow(String label, String col, String thisWeek, String lastWeek) {
-        String a = "SUMIFS(Diario!$" + col + "$2:$" + col + "," + thisWeek + ")";
-        String b = "SUMIFS(Diario!$" + col + "$2:$" + col + "," + lastWeek + ")";
+        String a = "SUMIFS(Diario!$" + col + ":$" + col + "," + thisWeek + ")";
+        String b = "SUMIFS(Diario!$" + col + ":$" + col + "," + lastWeek + ")";
         return row(label, "=" + a, "=" + b, "=" + a + "-" + b);
     }
 
@@ -634,7 +639,27 @@ public final class SheetLayout {
                                                 .put("bold", true)
                                                 .put("foregroundColorStyle", color(HEADER))),
                         "userEnteredFormat.textFormat"));
-        // Gráficos (leen los bloques de abajo, que leen las otras pestañas).
+        r.addAll(charts());
+        return r;
+    }
+
+    /** Títulos de los cuatro gráficos del Panel (así se reconocen para repararlos). */
+    public static final String[] CHART_TITLES = {
+        "Invertido vs ocio (últimos 14 días)",
+        "Ocio por semana",
+        "Top apps de ocio (7 días)",
+        "Top rastreadores bloqueados (7 días)"
+    };
+
+    /**
+     * Versión del diseño. v47b (2): fórmulas con columnas enteras, filas nuevas sin insertar y
+     * fecha con formato; las hojas creadas antes se reparan solas.
+     */
+    public static final int DESIGN = 2;
+
+    /** Los cuatro gráficos (leen los bloques de abajo del Panel, que leen las otras pestañas). */
+    static List<Json.Obj> charts() {
+        List<Json.Obj> r = new ArrayList<>();
         r.add(
                 chart(
                         "Invertido vs ocio (últimos 14 días)",
@@ -675,6 +700,29 @@ public final class SheetLayout {
                         27,
                         6));
         return r;
+    }
+
+    /**
+     * Google quita las series de un gráfico si al crearlo no había datos. Este batchUpdate borra los
+     * gráficos rotos ({@code deleteIds}) y vuelve a crear los que falten o estaban rotos ({@code
+     * titles}).
+     */
+    public static String chartsBody(List<String> titles, List<Integer> deleteIds) {
+        Json.Arr req = new Json.Arr();
+        for (Integer id : deleteIds)
+            req.add(Json.obj().put("deleteEmbeddedObject", Json.obj().put("objectId", id)));
+        List<Json.Obj> all = charts();
+        for (int i = 0; i < CHART_TITLES.length; i++)
+            if (titles.contains(CHART_TITLES[i])) req.add(all.get(i));
+        return Json.obj().put("requests", req).toString();
+    }
+
+    /** Reparación de hojas creadas con el diseño 1: la fecha con formato AAAA-MM-DD. */
+    public static String repairBody(boolean mood) {
+        Json.Arr req = new Json.Arr();
+        for (String tab : DATA_TABS) req.add(numberFormat(idOf(tab), 0, 1, "DATE", "yyyy-mm-dd"));
+        if (mood) req.add(numberFormat(ID_ANIMO, 0, 1, "DATE", "yyyy-mm-dd"));
+        return Json.obj().put("requests", req).toString();
     }
 
     static Json.Obj chart(

@@ -281,9 +281,50 @@ public final class GoogleApi {
                         + enc(id)
                         + "/values/"
                         + enc(range)
-                        + ":append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS",
+                        + ":append?valueInputOption=USER_ENTERED&insertDataOption=OVERWRITE",
                 token,
                 body);
+    }
+
+    /**
+     * v47b: gráficos del Panel → {id, título, número de series}. Google quita las series de un
+     * gráfico creado sin datos; así se detectan para rehacerlos.
+     */
+    static List<Object[]> charts(String token, String id, int sheetId) throws Exception {
+        JSONObject o =
+                new JSONObject(
+                        json(
+                                "GET",
+                                SHEETS
+                                        + "/"
+                                        + enc(id)
+                                        + "?fields="
+                                        + enc(
+                                                "sheets(properties.sheetId,charts(chartId,spec(title,basicChart.series)))"),
+                                token,
+                                null));
+        List<Object[]> out = new ArrayList<>();
+        JSONArray sheets = o.optJSONArray("sheets");
+        if (sheets == null) return out;
+        for (int i = 0; i < sheets.length(); i++) {
+            JSONObject sh = sheets.getJSONObject(i);
+            JSONObject props = sh.optJSONObject("properties");
+            if (props == null || props.optInt("sheetId", -1) != sheetId) continue;
+            JSONArray charts = sh.optJSONArray("charts");
+            if (charts == null) continue;
+            for (int j = 0; j < charts.length(); j++) {
+                JSONObject ch = charts.getJSONObject(j);
+                JSONObject spec = ch.optJSONObject("spec");
+                String title = spec == null ? "" : spec.optString("title", "");
+                JSONObject basic = spec == null ? null : spec.optJSONObject("basicChart");
+                JSONArray series = basic == null ? null : basic.optJSONArray("series");
+                out.add(
+                        new Object[] {
+                            ch.optInt("chartId"), title, series == null ? 0 : series.length()
+                        });
+            }
+        }
+        return out;
     }
 
     /** Columna A tal como se ve (la fila 0 es el encabezado). */

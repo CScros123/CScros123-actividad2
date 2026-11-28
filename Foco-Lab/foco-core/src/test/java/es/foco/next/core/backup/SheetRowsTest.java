@@ -27,6 +27,29 @@ public class SheetRowsTest {
     }
 
     @Test
+    public void laFechaComoNumeroDeSerieTambienCuenta() {
+        // Así llegaron las dos filas repetidas del 27 en la primera hoja (fecha sin formato).
+        List<int[]> del = SheetRows.rowsOf(List.of("Fecha", "46353", "46353"), "2026-11-27");
+        assertEquals(1, del.size());
+        assertArrayEquals(new int[] {1, 3}, del.get(0));
+    }
+
+    @Test
+    public void lasFormulasNoSeMuevenAlAnadirFilas() {
+        String panel = SheetLayout.headersAndPanelBody(false);
+        // Columnas enteras: nada de rangos que empiecen en la fila 2.
+        assertTrue(!panel.contains("$2:"));
+        assertTrue(panel.contains("MAX(Diario!$A:$A)"));
+        String redo =
+                SheetLayout.chartsBody(
+                        List.of(SheetLayout.CHART_TITLES[0], SheetLayout.CHART_TITLES[3]),
+                        List.of(11, 22));
+        assertEquals(2, redo.split("\"deleteEmbeddedObject\"").length - 1);
+        assertEquals(2, redo.split("\"addChart\"").length - 1);
+        assertTrue(SheetLayout.repairBody(true).contains("yyyy-mm-dd"));
+    }
+
+    @Test
     public void tramosDelUltimoAlPrimero() {
         List<int[]> del = SheetRows.olderThan(List.of("Fecha", "2026-10-01", "2026-10-02", "2026-11-01"), "2026-10-29");
         assertArrayEquals(new int[] {1, 3}, del.get(0));
