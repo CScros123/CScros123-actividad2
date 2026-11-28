@@ -20,7 +20,8 @@ public class ReportQueueTest {
         for (LocalDate d : p) last = ReportQueue.advance(last, d, D.plusDays(4));
         // El de hoy aún no está cerrado: se vuelve a subir mañana.
         assertEquals(D.plusDays(3), last);
-        assertEquals(List.of(D.plusDays(4), D.plusDays(5)), ReportQueue.pending(last, D.plusDays(5), D));
+        assertEquals(
+                List.of(D.plusDays(4), D.plusDays(5)), ReportQueue.pending(last, D.plusDays(5), D));
     }
 
     @Test

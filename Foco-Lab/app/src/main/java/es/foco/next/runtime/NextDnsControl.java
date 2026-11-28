@@ -130,12 +130,11 @@ public final class NextDnsControl {
                     NextDnsApi.actives(NextDnsApi.get(base + NextDnsPlan.SERVICES_PATH, key));
             java.util.Map<String, Boolean> deny =
                     NextDnsApi.actives(NextDnsApi.get(base + NextDnsPlan.DENYLIST_PATH, key));
-            Set<String> unsupported = new HashSet<>(p.getStringSet("no_admitidos", new HashSet<>()));
+            Set<String> unsupported =
+                    new HashSet<>(p.getStringSet("no_admitidos", new HashSet<>()));
             List<NextDnsPlan.Op> ops = NextDnsPlan.diff(block, services, deny);
             ops.removeIf(
-                    o ->
-                            o.list.equals(NextDnsPlan.SERVICES_PATH)
-                                    && unsupported.contains(o.id));
+                    o -> o.list.equals(NextDnsPlan.SERVICES_PATH) && unsupported.contains(o.id));
             boolean outside = NextDnsPlan.changedOutside(ops, p.getString("aplicado", ""), block);
             int done = 0;
             for (NextDnsPlan.Op o : ops) {
@@ -165,7 +164,9 @@ public final class NextDnsControl {
                     .putStringSet("no_admitidos", unsupported)
                     .putString(
                             "estado",
-                            (block ? "Redes bloqueadas por servicio" : "Redes sin bloqueo por servicio")
+                            (block
+                                            ? "Redes bloqueadas por servicio"
+                                            : "Redes sin bloqueo por servicio")
                                     + " · Telegram bloqueado")
                     .apply();
             // Alguien lo cambió desde la web: ya quedó como debe. Se apunta, sin culpa.

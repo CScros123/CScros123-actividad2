@@ -8,8 +8,8 @@ import java.util.List;
  * colores, fórmulas del Panel y gráficos. La app la crea una vez y cada noche solo añade filas; el
  * diseño no se vuelve a tocar.
  *
- * <p>La hoja usa el idioma en_US para que las fórmulas se lean siempre igual (coma como separador
- * y funciones en inglés); las fechas se muestran como AAAA-MM-DD.
+ * <p>La hoja usa el idioma en_US para que las fórmulas se lean siempre igual (coma como separador y
+ * funciones en inglés); las fechas se muestran como AAAA-MM-DD.
  */
 public final class SheetLayout {
     private SheetLayout() {}
@@ -23,7 +23,6 @@ public final class SheetLayout {
             RASTREADORES = "Rastreadores",
             EVENTOS = "Eventos",
             ANIMO = "Ánimo";
-
     public static final int ID_PANEL = 1,
             ID_DIARIO = 2,
             ID_POR_HORA = 3,
@@ -58,7 +57,9 @@ public final class SheetLayout {
     };
     public static final String[] APPS_HEAD = {"Fecha", "App", "Minutos"};
     public static final String[] RASTREADORES_HEAD = {"Fecha", "Dominio", "Bloqueos"};
-    public static final String[] EVENTOS_HEAD = {"Fecha", "Hora", "Tipo", "App", "Valor", "Detalle"};
+    public static final String[] EVENTOS_HEAD = {
+        "Fecha", "Hora", "Tipo", "App", "Valor", "Detalle"
+    };
     public static final String[] ANIMO_HEAD = {"Fecha", "Media (1-5)", "Respuestas"};
 
     static String[] porHoraHead() {
@@ -240,14 +241,20 @@ public final class SheetLayout {
                                                 .put(
                                                         "rowProperties",
                                                         Json.obj()
-                                                                .put("headerColorStyle", color(HEADER))
-                                                                .put("firstBandColorStyle", color(WHITE))
+                                                                .put(
+                                                                        "headerColorStyle",
+                                                                        color(HEADER))
+                                                                .put(
+                                                                        "firstBandColorStyle",
+                                                                        color(WHITE))
                                                                 .put(
                                                                         "secondBandColorStyle",
                                                                         color(BAND)))));
     }
 
-    /** Formato de una pestaña de datos: encabezado verde con texto blanco, filas alternas, anchos. */
+    /**
+     * Formato de una pestaña de datos: encabezado verde con texto blanco, filas alternas, anchos.
+     */
     static List<Json.Obj> dataTab(String tab) {
         int id = idOf(tab);
         String[] head = head(tab);
@@ -314,22 +321,34 @@ public final class SheetLayout {
                                                                 .put(
                                                                         "minpoint",
                                                                         Json.obj()
-                                                                                .put("colorStyle", color(BAND))
-                                                                                .put("type", "NUMBER")
+                                                                                .put(
+                                                                                        "colorStyle",
+                                                                                        color(BAND))
+                                                                                .put(
+                                                                                        "type",
+                                                                                        "NUMBER")
                                                                                 .put("value", "0"))
                                                                 .put(
                                                                         "midpoint",
                                                                         Json.obj()
                                                                                 .put(
                                                                                         "colorStyle",
-                                                                                        color(GREEN_LIGHT))
-                                                                                .put("type", "PERCENTILE")
+                                                                                        color(
+                                                                                                GREEN_LIGHT))
+                                                                                .put(
+                                                                                        "type",
+                                                                                        "PERCENTILE")
                                                                                 .put("value", "50"))
                                                                 .put(
                                                                         "maxpoint",
                                                                         Json.obj()
-                                                                                .put("colorStyle", color(HEADER))
-                                                                                .put("type", "MAX")))));
+                                                                                .put(
+                                                                                        "colorStyle",
+                                                                                        color(
+                                                                                                HEADER))
+                                                                                .put(
+                                                                                        "type",
+                                                                                        "MAX")))));
     }
 
     // ---------------- Panel ----------------
@@ -376,11 +395,7 @@ public final class SheetLayout {
                 });
         String thisWeek = "Diario!$A:$A,\">\"&(" + LAST + "-7)";
         String lastWeek =
-                "Diario!$A:$A,\">\"&("
-                        + LAST
-                        + "-14),Diario!$A:$A,\"<=\"&("
-                        + LAST
-                        + "-7)";
+                "Diario!$A:$A,\">\"&(" + LAST + "-14),Diario!$A:$A,\"<=\"&(" + LAST + "-7)";
         out.add(
                 new Object[] {
                     "A6",
@@ -435,15 +450,10 @@ public final class SheetLayout {
                                     + "+6))"));
         }
         out.add(new Object[] {"E49", weeks});
+        out.add(new Object[] {"H49", rows(row("App", "Minutos (7 días)"), row(top("Apps")))});
         out.add(
                 new Object[] {
-                    "H49",
-                    rows(row("App", "Minutos (7 días)"), row(top("Apps")))
-                });
-        out.add(
-                new Object[] {
-                    "K49",
-                    rows(row("Rastreador", "Bloqueos (7 días)"), row(top("Rastreadores")))
+                    "K49", rows(row("Rastreador", "Bloqueos (7 días)"), row(top("Rastreadores")))
                 });
         return out;
     }
@@ -459,7 +469,8 @@ public final class SheetLayout {
                 + "-6,\"yyyy-mm-dd\")&\"' group by Col2 order by sum(Col3) desc limit 5 label sum(Col3) ''\",0),\"\")";
     }
 
-    private static List<Object> weekRow(String label, String col, String thisWeek, String lastWeek) {
+    private static List<Object> weekRow(
+            String label, String col, String thisWeek, String lastWeek) {
         String a = "SUMIFS(Diario!$" + col + ":$" + col + "," + thisWeek + ")";
         String b = "SUMIFS(Diario!$" + col + ":$" + col + "," + lastWeek + ")";
         return row(label, "=" + a, "=" + b, "=" + a + "-" + b);
@@ -703,9 +714,9 @@ public final class SheetLayout {
     }
 
     /**
-     * Google quita las series de un gráfico si al crearlo no había datos. Este batchUpdate borra los
-     * gráficos rotos ({@code deleteIds}) y vuelve a crear los que falten o estaban rotos ({@code
-     * titles}).
+     * Google quita las series de un gráfico si al crearlo no había datos. Este batchUpdate borra
+     * los gráficos rotos ({@code deleteIds}) y vuelve a crear los que falten o estaban rotos
+     * ({@code titles}).
      */
     public static String chartsBody(List<String> titles, List<Integer> deleteIds) {
         Json.Arr req = new Json.Arr();
@@ -768,7 +779,8 @@ public final class SheetLayout {
                                                                         Json.obj()
                                                                                 .put(
                                                                                         "sources",
-                                                                                        Json.arr(domain))))))
+                                                                                        Json.arr(
+                                                                                                domain))))))
                         .put("series", s);
         return Json.obj()
                 .put(
@@ -792,11 +804,21 @@ public final class SheetLayout {
                                                                                 .put(
                                                                                         "anchorCell",
                                                                                         Json.obj()
-                                                                                                .put("sheetId", ID_PANEL)
-                                                                                                .put("rowIndex", anchorRow)
-                                                                                                .put("columnIndex", anchorCol))
-                                                                                .put("widthPixels", 600)
-                                                                                .put("heightPixels", 310)))));
+                                                                                                .put(
+                                                                                                        "sheetId",
+                                                                                                        ID_PANEL)
+                                                                                                .put(
+                                                                                                        "rowIndex",
+                                                                                                        anchorRow)
+                                                                                                .put(
+                                                                                                        "columnIndex",
+                                                                                                        anchorCol))
+                                                                                .put(
+                                                                                        "widthPixels",
+                                                                                        600)
+                                                                                .put(
+                                                                                        "heightPixels",
+                                                                                        310)))));
     }
 
     /** batchUpdate del diseño (una sola vez, tras crear la hoja). */
@@ -819,7 +841,8 @@ public final class SheetLayout {
     /** values:batchUpdate con encabezados y Panel (USER_ENTERED, para que las fórmulas valgan). */
     public static String headersAndPanelBody(boolean mood) {
         Json.Arr data = new Json.Arr();
-        for (String tab : DATA_TABS) data.add(valueRange(a1(tab, "A1"), rows(row((Object[]) head(tab)))));
+        for (String tab : DATA_TABS)
+            data.add(valueRange(a1(tab, "A1"), rows(row((Object[]) head(tab)))));
         if (mood) data.add(valueRange(a1(ANIMO, "A1"), rows(row((Object[]) ANIMO_HEAD))));
         for (Object[] p : panelValues()) {
             @SuppressWarnings("unchecked")

@@ -27,7 +27,9 @@ public class DayReportTest {
         r.add(new DayReport.Row("intento_panel_nextdns", "", 23, 0, 1, 0, ""));
         r.add(new DayReport.Row("incidente", "", 23, 0, 1, 0, "vpn"));
         r.add(new DayReport.Row("modo_cambiado", "", 14, 0, 0, 0, "de=NORMAL;a=ENFOQUE;motivo=x"));
-        r.add(new DayReport.Row("modo_cambiado", "", 16, 0, 0, 0, "de=ENFOQUE;a=NORMAL;motivo=fin"));
+        r.add(
+                new DayReport.Row(
+                        "modo_cambiado", "", 16, 0, 0, 0, "de=ENFOQUE;a=NORMAL;motivo=fin"));
         r.add(new DayReport.Row("animo", "", 8, 0, 1, 4, "inicio:bien"));
         return r;
     }
@@ -74,8 +76,7 @@ public class DayReportTest {
                     "\"pct_bloqueado\":12.5",
                     "\"top_rastreadores\":[{\"dominio\":\"app-measurement.com\",\"bloqueos\":90}]",
                     "\"actividad_redes\":{\"tiktok\":7"
-                })
-            assertTrue(k + " en " + j, j.contains(k));
+                }) assertTrue(k + " en " + j, j.contains(k));
         // Lo invertido va antes que el ocio.
         assertTrue(j.indexOf("invertido_min") < j.indexOf("ocio_min"));
     }
@@ -120,7 +121,8 @@ public class DayReportTest {
         List<DayReport.Row> rows = sample();
         // Aunque la clave llegara a un detalle por error, lo exportado la oculta.
         rows.add(new DayReport.Row("incidente", "", 23, 0, 1, 0, "fallo X-Api-Key: " + KEY));
-        DayReport d = DayReport.build(LocalDate.of(2026, 11, 28), rows, false, p -> p, "", 28, false);
+        DayReport d =
+                DayReport.build(LocalDate.of(2026, 11, 28), rows, false, p -> p, "", 28, false);
         String out = Secrets.redact(d.toJson(false), KEY);
         assertFalse(out.contains(KEY));
         assertFalse(Secrets.leaks(out, KEY));

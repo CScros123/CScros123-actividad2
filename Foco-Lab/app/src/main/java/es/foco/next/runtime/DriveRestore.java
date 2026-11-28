@@ -10,9 +10,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
- * v47: «Recuperar historial desde Drive». Al reinstalar (base local vacía y Drive conectado) lee los
- * JSON de Foco/Reportes y reconstruye los resúmenes diarios del registro: tiempo invertido y de ocio
- * por app, retos y minutos. No pisa nada que ya exista. Hilo de fondo.
+ * v47: «Recuperar historial desde Drive». Al reinstalar (base local vacía y Drive conectado) lee
+ * los JSON de Foco/Reportes y reconstruye los resúmenes diarios del registro: tiempo invertido y de
+ * ocio por app, retos y minutos. No pisa nada que ya exista. Hilo de fondo.
  */
 public final class DriveRestore {
     private DriveRestore() {}
@@ -119,8 +119,7 @@ public final class DriveRestore {
         if (won > 0)
             out.add(new LogDatabase.InspectorRow(day, -1, "minutos_ganados", "", 0, 0, won, ""));
         if (spent > 0)
-            out.add(
-                    new LogDatabase.InspectorRow(day, -1, "minutos_gastados", "", 0, 0, spent, ""));
+            out.add(new LogDatabase.InspectorRow(day, -1, "minutos_gastados", "", 0, 0, spent, ""));
         return true;
     }
 

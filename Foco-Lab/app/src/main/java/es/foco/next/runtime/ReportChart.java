@@ -92,8 +92,7 @@ final class ReportChart {
 
         // 4) Top 5 rastreadores bloqueados.
         y = card(k, p, bold, "Rastreadores bloqueados", y, 460);
-        if (d.nextDns == null)
-            note(k, p, text, "Sin datos de NextDNS para este día.", y);
+        if (d.nextDns == null) note(k, p, text, "Sin datos de NextDNS para este día.", y);
         else list(k, p, text, bold, d.nextDns.trackers, 5, DARK, y, "", "Nada bloqueado hoy.");
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();

@@ -80,7 +80,12 @@ public final class BackupWorker extends Worker {
             if (sent != null) {
                 BackupStore.sent(c, sent, png);
                 InspectorLog.event(
-                        c, InspectorLog.RESPALDO, "", n, "ok:" + sent, "respaldo|" + sent + "|" + System.currentTimeMillis() / 3_600_000L);
+                        c,
+                        InspectorLog.RESPALDO,
+                        "",
+                        n,
+                        "ok:" + sent,
+                        "respaldo|" + sent + "|" + System.currentTimeMillis() / 3_600_000L);
             }
             if (days.size() > MAX_PER_RUN) more(c);
             else BackupNotifier.done(c);

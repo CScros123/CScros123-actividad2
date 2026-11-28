@@ -14,10 +14,10 @@ import java.util.function.Consumer;
 
 /**
  * v47: permiso de Google Drive con Google Identity Services (AuthorizationClient). Solo se pide
- * {@code drive.file}: Foco ve únicamente los archivos que él mismo crea (la carpeta Foco y la hoja).
- * No hay claves ni secretos de Google en el APK: Google reconoce la app por su paquete y la huella
- * SHA-1 de la llave de firma (se registran una vez en Google Cloud). El token nunca se guarda ni se
- * escribe en el log: se pide cada vez y lo cachea Google Play Services.
+ * {@code drive.file}: Foco ve únicamente los archivos que él mismo crea (la carpeta Foco y la
+ * hoja). No hay claves ni secretos de Google en el APK: Google reconoce la app por su paquete y la
+ * huella SHA-1 de la llave de firma (se registran una vez en Google Cloud). El token nunca se
+ * guarda ni se escribe en el log: se pide cada vez y lo cachea Google Play Services.
  */
 public final class GoogleDrive {
     private GoogleDrive() {}

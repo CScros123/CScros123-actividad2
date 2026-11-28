@@ -162,11 +162,13 @@ public final class GoogleApi {
 
     /** Archivos de una carpeta (id → nombre). */
     static Map<String, String> children(String token, String folder) throws Exception {
-        return list(token, q(folder) + " in parents and trashed=false and mimeType!='" + FOLDER + "'");
+        return list(
+                token, q(folder) + " in parents and trashed=false and mimeType!='" + FOLDER + "'");
     }
 
     static Map<String, String> subfolders(String token, String folder) throws Exception {
-        return list(token, q(folder) + " in parents and trashed=false and mimeType='" + FOLDER + "'");
+        return list(
+                token, q(folder) + " in parents and trashed=false and mimeType='" + FOLDER + "'");
     }
 
     /**
@@ -175,11 +177,17 @@ public final class GoogleApi {
      */
     static String put(String token, String folder, String name, String mime, byte[] data)
             throws Exception {
-        String[] same = es.foco.next.core.backup.SheetRows.replaceTarget(children(token, folder), name);
+        String[] same =
+                es.foco.next.core.backup.SheetRows.replaceTarget(children(token, folder), name);
         for (int i = 1; i < same.length; i++) delete(token, same[i]);
         if (same.length > 0) {
             try {
-                call("PATCH", UPLOAD + "/" + same[0] + "?uploadType=media&fields=id", token, mime, data);
+                call(
+                        "PATCH",
+                        UPLOAD + "/" + same[0] + "?uploadType=media&fields=id",
+                        token,
+                        mime,
+                        data);
                 return same[0];
             } catch (HttpError e) {
                 if (e.code == 401) throw e;
@@ -226,7 +234,8 @@ public final class GoogleApi {
 
     static byte[] download(String token, String id) throws Exception {
         HttpURLConnection h =
-                (HttpURLConnection) new URL(DRIVE + "files/" + enc(id) + "?alt=media").openConnection();
+                (HttpURLConnection)
+                        new URL(DRIVE + "files/" + enc(id) + "?alt=media").openConnection();
         try {
             h.setConnectTimeout(15_000);
             h.setReadTimeout(30_000);

@@ -24,9 +24,7 @@ final class BackupNotifier {
     static final int ID = 7471;
 
     static void done(Context c) {
-        int i =
-                BackupLines.pick(
-                        BackupStore.recentLines(c), RoutineStore.today().getDayOfYear());
+        int i = BackupLines.pick(BackupStore.recentLines(c), RoutineStore.today().getDayOfYear());
         BackupStore.usedLine(c, i);
         String sheet = BackupStore.sheetUrl(c), chart = BackupStore.chartUrl(c);
         Notification.Builder b = base(c, BackupLines.DONE[i]);
@@ -107,7 +105,9 @@ final class BackupNotifier {
             NotificationManager nm = app.getSystemService(NotificationManager.class);
             NotificationChannel ch =
                     new NotificationChannel(
-                            CHANNEL, "Copia nocturna en Drive", NotificationManager.IMPORTANCE_DEFAULT);
+                            CHANNEL,
+                            "Copia nocturna en Drive",
+                            NotificationManager.IMPORTANCE_DEFAULT);
             nm.createNotificationChannel(ch);
             // En llamada o No molestar: el mismo aviso por un canal silencioso (sin sonido ni
             // vibración). Notification.Builder no tiene setSilent; eso es de NotificationCompat.
