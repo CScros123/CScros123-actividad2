@@ -1,0 +1,16 @@
+LICENCIA PERSONAL — BRAIN TRAINING PERSONAL EDITION
+Autor / titular designado: qqq. Versión: 1.0.0. Fecha: 2026.
+
+En la medida en que existan derechos aplicables sobre los materiales originales
+específicos de este proyecto, se reservan para el uso y control de qqq. qqq puede
+usar, estudiar, modificar, compilar, firmar, instalar y respaldar estos materiales.
+No se concede a otras personas permiso para vender o redistribuir los materiales
+originales, salvo permiso de qqq o lo permitido por la ley aplicable.
+
+Las bibliotecas y materiales de terceros conservan sus licencias y titulares.
+Esta licencia no transfiere su propiedad ni restringe los derechos que otorgan
+sus licencias. No se garantiza exclusividad ni protección por copyright para
+todos los elementos asistidos por IA. Consulta THIRD-PARTY-NOTICES.md.
+
+Herramienta de práctica personal, sin diagnóstico ni garantías de mejora
+cognitiva. Se proporciona sin garantías en la medida permitida por la ley.

@@ -1,0 +1,6 @@
+pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+rootProject.name = 'Foco'
+// Fase 1 (plan Foco + Lab): un solo Gradle.
+// :foco-core = core de Foco (Java puro). :lab-* y :lab = Cognitive Lab Arcade 2.1 como bibliotecas.
+include ':foco-core', ':lab-core', ':lab-data', ':lab-design', ':lab', ':app'

@@ -1,0 +1,8 @@
+<resources>
+<string name="app_name">Foco</string>
+<string name="duration_minutes">%1$d min %2$d s</string>
+<string name="choose_apps">Elegir apps de ocio</string>
+<string name="choose_one_app">Elegir mi siguiente paso</string>
+<string name="save">Guardar</string><string name="cancel">Cancelar</string>
+<string name="accessibility_description">Foco usa cambios de ventana para medir el tiempo en tus apps elegidas y bloquearlas tras 5 minutos por hora. Normalmente solo consulta el paquete de la ventana, sin leer mensajes ni vídeos. Si un bloqueo tiene sitios web o palabras clave, lee la barra de direcciones de los navegadores compatibles y, solo si hay palabras clave, los textos visibles de la página en esos navegadores, para mostrar la pausa; no guarda lo que lee (el registro solo apunta la hora, el navegador y «web»). Si un bloqueo frena las compras, lee los textos de Google Play para cerrar la hoja de pago. En YouTube, Instagram, Facebook y Snapchat, solo cuando un bloqueo de secciones está activo, lee los identificadores de vista y las descripciones de los elementos en pantalla para detectar Shorts, Reels o Spotlight y volver atrás; no guarda nada (el registro solo apunta la hora, la app y la sección). Con el Modo estricto activado, durante un bloqueo o mientras dure su candado, lee los textos de la pantalla dentro de Ajustes y del instalador de apps para cerrar las pantallas que desinstalarían o desactivarían Foco. No guarda nada de lo que lee. Guarda solo en el teléfono un registro de bloqueos e intentos (hora y app) que puedes ver, exportar o borrar en Registro. Las llamadas, Inicio, Ajustes y bancos reconocidos siguen disponibles. Android conserva el control de este permiso.</string>
+</resources>

@@ -1,0 +1,12 @@
+<resources>
+ <!-- Tema propio de LabActivity (biblioteca :lab). Prefijo lab_ para no chocar con AppTheme de Foco. -->
+ <color name="lab_window_background">#171A21</color>
+ <color name="lab_accent">#3667FF</color>
+ <style name="lab_Theme" parent="android:style/Theme.Material.Light.NoActionBar">
+  <item name="android:fontFamily">sans</item>
+  <item name="android:windowLightStatusBar">false</item>
+  <item name="android:windowActionModeOverlay">true</item>
+  <item name="android:windowBackground">@color/lab_window_background</item>
+  <item name="android:colorAccent">@color/lab_accent</item>
+ </style>
+</resources>

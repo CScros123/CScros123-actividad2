@@ -1,0 +1,8 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+ <!-- Unico permiso que aporta :lab (vibracion de los juegos). Regla 2 del plan. -->
+ <uses-permission android:name="android.permission.VIBRATE"/>
+ <application>
+  <!-- Sin launcher ni atributos de application: los pone :app (Foco). Recordatorio de Lab desactivado (sin receivers). -->
+  <activity android:name=".LabActivity" android:exported="false" android:theme="@style/lab_Theme"/>
+ </application>
+</manifest>

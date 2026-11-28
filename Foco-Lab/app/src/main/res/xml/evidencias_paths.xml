@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Solo la foto temporal de la cámara (caché). Las evidencias comprimidas viven en files/evidencias y no se comparten. -->
+<paths>
+    <cache-path name="camara" path="camara/" />
+</paths>

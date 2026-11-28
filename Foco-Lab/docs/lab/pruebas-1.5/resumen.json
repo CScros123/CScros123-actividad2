@@ -1,0 +1,268 @@
+{
+  "version": "1.5.0",
+  "date": "2026-10-28",
+  "suites": [
+    {
+      "module": "core",
+      "name": "personal.qqq.braintraining.core.EvaluationTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "latestModeDeterminesComparisonRatherThanAnOlderAvailableGroup",
+          "seconds": 0.018
+        },
+        {
+          "name": "falseStartsTakePriorityInAdvice",
+          "seconds": 0.006
+        },
+        {
+          "name": "longPracticeIsNotTruncatedAtTwoMinutes",
+          "seconds": 0.001
+        },
+        {
+          "name": "insufficientAndLegacyEvidenceDoesNotProduceComparison",
+          "seconds": 0.0
+        },
+        {
+          "name": "excludesOtherLevelsAndModesAndSortsHistory",
+          "seconds": 0.001
+        },
+        {
+          "name": "separatesMistakesFromTimingFailures",
+          "seconds": 0.002
+        }
+      ]
+    },
+    {
+      "module": "core",
+      "name": "personal.qqq.braintraining.core.EventsTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "realApplicationIsNeededForItsReward",
+          "seconds": 0.029
+        },
+        {
+          "name": "repeatedEvidenceCannotDuplicateXp",
+          "seconds": 0.002
+        },
+        {
+          "name": "periodsAreStableAndRotateWithoutErasingRewards",
+          "seconds": 0.001
+        },
+        {
+          "name": "weeklyGoalsUseDistinctDaysAndCompletedSessions",
+          "seconds": 0.001
+        },
+        {
+          "name": "timezoneAndFirstShortWeekAreCorrect",
+          "seconds": 0.004
+        }
+      ]
+    },
+    {
+      "module": "core",
+      "name": "personal.qqq.braintraining.core.MathGamesTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "newProblemsHaveCorrectAnswersAndUniqueChoices",
+          "seconds": 0.39
+        },
+        {
+          "name": "arithmeticHonorsOrderAndDivision",
+          "seconds": 0.013
+        },
+        {
+          "name": "practicalSuggestionsHandleEveryDate",
+          "seconds": 0.002
+        }
+      ]
+    },
+    {
+      "module": "core",
+      "name": "personal.qqq.braintraining.core.RulesTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "adaptation",
+          "seconds": 0.0
+        },
+        {
+          "name": "statistics",
+          "seconds": 0.001
+        },
+        {
+          "name": "generators",
+          "seconds": 0.076
+        },
+        {
+          "name": "clampsAndTiming",
+          "seconds": 0.0
+        }
+      ]
+    },
+    {
+      "module": "core",
+      "name": "personal.qqq.braintraining.core.VisualGamesTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "orbitUsesTheEightVisibleNodesAndGrowsGradually",
+          "seconds": 0.004
+        },
+        {
+          "name": "balanceCanBeSolvedFromTheDisplayedEquation",
+          "seconds": 0.03
+        },
+        {
+          "name": "compassObeysBothRulesAndEveryDirection",
+          "seconds": 0.006
+        }
+      ]
+    },
+    {
+      "module": "app",
+      "name": "personal.qqq.braintraining.ExperienceFeedbackTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "hiddenOrUnfocusedWindowNeverProducesEffects",
+          "seconds": 4.979
+        },
+        {
+          "name": "silenceVibrateAndDoNotDisturbSuppressSounds",
+          "seconds": 0.091
+        },
+        {
+          "name": "eachCueUsesItsOwnShortNonLoopingSound",
+          "seconds": 0.101
+        },
+        {
+          "name": "soundAndHapticPreferencesAreIndependent",
+          "seconds": 0.066
+        }
+      ]
+    },
+    {
+      "module": "app",
+      "name": "personal.qqq.braintraining.LaunchTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "darkThemeAndExperienceControls",
+          "seconds": 12.739
+        },
+        {
+          "name": "homeCatalogAndWorkedSolution",
+          "seconds": 4.602
+        }
+      ]
+    },
+    {
+      "module": "app",
+      "name": "personal.qqq.braintraining.ReminderTimeTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "schedulesTodayBeforeChosenTimeAndTomorrowAfterIt",
+          "seconds": 0.001
+        },
+        {
+          "name": "daylightSavingGapAndOverlapStayInTheFuture",
+          "seconds": 0.002
+        }
+      ]
+    },
+    {
+      "module": "app",
+      "name": "personal.qqq.braintraining.StorageTest",
+      "tests": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "longUntimedSessionSurvivesBackup",
+          "seconds": 1.855
+        },
+        {
+          "name": "restoreRoundTrip",
+          "seconds": 0.049
+        },
+        {
+          "name": "realApplicationsAreIdempotentAndSurviveBackup",
+          "seconds": 0.134
+        },
+        {
+          "name": "invalidNewEvidencePreservesHistory",
+          "seconds": 0.112
+        },
+        {
+          "name": "invalidBackupPreservesHistory",
+          "seconds": 0.096
+        },
+        {
+          "name": "experienceSettingsRoundTripAndRejectInvalidValuesAtomically",
+          "seconds": 0.105
+        },
+        {
+          "name": "idempotent",
+          "seconds": 0.099
+        },
+        {
+          "name": "malformedApplicationBackupPreservesData",
+          "seconds": 0.123
+        },
+        {
+          "name": "newSkillsAndLearningSettingRoundTrip",
+          "seconds": 0.181
+        }
+      ]
+    },
+    {
+      "module": "app",
+      "name": "personal.qqq.braintraining.VisualScenesTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "ringNodesRemainIndividuallyAccessibleAndTapInPlace",
+          "seconds": 0.994
+        }
+      ]
+    }
+  ],
+  "totals": {
+    "tests": 39,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  }
+}
