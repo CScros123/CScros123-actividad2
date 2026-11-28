@@ -66,7 +66,6 @@ final class BlocksScreen {
             card.addView(Design.button(a, "Duplicar", false, () -> duplicate(a, r)));
         }
         body.addView(Design.button(a, "Nuevo bloqueo", true, () -> edit(a, null)));
-        backup(a, body, store);
         if (!FocusAccessibilityService.connected())
             Design.note(body, "Activa Accesibilidad para que los bloqueos midan y bloqueen.");
     }
@@ -481,95 +480,8 @@ final class BlocksScreen {
         }
     }
 
-    // Lote 5: copia de seguridad de los bloqueos (sin tiempos de uso, pausas ni sesión).
-    private static void backup(MainActivity a, LinearLayout body, RuleStore store) {
-        LinearLayout card = Design.card(body, "Copia de los bloqueos");
-        Design.note(
-                card,
-                "Guarda tus bloqueos en un archivo JSON o recupéralos. No incluye tiempos de uso, pausas ni la sesión de foco.");
-        card.addView(
-                Design.button(
-                        a,
-                        "Guardar copia de los bloqueos",
-                        false,
-                        () ->
-                                a.openForResult(
-                                        new android.content.Intent(
-                                                        android.content.Intent
-                                                                .ACTION_CREATE_DOCUMENT)
-                                                .setType("application/json")
-                                                .addCategory(
-                                                        android.content.Intent.CATEGORY_OPENABLE)
-                                                .putExtra(
-                                                        android.content.Intent.EXTRA_TITLE,
-                                                        "Foco-bloqueos-"
-                                                                + java.time.LocalDate.now()
-                                                                + ".json"),
-                                        14)));
-        card.addView(
-                Design.button(
-                        a,
-                        "Restaurar copia de los bloqueos",
-                        false,
-                        () -> {
-                            if (locked(a, store)) {
-                                a.message(
-                                        "Modo estricto: hay un bloqueo activo. Podrás restaurar la copia cuando termine.");
-                                return;
-                            }
-                            a.openForResult(
-                                    new android.content.Intent(
-                                                    android.content.Intent.ACTION_OPEN_DOCUMENT)
-                                            .setType("application/json")
-                                            .addCategory(android.content.Intent.CATEGORY_OPENABLE),
-                                    15);
-                        }));
-    }
 
-    private static boolean locked(MainActivity a, RuleStore store) {
-        return StrictAdmin.lockActive(a)
-                || StrictAdmin.enabled(a) && (store.anyActive() || a.repository.locked());
-    }
-
-    static void onResult(MainActivity a, int request, android.net.Uri uri) {
-        RuleStore store = RuleStore.get(a);
-        try {
-            if (request == 14) {
-                String json = RuleStore.exportJson(store.rules());
-                Documents.write(a, uri, json);
-                a.message("Copia de los bloqueos guardada");
-                return;
-            }
-            String text = Documents.read(a, uri, Documents.MAX_IMPORT);
-            List<BlockRule> in = RuleStore.parseBackup(text);
-            new AlertDialog.Builder(a)
-                    .setMessage("¿Sustituir tus bloqueos por los " + in.size() + " de esta copia?")
-                    .setPositiveButton(
-                            "Restaurar",
-                            (d, w) -> {
-                                if (locked(a, store)) {
-                                    a.message(
-                                            "Modo estricto: hay un bloqueo activo. Podrás restaurar la copia cuando termine.");
-                                    return;
-                                }
-                                AppConfig c = a.repository.config();
-                                for (BlockRule r : in)
-                                    r.packages.removeIf(p -> FocusEngine.essential(c, p));
-                                try {
-                                    store.replaceAll(in);
-                                    FocusAccessibilityService.rulesChanged();
-                                    a.render();
-                                    a.message("Bloqueos restaurados");
-                                } catch (RuntimeException e) {
-                                    a.message(e.getMessage());
-                                }
-                            })
-                    .setNegativeButton(R.string.cancel, null)
-                    .show();
-        } catch (Exception e) {
-            a.message("No se pudo procesar la copia. Tus bloqueos se conservan.");
-        }
-    }
+    // v48: la copia de los bloqueos va en la copia de ajustes de Drive (SettingsSnapshot).
 
     // Lote 3: filtro web. Se aplica mientras el bloqueo esté activado y (sin horario o dentro de su
     // franja); los minutos no cuentan.

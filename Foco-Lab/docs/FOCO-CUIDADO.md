@@ -678,3 +678,28 @@ Motivo: al cambiar la llave de firma se perdieron todos los datos. Ahora:
 Dependencias nuevas (justificadas): `androidx.work:work-runtime` (trabajo nocturno con red,
 batería y reintentos que sobreviven a reinicios) y `play-services-auth` (permiso de Drive sin
 secretos en el APK). Drive y Sheets van por REST con `HttpURLConnection`, sin sus librerías.
+
+## v47b: la hoja no se rompe al añadir filas
+
+Las filas nuevas se escriben con `OVERWRITE` (con `INSERT_ROWS` Google movía las fórmulas del Panel),
+las fórmulas usan columnas enteras y el top 5 usa `FILTER` + `QUERY`. Una fecha sin formato (número
+de serie, 46353) también cuenta al quitar duplicados. Las hojas del diseño 1 se reparan solas y los
+gráficos que Google dejó sin series se rehacen tras cada copia.
+
+## v48: todos los ajustes en Drive, fuera las copias manuales y Apple Music directo
+
+- **Copia de ajustes** (`SettingsSnapshot`): cada noche `Foco/Ajustes/foco-ajustes.json` con el
+  plan, Foco Core, informes, bloqueos con nombre y preferencias permitidas (noche, racha y cupones,
+  categorías, inicio y tema, ambiente, sonido, perfil de NextDNS, hoja). Nunca: candado, esperas,
+  modo en curso, enfriamientos, DNS pendiente, clave de NextDNS, ánimo ni notas.
+- **Recuperar todo** (`DriveRestore.all`): al conectar Drive en un teléfono nuevo, si hay copia,
+  Ajustes ofrece «Recuperar todo desde Drive» o «Empezar de cero». Mientras no decidas, Foco no sube
+  sus ajustes vacíos encima de tu copia buena. Con el candado del modo estricto no se restaura.
+- **Quitado** (lo pidió el usuario): «Guardar copia de todo» / «Restaurar copia» (JSON), «Exportar
+  mis 7 días · CSV», «Exportar los últimos 30 días» (TXT) y «Copia de los bloqueos». El código que
+  usaban para armar la copia sigue y ahora lo usa `SettingsSnapshot`.
+- **Apple Music** (`AppleMusic`, `MediaListener`): abre tu playlist exacta (music.apple.com) y la
+  pone a sonar; con «Foco · música» en Acceso a notificaciones ve qué suena y la controla (con
+  `playFromUri` si Apple Music lo admite). Suena al entrar en Enfoque (si lo activas), en la pausa
+  (si eliges Apple Music) y desde «Mi música» en el menú del búho. Sin MusicKit: no hacen falta
+  cuenta de desarrollador ni claves.

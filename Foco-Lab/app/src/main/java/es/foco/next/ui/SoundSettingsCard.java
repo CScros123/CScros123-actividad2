@@ -126,9 +126,57 @@ final class SoundSettingsCard {
         Design.note(
                 box,
                 "Con Spotify o Apple Music, Foco no pausa otras apps y abre tu playlist (o busca \"lofi\") una vez por bloqueo. Si la app no está instalada, suena el lo-fi de Foco. Enlaces: open.spotify.com, spotify:… o music.apple.com.");
+        appleMusic(c, box);
         Design.note(
                 box,
                 "Los efectos de los juegos también callan con el modo silencio, vibración o No molestar. Al bloquear, Foco pide a la app que suena que se pause; algunas apps pueden ignorarlo.");
+    }
+
+    /**
+     * v48: Apple Music directo. Usa el mismo enlace (music.apple.com). Suena al entrar en Enfoque
+     * (si lo activas), en la pausa (si eliges Apple Music arriba) y con el botón del inicio.
+     */
+    private static void appleMusic(Context c, LinearLayout box) {
+        Design.gap(box, 8);
+        box.addView(Design.text(c, "Apple Music", 15, true));
+        if (!es.foco.next.runtime.AppleMusic.installed(c)) {
+            Design.note(box, "Apple Music no está instalada.");
+            return;
+        }
+        Switch focus =
+                toggle(c, box, "Poner mi playlist al entrar en Enfoque", SoundSettings.appleOnFocus(c));
+        focus.setOnCheckedChangeListener((v, on) -> SoundSettings.setAppleOnFocus(c, on));
+        boolean control = es.foco.next.runtime.AppleMusic.canControl(c);
+        String now = control ? es.foco.next.runtime.AppleMusic.nowPlaying(c) : "";
+        Design.note(
+                box,
+                control
+                        ? (now.isEmpty() ? "Control activado." : "Suena: " + now)
+                        : "Para que Foco vea qué suena y la ponga a sonar seguro, permite «Foco · música» en Acceso a notificaciones. Foco no lee tus notificaciones.");
+        if (!control)
+            box.addView(
+                    Design.button(
+                            c,
+                            "Permitir control de la música",
+                            false,
+                            () -> {
+                                try {
+                                    c.startActivity(
+                                            es.foco.next.runtime.AppleMusic.accessSettings());
+                                } catch (RuntimeException ignored) {
+                                }
+                            }));
+        box.addView(
+                Design.button(
+                        c,
+                        "Poner mi playlist ahora",
+                        true,
+                        () ->
+                                android.widget.Toast.makeText(
+                                                c,
+                                                es.foco.next.runtime.AppleMusic.play(c),
+                                                android.widget.Toast.LENGTH_SHORT)
+                                        .show()));
     }
 
     private static Switch toggle(Context c, LinearLayout box, String label, boolean checked) {

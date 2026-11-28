@@ -35,6 +35,29 @@ public class BackupJsonTest {
     }
 
     @Test
+    public void laCopiaDeAjustesNoLlevaSeguridadNiClave() {
+        String[] cuidado = SettingsSnapshot.PREFS[0];
+        assertEquals("foco-cuidado", cuidado[0]);
+        assertTrue(SettingsSnapshot.allowed(cuidado, "nocheIni"));
+        // El modo en curso, el Enfoque y los enfriamientos no viajan.
+        assertFalse(SettingsSnapshot.allowed(cuidado, "modo"));
+        assertFalse(SettingsSnapshot.allowed(cuidado, "hasta"));
+        assertFalse(SettingsSnapshot.allowed(cuidado, "enfriamientoDesde"));
+        for (String[] spec : SettingsSnapshot.PREFS) {
+            // La clave de NextDNS (texto plano antiguo) nunca sale del teléfono.
+            if (spec[0].equals("foco-nextdns")) {
+                assertFalse(SettingsSnapshot.allowed(spec, "key"));
+                assertTrue(SettingsSnapshot.allowed(spec, "perfil_api"));
+            }
+            // Ni los secretos cifrados ni el estado del modo estricto están en la lista.
+            assertFalse(spec[0].equals("foco-secretos"));
+            assertFalse(spec[0].equals("foco-absolutas"));
+            if (spec[0].equals("foco-respaldo"))
+                assertFalse(SettingsSnapshot.allowed(spec, "ajustes_ok"));
+        }
+    }
+
+    @Test
     public void elJsonDelDiaSeRecuperaComoResumen() throws Exception {
         List<DayReport.Row> rows = new ArrayList<>();
         rows.add(new DayReport.Row("uso_productivo", "com.duolingo", 9, 20 * 60_000L, 1, 0, ""));

@@ -75,6 +75,32 @@ public final class BackupStore {
         prefs(c).edit().putBoolean("reconectar", v).apply();
     }
 
+    /**
+     * v48: este teléfono ya decidió (recuperó la copia de ajustes, empezó de cero o era el primero):
+     * desde ahí su copia de ajustes se sube cada noche.
+     */
+    static boolean settingsDecided(Context c) {
+        return prefs(c).getBoolean("ajustes_ok", false);
+    }
+
+    static void setSettingsDecided(Context c) {
+        prefs(c).edit().putBoolean("ajustes_ok", true).putBoolean("ajustes_pendiente", false).apply();
+    }
+
+    /** Hay una copia de ajustes en Drive esperando a que decidas (recién instalado). */
+    public static boolean restorePending(Context c) {
+        return prefs(c).getBoolean("ajustes_pendiente", false);
+    }
+
+    static void setRestorePending(Context c, boolean v) {
+        prefs(c).edit().putBoolean("ajustes_pendiente", v).apply();
+    }
+
+    /** «Empezar de cero»: no recuperar y, desde esta noche, subir los ajustes de este teléfono. */
+    public static void startFresh(Context c) {
+        setSettingsDecided(c);
+    }
+
     /** El ánimo solo se sube si la persona lo activa (apagado por defecto). */
     public static boolean includeMood(Context c) {
         return prefs(c).getBoolean("animo", false);

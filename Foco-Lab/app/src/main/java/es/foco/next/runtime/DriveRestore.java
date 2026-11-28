@@ -17,12 +17,58 @@ import org.json.JSONObject;
 public final class DriveRestore {
     private DriveRestore() {}
 
-    /** ¿Ofrecer la recuperación? Drive conectado y el registro local vacío. Hilo de fondo. */
+    /**
+     * ¿Ofrecer «Recuperar todo»? Drive conectado y: hay una copia de ajustes esperando (v48) o el
+     * registro local está vacío. Hilo de fondo (puede mirar Drive).
+     */
     public static boolean offer(Context c) {
         if (!BackupStore.connected(c)) return false;
+        if (BackupStore.restorePending(c)) return true;
+        if (!BackupStore.settingsDecided(c))
+            try {
+                String token = GoogleDrive.token(c);
+                if (GoogleApi.children(token, DriveBackup.settingsFolder(token))
+                        .containsValue(SettingsSnapshot.FILE)) {
+                    BackupStore.setRestorePending(c, true);
+                    return true;
+                }
+            } catch (Exception ignored) {
+            }
         Boolean empty =
                 es.foco.next.log.BlockLog.await(c, LogDatabase::inspectorEmpty, 5_000);
         return Boolean.TRUE.equals(empty);
+    }
+
+    /**
+     * v48: «Recuperar todo desde Drive»: primero los ajustes (plan, tareas, bloqueos, preferencias)
+     * y después el historial de los JSON diarios. Desde ahí este teléfono sube su copia cada noche.
+     */
+    public static String all(Context c) {
+        String settings;
+        try {
+            String token = GoogleDrive.token(c);
+            String folder = DriveBackup.settingsFolder(token);
+            String id = null;
+            for (Map.Entry<String, String> f : GoogleApi.children(token, folder).entrySet())
+                if (SettingsSnapshot.FILE.equals(f.getValue())) id = f.getKey();
+            if (id == null) settings = "No hay copia de ajustes en tu Drive.";
+            else {
+                settings =
+                        SettingsSnapshot.restore(
+                                c,
+                                new String(GoogleApi.download(token, id), StandardCharsets.UTF_8));
+                if (!settings.startsWith("Modo estricto")) BackupStore.setSettingsDecided(c);
+            }
+        } catch (GoogleDrive.NeedsReconnect e) {
+            return es.foco.next.core.backup.BackupLines.RECONNECT;
+        } catch (Exception e) {
+            return "No pude leer tu Drive ahora. Prueba más tarde con internet.";
+        }
+        Boolean empty =
+                es.foco.next.log.BlockLog.await(c, LogDatabase::inspectorEmpty, 5_000);
+        String history = run(c);
+        return settings
+                + (Boolean.FALSE.equals(empty) && history.startsWith("No encontré") ? "" : " " + history);
     }
 
     /** Recupera y devuelve el texto para la persona. Hilo de fondo. */

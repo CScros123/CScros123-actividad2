@@ -128,4 +128,8 @@ Compose necesitan `imePadding()`).
   la doc (instagram, youtube…) se prueban y, si NextDNS responde 400, se marcan «no admitidos».
 - Firma: `local.properties` (`foco.storeFile`, `foco.keyAlias`, `foco.storePassword`,
   `foco.keyPassword`) o las variables `FOCO_*`. Nunca pidas la contraseña.
+- v48: los ajustes viajan en `SettingsSnapshot` (lista blanca de preferencias). Si añades una
+  preferencia nueva que deba recuperarse, súmala allí; lo de seguridad nunca.
+- Las copias manuales (JSON/CSV/TXT/bloqueos) se quitaron a pedido del usuario: no las vuelvas a
+  poner; Drive es la copia.
 

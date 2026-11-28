@@ -116,6 +116,36 @@ final class DriveBackup {
         GoogleApi.batchUpdate(token, sheet, SheetLayout.chartsBody(redo, delete));
     }
 
+    /** Carpeta Foco/Ajustes (la crea si falta). */
+    static String settingsFolder(String token) throws Exception {
+        return GoogleApi.folder(token, "Ajustes", GoogleApi.folder(token, "Foco", "root"));
+    }
+
+    /**
+     * v48: sube la copia de todos los ajustes (se reemplaza cada noche). Si en Drive ya hay una
+     * copia y este teléfono aún no decidió recuperarla (recién instalado), no la pisa con ajustes
+     * vacíos: Ajustes ofrece «Recuperar todo desde Drive».
+     */
+    void uploadSettings() throws Exception {
+        String folder = settingsFolder(token);
+        if (!BackupStore.settingsDecided(c)) {
+            if (!GoogleApi.children(token, folder).containsValue(SettingsSnapshot.FILE)) {
+                BackupStore.setSettingsDecided(c); // no había copia: este teléfono es el bueno
+            } else {
+                BackupStore.setRestorePending(c, true);
+                return;
+            }
+        }
+        String json = Secrets.redact(SettingsSnapshot.export(c), apiKey);
+        if (Secrets.leaks(json, apiKey)) throw new IllegalStateException("secreto en los ajustes");
+        GoogleApi.put(
+                token,
+                folder,
+                SettingsSnapshot.FILE,
+                "application/json",
+                json.getBytes(StandardCharsets.UTF_8));
+    }
+
     static String zone() {
         return java.util.TimeZone.getDefault().getID();
     }

@@ -388,20 +388,6 @@ public final class MainActivity extends Activity {
                         "Ver estadísticas y bloqueos",
                         true,
                         () -> open(new Intent(this, StatsActivity.class)))); // Lote 4
-        week.addView(
-                Design.button(
-                        this,
-                        "Exportar mis 7 días · CSV",
-                        false,
-                        () ->
-                                openForResult(
-                                        new Intent(Intent.ACTION_CREATE_DOCUMENT)
-                                                .setType("text/csv")
-                                                .addCategory(Intent.CATEGORY_OPENABLE)
-                                                .putExtra(
-                                                        Intent.EXTRA_TITLE,
-                                                        "Foco-semana-" + LocalDate.now() + ".csv"),
-                                        12)));
     }
 
     /**
@@ -791,39 +777,13 @@ public final class MainActivity extends Activity {
         SoundSettingsCard.add(this, body); // Fase 6: volumen de música/efectos y "sin sonido"
         DnsSettings.render(this, body); // Fase 3: proveedor, vigilancia y paso de Chrome
         BackupSettings.render(this, body); // v47: Google Drive y API de NextDNS
+        // v48: las copias manuales (JSON, CSV, TXT) se quitaron: todo va cada noche a tu Drive.
         LinearLayout data = Design.card(body, "Tus datos");
-        data.addView(
-                Design.button(
-                        this,
-                        "Guardar copia de todo (plan, tareas, dinero e informes)",
-                        false,
-                        () ->
-                                openForResult(
-                                        new Intent(Intent.ACTION_CREATE_DOCUMENT)
-                                                .setType("application/json")
-                                                .addCategory(Intent.CATEGORY_OPENABLE)
-                                                .putExtra(Intent.EXTRA_TITLE, "Foco-Ligero.json"),
-                                        10)));
-        data.addView(
-                Design.button(
-                        this,
-                        "Restaurar copia",
-                        false,
-                        () ->
-                                edit(
-                                        () -> {
-                                            if (strictRestoreBlocked()) return;
-                                            openForResult(
-                                                    new Intent(Intent.ACTION_OPEN_DOCUMENT)
-                                                            .setType("application/json")
-                                                            .addCategory(Intent.CATEGORY_OPENABLE),
-                                                    11);
-                                        })));
         Design.note(
                 data,
                 "Foco "
                         + versionName()
-                        + ". Datos locales; sin cuenta ni telemetría. No se copian a la nube ni a otro teléfono.");
+                        + ". Sin cuenta ni telemetría. Tus datos están en este teléfono y, si conectas Google Drive (arriba), cada noche se guardan solo en tu Drive: tu día, tu historial y todos tus ajustes.");
     }
 
     private void showHowItWorks() {
@@ -1067,38 +1027,12 @@ public final class MainActivity extends Activity {
         String last = es.foco.next.runtime.Inspector.lastDay(this);
         Design.note(
                 box,
-                "Cada día va de 5:00 a 24:00. Al cerrarse, Foco guarda un informe con tus tareas de Foco Core, el dinero, los tiempos, los bloqueos, los retos de Lab y el DNS. Se queda en el teléfono (90 días); el ánimo no se incluye.");
+                "Cada día va de 5:00 a 24:00. Al cerrarse, Foco guarda un informe con tus tareas de Foco Core, el dinero, los tiempos, los bloqueos, los retos de Lab y el DNS. Se queda en el teléfono (90 días) y, con Drive conectado, cada noche va a tu Drive; el ánimo no se incluye salvo que lo actives.");
         Design.note(
                 box,
                 last.isEmpty()
                         ? "Todavía no hay informes: el primero llega mañana."
                         : "Último informe: " + last + ".");
-        box.addView(
-                Design.button(
-                        this,
-                        "Exportar los últimos 30 días",
-                        true,
-                        () ->
-                                openForResult(
-                                        new Intent(Intent.ACTION_CREATE_DOCUMENT)
-                                                .setType("text/plain")
-                                                .addCategory(Intent.CATEGORY_OPENABLE)
-                                                .putExtra(
-                                                        Intent.EXTRA_TITLE,
-                                                        "Foco-informes-"
-                                                                + LocalDate.now()
-                                                                + ".txt"),
-                                        18)));
-    }
-
-    /**
-     * Auditoría: restaurar una copia sustituye el plan entero (y los tiempos); con el candado no se
-     * permite.
-     */
-    private boolean strictRestoreBlocked() {
-        if (!StrictAdmin.lockActive(this)) return false;
-        message("Modo estricto: con el candado puesto no se puede restaurar una copia del plan.");
-        return true;
     }
 
     private String versionName() {
@@ -1221,114 +1155,6 @@ public final class MainActivity extends Activity {
                         this, data, msg -> BackupSettings.done(this, msg));
             else message("No se conectó Drive. Puedes intentarlo cuando quieras.");
             return;
-        }
-        if (result != RESULT_OK || data == null || data.getData() == null) return;
-        if (request == 14 || request == 15) {
-            BlocksScreen.onResult(this, request, data.getData());
-            return;
-        } // Lote 5
-        if (request == 18) {
-            final Uri target = data.getData();
-            new Thread(
-                            () -> {
-                                String text = es.foco.next.runtime.Inspector.export(this, 30);
-                                runOnUiThread(
-                                        () -> {
-                                            try {
-                                                Documents.write(this, target, text);
-                                                message(
-                                                        "Informes exportados. Puedes analizarlos con Claude.");
-                                            } catch (Exception e) {
-                                                message("No se pudo escribir el archivo.");
-                                            }
-                                        });
-                            },
-                            "foco-exportar-informes")
-                    .start();
-            return;
-        }
-        try {
-            if (request == 12) { // Foco 1.0, etapa 1: mismo botón, formato nuevo del Inspector (con
-                // hora, tiempo y veces separados)
-                FocusAccessibilityService.checkpoint();
-                es.foco.next.log.InspectorLog.drainLab(this);
-                Uri target = data.getData();
-                String from = es.foco.next.log.InspectorLog.weekStart(LocalDate.now());
-                AppConfig plan = repository.config();
-                es.foco.next.log.BlockLog.query(
-                        this,
-                        db ->
-                                es.foco.next.log.InspectorLog.csv(
-                                        db,
-                                        from,
-                                        p -> AppPicker.label(this, p),
-                                        es.foco.next.log.InspectorLog.rows(
-                                                this, db, LocalDate.now(), 7, plan),
-                                        false),
-                        csv -> {
-                            try {
-                                Documents.write(this, target, csv);
-                                message(
-                                        "Registro exportado. Puedes abrirlo en una hoja de cálculo.");
-                            } catch (Exception e) {
-                                message("No se pudo escribir el archivo.");
-                            }
-                        },
-                        () -> message("No se pudo leer el registro."));
-            }
-            if (request == 10) {
-                FocusAccessibilityService.checkpoint();
-                // Foco Core va dentro de la misma copia (clave "focoCore"); las versiones
-                // anteriores la ignoran al restaurar.
-                String backup = repository.exportBackup();
-                try {
-                    org.json.JSONObject j = new org.json.JSONObject(backup);
-                    j.put(
-                            es.foco.next.runtime.FocoCoreBackup.KEY,
-                            es.foco.next.runtime.FocoCoreBackup.export(this));
-                    j.put("informes", es.foco.next.runtime.Inspector.backup(this)); // v28
-                    backup = j.toString();
-                } catch (org.json.JSONException ignored) {
-                }
-                Documents.write(this, data.getData(), backup);
-                message("Copia guardada (plan, tiempos, tareas, dinero e informes)");
-            }
-            if (request == 11) {
-                String json = Documents.read(this, data.getData(), Documents.MAX_IMPORT);
-                new AlertDialog.Builder(this)
-                        .setMessage("¿Sustituir el plan y los tiempos por esta copia?")
-                        .setPositiveButton(
-                                "Restaurar",
-                                (d, w) -> {
-                                    if (strictRestoreBlocked()) return;
-                                    FocusAccessibilityService.checkpoint();
-                                    try {
-                                        repository.importBackup(json);
-                                        try {
-                                            org.json.JSONObject core =
-                                                    new org.json.JSONObject(json)
-                                                            .optJSONObject(
-                                                                    es.foco.next.runtime
-                                                                            .FocoCoreBackup.KEY);
-                                            if (core != null)
-                                                es.foco.next.runtime.FocoCoreBackup.restore(
-                                                        this, core);
-                                            es.foco.next.runtime.Inspector.restore(
-                                                    this,
-                                                    new org.json.JSONObject(json)
-                                                            .optJSONObject("informes"));
-                                        } catch (org.json.JSONException ignored) {
-                                        }
-                                        render();
-                                    } catch (RuntimeException e) {
-                                        message(e.getMessage());
-                                    }
-                                })
-                        .setNegativeButton("Cancelar", null)
-                        .show();
-            }
-        } catch (Exception e) {
-            message("No se pudo procesar la copia. Tus datos se conservan.");
         }
     }
 }

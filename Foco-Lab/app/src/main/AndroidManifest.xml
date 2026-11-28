@@ -47,6 +47,8 @@
   <activity android:name=".ui.AwarenessActivity" android:exported="false" android:launchMode="singleTask" android:taskAffinity="es.foco.next.conciencia" android:excludeFromRecents="true" android:windowSoftInputMode="adjustResize" android:theme="@style/AwarenessTheme"/>
   <activity android:name=".ui.StatsActivity" android:exported="false"/><!-- Lote 4: Estadísticas -->
   <service android:name=".runtime.FocusAccessibilityService" android:exported="true" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:label="@string/app_name"><intent-filter><action android:name="android.accessibilityservice.AccessibilityService"/></intent-filter><meta-data android:name="android.accessibilityservice" android:resource="@xml/accessibility"/></service>
+  <!-- v48: «Foco · música»: acceso a notificaciones SOLO para ver y controlar Apple Music (sesiones multimedia). No lee notificaciones. -->
+  <service android:name=".runtime.MediaListener" android:exported="true" android:label="Foco · música" android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"><intent-filter><action android:name="android.service.notification.NotificationListenerService"/></intent-filter></service>
   <service android:name=".runtime.CalmAudioService" android:exported="false" android:foregroundServiceType="mediaPlayback"/>
   <service android:name=".runtime.GuardService" android:exported="false" android:foregroundServiceType="specialUse">
    <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="Respaldo del bloqueo cuando Accesibilidad está desactivada"/>

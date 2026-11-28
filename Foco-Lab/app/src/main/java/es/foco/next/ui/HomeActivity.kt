@@ -550,6 +550,9 @@ class HomeActivity : ComponentActivity(), HomeActions {
         showBreathe = true
     }
 
+    // v48: Apple Music directo (abre tu playlist y la pone a sonar).
+    override fun playMusic() = toast(es.foco.next.runtime.AppleMusic.play(this))
+
     override fun owlBannerOpen(target: String) {
         when (target) {
             "reto" -> vm.quick?.let { openLab(it.game) }

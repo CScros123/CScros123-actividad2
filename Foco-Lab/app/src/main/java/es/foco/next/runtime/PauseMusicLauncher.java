@@ -42,6 +42,9 @@ public final class PauseMusicLauncher {
             i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             c.startActivity(i);
             firedFor = episode;
+            // v48: con Apple Music, además de abrir tu playlist, se pone a sonar.
+            if (choice == PauseMusic.Choice.APPLE)
+                AppleMusic.startLater(c.getApplicationContext(), AppleMusic.link(c));
             return action;
         } catch (RuntimeException e) {
             return PauseMusic.Action.LOFI;

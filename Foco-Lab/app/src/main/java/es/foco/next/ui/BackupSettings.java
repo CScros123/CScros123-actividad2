@@ -39,7 +39,7 @@ final class BackupSettings {
         if (!on) {
             Design.note(
                     card,
-                    "Cada noche, sin que hagas nada, Foco guarda tu día en tu Drive: un archivo, un gráfico y una hoja con tu historial. Solo en tu cuenta; Foco solo ve lo que él crea.");
+                    "Cada noche, sin que hagas nada, Foco guarda en tu Drive tu día (archivo, gráfico y hoja con tu historial) y todos tus ajustes. Si cambias de teléfono o reinstalas, lo recuperas con un botón. Solo en tu cuenta; Foco solo ve lo que él crea.");
             card.addView(
                     Design.button(
                             a,
@@ -104,17 +104,20 @@ final class BackupSettings {
                             },
                             "foco-recuperar-ver")
                     .start();
-        } else if (offer)
+        } else if (offer) {
+            Design.note(
+                    card,
+                    "Hay una copia tuya en Drive: plan, tareas, bloqueos, racha y cupones, noche, tema, sonido e historial. No incluye el candado ni la clave de NextDNS.");
             card.addView(
                     Design.button(
                             a,
-                            "Recuperar historial desde Drive",
+                            "Recuperar todo desde Drive",
                             true,
                             () -> {
-                                a.message("Recuperando tu historial…");
+                                a.message("Recuperando tus ajustes e historial…");
                                 new Thread(
                                                 () -> {
-                                                    String msg = DriveRestore.run(a);
+                                                    String msg = DriveRestore.all(a);
                                                     restoreOffer = null;
                                                     a.runOnUiThread(
                                                             () -> {
@@ -125,6 +128,27 @@ final class BackupSettings {
                                                 "foco-recuperar")
                                         .start();
                             }));
+            if (BackupStore.restorePending(a))
+                card.addView(
+                        Design.button(
+                                a,
+                                "Empezar de cero (no recuperar)",
+                                false,
+                                () ->
+                                        new android.app.AlertDialog.Builder(a)
+                                                .setTitle("Empezar de cero")
+                                                .setMessage(
+                                                        "Esta noche Foco guardará los ajustes de este teléfono en lugar de tu copia anterior. ¿Seguro?")
+                                                .setPositiveButton(
+                                                        "Empezar de cero",
+                                                        (d, w) -> {
+                                                            BackupStore.startFresh(a);
+                                                            restoreOffer = null;
+                                                            a.render();
+                                                        })
+                                                .setNegativeButton("Cancelar", null)
+                                                .show()));
+        }
         card.addView(
                 Design.button(
                         a,
@@ -146,6 +170,7 @@ final class BackupSettings {
     }
 
     static void done(MainActivity a, String msg) {
+        restoreOffer = null; // recién conectado: volver a mirar si hay copia en Drive
         a.runOnUiThread(
                 () -> {
                     a.message(msg);

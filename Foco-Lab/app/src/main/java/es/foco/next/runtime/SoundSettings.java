@@ -89,6 +89,15 @@ public final class SoundSettings {
         prefs(c).edit().putString(PLAYLIST_LINK, v == null ? "" : v.trim()).apply();
     }
 
+    /** v48: poner tu música de Apple Music al entrar en Enfoque. */
+    public static boolean appleOnFocus(Context c) {
+        return prefs(c).getBoolean("apple_enfoque", false);
+    }
+
+    public static void setAppleOnFocus(Context c, boolean on) {
+        prefs(c).edit().putBoolean("apple_enfoque", on).apply();
+    }
+
     public static void setPauseOthers(Context c, boolean on) {
         prefs(c).edit().putBoolean(PAUSE_OTHERS, on).apply();
     }

@@ -45,6 +45,7 @@ import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.rounded.LocalFireDepartment
 import androidx.compose.material.icons.rounded.Mood
+import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -176,6 +177,9 @@ interface HomeActions {
 
     /** v41: respirar (menú del búho). */
     fun breathe()
+
+    /** v48: tu playlist de Apple Music (menú del búho). */
+    fun playMusic()
 }
 
 /**
@@ -623,6 +627,15 @@ private fun Header(vm: HomeViewModel, a: HomeActions) {
                         ) {
                             owlMenu = false
                             a.openCore()
+                        }
+                        GameButton(
+                            "Mi música",
+                            Act.PRIZE,
+                            Modifier.fillMaxWidth(),
+                            icon = Icons.Rounded.MusicNote,
+                        ) {
+                            owlMenu = false
+                            a.playMusic()
                         }
                         GameButton(
                             "¿Cómo estás?",

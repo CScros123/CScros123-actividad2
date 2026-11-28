@@ -241,6 +241,8 @@ public final class CareStore {
                 CareMode.toFocus(state(c), d, ZonedDateTime.now(), AbsoluteRules.nightStart());
         if (ch == null) return false;
         save(c, ch);
+        // v48: tu música de concentración al entrar en Enfoque (si lo activaste).
+        if (es.foco.next.runtime.SoundSettings.appleOnFocus(c)) AppleMusic.play(c);
         return true;
     }
 
