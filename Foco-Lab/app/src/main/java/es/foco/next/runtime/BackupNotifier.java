@@ -40,6 +40,18 @@ final class BackupNotifier {
         show(c, b);
     }
 
+    /** v50: el resumen de la semana (domingo), con «Ver hoja». */
+    static void weekly(Context c, String text) {
+        Notification.Builder b = base(c, text).setContentTitle("🦉 Búho · Tu semana");
+        String sheet = BackupStore.sheetUrl(c);
+        if (!sheet.isEmpty()) {
+            PendingIntent open = view(c, sheet, 4);
+            b.setContentIntent(open)
+                    .addAction(new Notification.Action.Builder(null, "Ver hoja", open).build());
+        }
+        show(c, b);
+    }
+
     static void failed(Context c) {
         show(c, base(c, BackupLines.FAILED).setContentIntent(settings(c)));
     }

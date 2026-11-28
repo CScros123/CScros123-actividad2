@@ -42,6 +42,7 @@ public final class SettingsSnapshot {
         {"foco-soundscape", ""},
         {"foco-nextdns", "perfil_api"},
         {"foco-respaldo", "animo", "id_hoja", "diseno"},
+        {"foco-noche-avisos", "activo"},
     };
 
     static boolean allowed(String[] spec, String key) {

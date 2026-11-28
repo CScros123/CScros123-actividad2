@@ -66,6 +66,20 @@ public final class NextDnsPlan {
     public static final String SERVICES_PATH = "parentalControl/services";
     public static final String DENYLIST_PATH = "denylist";
 
+    /**
+     * v50: de noche, además de los 8 servicios, la categoría «redes sociales» del control parental
+     * (Threads, Bluesky, Kwai… y los dominios de rastreo y avisos propios de cada red).
+     */
+    public static final String CATEGORIES_PATH = "parentalControl/categories";
+
+    public static final String NIGHT_CATEGORY = "social-networks";
+
+    /** WhatsApp es esencial: nunca lo corta la categoría de redes (la lista de permitidos manda). */
+    public static final String ALLOWLIST_PATH = "allowlist";
+
+    public static final List<String> ESSENTIAL_ALLOW =
+            List.of("whatsapp.com", "whatsapp.net", "wa.me");
+
     /** ¿Se bloquean las redes por servicio? Solo en Enfoque o de noche. */
     public static boolean blockServices(CareMode.Modo mode, boolean night) {
         return night || mode == CareMode.Modo.ENFOQUE;
@@ -74,6 +88,11 @@ public final class NextDnsPlan {
     /** Firma de lo esperado (para saber si un desajuste vino de fuera o de un cambio de modo). */
     public static String signature(boolean block) {
         return block ? "servicios=si;telegram=si" : "servicios=no;telegram=si";
+    }
+
+    /** v50: con la categoría de redes de la noche. */
+    public static String signature(boolean block, boolean night) {
+        return signature(block) + (night ? ";noche=si" : "");
     }
 
     /**
@@ -109,6 +128,39 @@ public final class NextDnsPlan {
      */
     public static boolean changedOutside(List<Op> ops, String lastApplied, boolean block) {
         return ops != null && !ops.isEmpty() && signature(block).equals(lastApplied);
+    }
+
+    public static boolean changedOutside(
+            List<Op> ops, String lastApplied, boolean block, boolean night) {
+        return ops != null && !ops.isEmpty() && signature(block, night).equals(lastApplied);
+    }
+
+    /**
+     * v50: lo de {@link #diff(boolean, Map, Map)} más la noche: la categoría «redes sociales»
+     * activa de noche (y quitada de día) y WhatsApp en la lista de permitidos mientras tanto.
+     */
+    public static List<Op> diff(
+            boolean block,
+            boolean night,
+            Map<String, Boolean> services,
+            Map<String, Boolean> categories,
+            Map<String, Boolean> denylist,
+            Map<String, Boolean> allowlist) {
+        List<Op> ops = diff(block, services, denylist);
+        Boolean cat = categories == null ? null : categories.get(NIGHT_CATEGORY);
+        if (night) {
+            for (String d : ESSENTIAL_ALLOW) {
+                Boolean a = allowlist == null ? null : allowlist.get(d);
+                if (Boolean.FALSE.equals(a)) ops.add(new Op(Op.Kind.REMOVE, ALLOWLIST_PATH, d));
+                if (!Boolean.TRUE.equals(a)) ops.add(new Op(Op.Kind.ADD, ALLOWLIST_PATH, d));
+            }
+            if (Boolean.FALSE.equals(cat))
+                ops.add(new Op(Op.Kind.REMOVE, CATEGORIES_PATH, NIGHT_CATEGORY));
+            if (!Boolean.TRUE.equals(cat))
+                ops.add(new Op(Op.Kind.ADD, CATEGORIES_PATH, NIGHT_CATEGORY));
+        } else if (Boolean.TRUE.equals(cat))
+            ops.add(new Op(Op.Kind.REMOVE, CATEGORIES_PATH, NIGHT_CATEGORY));
+        return ops;
     }
 
     /**

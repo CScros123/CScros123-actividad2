@@ -65,29 +65,31 @@ public final class Inspector {
     }
 
     /**
-     * Guarda el informe de ayer si falta (y, con {@code force}, también el de hoy hasta ahora) y
-     * programa el cierre de esta noche. En segundo plano; nunca lanza.
+     * v50: los informes de texto se dejaron de guardar en el teléfono: la copia de cada noche en
+     * Drive guarda lo mismo (JSON, gráfico y hoja). Una sola vez: se cancela la alarma de las 04:05
+     * y se borran los informes viejos para liberar espacio. Nunca lanza.
      */
     public static void maybeWrite(Context context, boolean force) {
         final Context c = context.getApplicationContext();
         try {
-            scheduleMidnight(c);
-            LocalDate yesterday = RoutineStore.today().minusDays(1); // v32 (R9): día lógico
-            boolean missing =
-                    !file(c, yesterday).exists() && firstUse(c).isBefore(RoutineStore.today());
-            if (!missing && !force) return;
+            if (prefs(c).getBoolean("retirado_v50", false)) return;
+            AlarmManager am = c.getSystemService(AlarmManager.class);
+            PendingIntent pi =
+                    PendingIntent.getBroadcast(
+                            c,
+                            REQUEST,
+                            new Intent(c, DailyReminder.class).setAction(ACTION),
+                            PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
+            if (am != null && pi != null) am.cancel(pi);
             IO.execute(
                     () -> {
-                        try {
-                            if (!file(c, yesterday).exists()) save(c, yesterday);
-                            if (force) save(c, RoutineStore.today());
-                            prune(c);
-                        } catch (Exception e) {
-                            prefs(c).edit()
-                                    .putString("error", e.getClass().getSimpleName())
-                                    .apply();
-                            android.util.Log.w("Foco", "Informe: no se pudo guardar", e);
-                        }
+                        File[] all = dir(c).listFiles();
+                        if (all != null)
+                            for (File f : all) {
+                                //noinspection ResultOfMethodCallIgnored
+                                f.delete();
+                            }
+                        prefs(c).edit().putBoolean("retirado_v50", true).apply();
                     });
         } catch (RuntimeException ignored) {
         }

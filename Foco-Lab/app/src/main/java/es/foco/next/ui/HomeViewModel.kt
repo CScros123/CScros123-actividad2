@@ -467,8 +467,21 @@ class HomeViewModel(app: Application) : AndroidViewModel(app), HomeHub.Listener 
     var dnsTop by mutableStateOf<List<String>>(emptyList())
         private set
 
+    /** v50: «Tu semana con NextDNS» en Análisis (y los avisos de redes quitados de noche). */
+    var dnsWeek by mutableStateOf<List<String>>(emptyList())
+        private set
+
     fun refreshDns() {
         val c = ctx
+        val week = es.foco.next.runtime.NextDnsSync.week(c)
+        dnsWeek =
+            es.foco.next.core.backup.WeekLines.dnsWeek(
+                week[1],
+                week[0],
+                es.foco.next.runtime.NextDnsSync.weekSocial(c),
+                es.foco.next.runtime.NightQuiet.lastWeek(c),
+                showNumbers,
+            )
         if (!es.foco.next.runtime.NextDnsSync.hasKey(c)) {
             dnsLine = null
             dnsTop = emptyList()

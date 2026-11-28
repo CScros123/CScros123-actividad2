@@ -186,6 +186,15 @@ fun AnalysisPanel(vm: HomeViewModel, a: HomeActions) {
                     }
                 }
             }
+            // v50: lo que NextDNS bloqueó en la semana y los avisos de redes quitados de noche.
+            if (vm.dnsWeek.isNotEmpty()) {
+                SectionLabel("Tu semana con NextDNS")
+                HomeCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        vm.dnsWeek.forEach { HomeText(it, 13.sp, LocalHome.current.text) }
+                    }
+                }
+            }
             SectionLabel("Reportes")
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Tile(

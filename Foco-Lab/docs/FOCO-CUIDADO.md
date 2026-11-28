@@ -718,3 +718,24 @@ gráficos que Google dejó sin series se rehacen tras cada copia.
   la noche siguiente. El trabajo ya programado se reprograma solo una vez.
 - **Quitado**: la exportación CSV de Registro (30/90 días) y el segundo sitio donde se pedía la clave
   de NextDNS (queda en «NextDNS: control por modo»).
+
+## v50: noche sin redes, la semana en Análisis y menos cosas
+
+- **Noche más estricta** (`NextDnsPlan.diff` con noche, `NextDnsControl`): de noche, además de los
+  8 servicios, la categoría «social-networks» del control parental de NextDNS (rastreadores y
+  servidores de las redes), con WhatsApp en la lista de permitidos antes de activarla. De día la
+  categoría se quita. Si la API no la reconoce, se marca «no admitida» y no se reintenta.
+- **Avisos de redes de noche** (`NightQuiet`, `MediaListener`): con el acceso a notificaciones
+  («Foco · música»), de noche se quitan los avisos de las apps de la Regla 1 en cuanto llegan. Solo
+  se mira el paquete; se cuenta cuántos (14 días). Se apaga en Ajustes › NextDNS › Noche sin redes.
+  Los avisos llegan por el canal común de Google (FCM): bloquearlo por DNS cortaría también WhatsApp
+  y los bancos, por eso se quitan en el teléfono.
+- **Análisis › «Tu semana con NextDNS»** (`NextDnsSync.week`, `WeekLines.dnsWeek`): lo bloqueado en
+  7 días, los intentos de cada red y los avisos quitados (cada 6 h como mucho).
+- **Resumen del búho del domingo** (`WeekLines.owlWeekly`, `DriveBackup.weeklySummary`): tras la
+  copia de las 21:00, con los números del Panel de la hoja (invertido y ocio frente a la semana
+  anterior y el peor horario). El lunes si el domingo no hubo copia.
+- **Quitado**: la tarjeta «Música tranquila» de Hoy (el lo-fi queda como último recurso de «Mi
+  música» sin Apple Music o sin internet, y en la pausa), los informes de texto del teléfono (se
+  borran una vez y se cancela la alarma de las 04:05) y la tarjeta de permisos repetida en
+  Registro.

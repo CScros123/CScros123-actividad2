@@ -119,6 +119,23 @@ public final class NextDnsControl {
     }
 
     /** Lo que hay que bloquear ahora mismo por servicio. */
+    /** v50: ¿es de noche ahora? (horario de la noche de Foco). */
+    static boolean nightNow(Context c) {
+        CareStore.install(c);
+        return AbsoluteRules.esNocheAbsoluta(LocalDateTime.now());
+    }
+
+    /** Una lista que puede no existir en la API: null si NextDNS responde 400/404. */
+    private static java.util.Map<String, Boolean> optional(String url, String key)
+            throws Exception {
+        try {
+            return NextDnsApi.actives(NextDnsApi.get(url, key));
+        } catch (NextDnsApi.HttpError e) {
+            if (e.code == 400 || e.code == 404) return null;
+            throw e;
+        }
+    }
+
     static boolean expectedBlock(Context c) {
         CareStore.install(c);
         return NextDnsPlan.blockServices(
@@ -131,18 +148,28 @@ public final class NextDnsControl {
         if (!NextDnsStats.validKey(key) || id == null) return Outcome.SKIP;
         SharedPreferences p = prefs(c);
         boolean block = expectedBlock(c);
+        // v50: de noche, además, la categoría «redes sociales» (con WhatsApp permitido).
+        boolean night = nightNow(c);
         String base = NextDnsApi.BASE + id + "/";
         try {
             java.util.Map<String, Boolean> services =
                     NextDnsApi.actives(NextDnsApi.get(base + NextDnsPlan.SERVICES_PATH, key));
             java.util.Map<String, Boolean> deny =
                     NextDnsApi.actives(NextDnsApi.get(base + NextDnsPlan.DENYLIST_PATH, key));
+            java.util.Map<String, Boolean> categories =
+                    optional(base + NextDnsPlan.CATEGORIES_PATH, key);
+            java.util.Map<String, Boolean> allow = optional(base + NextDnsPlan.ALLOWLIST_PATH, key);
             Set<String> unsupported =
                     new HashSet<>(p.getStringSet("no_admitidos", new HashSet<>()));
-            List<NextDnsPlan.Op> ops = NextDnsPlan.diff(block, services, deny);
+            List<NextDnsPlan.Op> ops =
+                    NextDnsPlan.diff(block, night, services, categories, deny, allow);
             ops.removeIf(
-                    o -> o.list.equals(NextDnsPlan.SERVICES_PATH) && unsupported.contains(o.id));
-            boolean outside = NextDnsPlan.changedOutside(ops, p.getString("aplicado", ""), block);
+                    o ->
+                            !o.list.equals(NextDnsPlan.DENYLIST_PATH)
+                                    && (unsupported.contains(o.id)
+                                            || unsupported.contains(o.list + "/" + o.id)));
+            boolean outside =
+                    NextDnsPlan.changedOutside(ops, p.getString("aplicado", ""), block, night);
             int done = 0;
             for (NextDnsPlan.Op o : ops) {
                 try {
@@ -160,13 +187,18 @@ public final class NextDnsControl {
                     done++;
                 } catch (NextDnsApi.HttpError e) {
                     if (e.code == 401 || e.code == 403) throw e;
-                    // Un servicio que NextDNS no reconoce: no se vuelve a intentar cada 30 min.
-                    if (e.code == 400 && o.list.equals(NextDnsPlan.SERVICES_PATH))
-                        unsupported.add(o.id);
+                    // Algo que NextDNS no reconoce (un servicio, la categoría): no se vuelve a
+                    // intentar cada 30 min.
+                    if ((e.code == 400 || e.code == 404)
+                            && !o.list.equals(NextDnsPlan.DENYLIST_PATH))
+                        unsupported.add(
+                                o.list.equals(NextDnsPlan.SERVICES_PATH)
+                                        ? o.id
+                                        : o.list + "/" + o.id);
                 }
             }
             p.edit()
-                    .putString("aplicado", NextDnsPlan.signature(block))
+                    .putString("aplicado", NextDnsPlan.signature(block, night))
                     .putLong("comprobado", System.currentTimeMillis())
                     .putStringSet("no_admitidos", unsupported)
                     .putString(
@@ -174,6 +206,7 @@ public final class NextDnsControl {
                             (block
                                             ? "Redes bloqueadas por servicio"
                                             : "Redes sin bloqueo por servicio")
+                                    + (night ? " · noche: categoría de redes" : "")
                                     + " · Telegram bloqueado")
                     .apply();
             // Alguien lo cambió desde la web: ya quedó como debe. Se apunta, sin culpa.

@@ -115,6 +115,33 @@ final class DriveBackup {
         GoogleApi.batchUpdate(token, sheet, SheetLayout.chartsBody(redo, delete));
     }
 
+    /**
+     * v50: los números de la semana desde el Panel de la hoja: {invertido esta, invertido anterior,
+     * ocio esta, ocio anterior} y el peor horario. null si no se pudieron leer.
+     */
+    String weeklySummary() {
+        try {
+            List<List<String>> week =
+                    GoogleApi.values(token, sheet, SheetLayout.a1(SheetLayout.PANEL, "B7:C8"));
+            List<List<String>> worst =
+                    GoogleApi.values(token, sheet, SheetLayout.a1(SheetLayout.PANEL, "G4"));
+            if (week.size() < 2) return null;
+            String hour = worst.isEmpty() || worst.get(0).isEmpty() ? "" : worst.get(0).get(0);
+            return es.foco.next.core.backup.WeekLines.owlWeekly(
+                    num(week.get(0), 0), num(week.get(0), 1), num(week.get(1), 0), num(week.get(1), 1), hour);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static long num(List<String> row, int i) {
+        try {
+            return i < row.size() ? Math.round(Double.parseDouble(row.get(i))) : 0;
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
     /** Carpeta Foco/Ajustes (la crea si falta). */
     static String settingsFolder(String token) throws Exception {
         return GoogleApi.folder(token, "Ajustes", GoogleApi.folder(token, "Foco", "root"));

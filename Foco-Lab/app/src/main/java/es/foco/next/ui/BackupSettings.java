@@ -211,6 +211,34 @@ final class BackupSettings {
                                         ? " (del DNS privado)"
                                         : ""));
         card.addView(Design.button(a, "Escribir el ID de perfil", false, () -> askProfile(a)));
+        // v50: noche más estricta con las redes (NextDNS + avisos).
+        Design.gap(card, 8);
+        card.addView(Design.text(a, "Noche sin redes", 15, true));
+        Design.note(
+                card,
+                "De noche, NextDNS bloquea también la categoría «redes sociales» (sus rastreadores y servidores; WhatsApp sigue funcionando) y Foco quita los avisos de las redes en cuanto llegan.");
+        boolean quiet = es.foco.next.runtime.NightQuiet.enabled(a);
+        card.addView(
+                Design.button(
+                        a,
+                        quiet ? "Quitar avisos de redes de noche: sí" : "Quitar avisos de redes de noche: no",
+                        false,
+                        () -> {
+                            es.foco.next.runtime.NightQuiet.setEnabled(a, !quiet);
+                            a.render();
+                        }));
+        if (quiet && !es.foco.next.runtime.AppleMusic.canControl(a))
+            card.addView(
+                    Design.button(
+                            a,
+                            "Permitir «Foco · música» (acceso a notificaciones)",
+                            true,
+                            () -> {
+                                try {
+                                    a.startActivity(es.foco.next.runtime.AppleMusic.accessSettings());
+                                } catch (RuntimeException ignored) {
+                                }
+                            }));
         if (key) {
             Design.note(card, NextDnsControl.status(a));
             card.addView(

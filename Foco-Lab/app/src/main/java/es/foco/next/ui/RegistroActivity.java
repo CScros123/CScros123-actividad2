@@ -92,7 +92,7 @@ public final class RegistroActivity extends Activity {
                         () -> startActivity(new Intent(this, StatsActivity.class)))); // Lote 4
         LinearLayout days = Design.card(body, "Últimos " + SHOWN_DAYS + " días");
         Design.note(days, "Cargando el registro…");
-        StabilityPermissions.card(body, this);
+        // v50: los permisos (Acceso de uso, batería) viven solo en Ajustes.
         // v49: la exportación CSV se quitó: tu historial ya va cada noche a tu Drive (hoja y JSON).
         LinearLayout export = Design.card(body, "Borrar el registro");
         Design.note(

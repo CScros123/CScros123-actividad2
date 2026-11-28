@@ -88,7 +88,7 @@ public final class BackupWorker extends Worker {
                         "respaldo|" + sent + "|" + System.currentTimeMillis() / 3_600_000L);
             }
             if (days.size() > MAX_PER_RUN) more(c);
-            else BackupNotifier.done(c);
+            else if (!weekly(c, up, today)) BackupNotifier.done(c);
             return Result.success();
         } catch (GoogleApi.HttpError e) {
             if (e.code == 401) GoogleDrive.forget(c, token);
@@ -96,6 +96,25 @@ public final class BackupWorker extends Worker {
         } catch (Exception e) {
             return retry(c);
         }
+    }
+
+    /**
+     * v50: el domingo (o el lunes si el domingo no hubo copia), en lugar del aviso de siempre, el
+     * búho cuenta la semana con los números del Panel de la hoja. true si lo mostró.
+     */
+    private static boolean weekly(Context c, DriveBackup up, LocalDate today) {
+        String last = BackupStore.prefs(c).getString("resumen_semana", "");
+        if (!es.foco.next.core.backup.WeekLines.weeklyDue(today, last)) return false;
+        String text = up.weeklySummary();
+        if (text == null) return false;
+        BackupStore.prefs(c)
+                .edit()
+                .putString(
+                        "resumen_semana",
+                        es.foco.next.core.backup.WeekLines.weekSunday(today).toString())
+                .apply();
+        BackupNotifier.weekly(c, text);
+        return true;
     }
 
     /** Quedan días: otra vuelta en cuanto termine esta. */

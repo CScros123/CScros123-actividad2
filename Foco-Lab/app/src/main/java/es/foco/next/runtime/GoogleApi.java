@@ -336,6 +336,32 @@ public final class GoogleApi {
         return out;
     }
 
+    /** v50: valores de un rango tal como se ven (filas de celdas). */
+    static List<List<String>> values(String token, String id, String range) throws Exception {
+        JSONObject o =
+                new JSONObject(
+                        json(
+                                "GET",
+                                SHEETS
+                                        + "/"
+                                        + enc(id)
+                                        + "/values/"
+                                        + enc(range)
+                                        + "?majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE",
+                                token,
+                                null));
+        List<List<String>> out = new ArrayList<>();
+        JSONArray rows = o.optJSONArray("values");
+        if (rows != null)
+            for (int i = 0; i < rows.length(); i++) {
+                JSONArray r = rows.optJSONArray(i);
+                List<String> cells = new ArrayList<>();
+                if (r != null) for (int j = 0; j < r.length(); j++) cells.add(r.optString(j, ""));
+                out.add(cells);
+            }
+        return out;
+    }
+
     /** Columna A tal como se ve (la fila 0 es el encabezado). */
     static List<String> columnA(String token, String id, String tab) throws Exception {
         String range = es.foco.next.core.backup.SheetLayout.a1(tab, "A:A");

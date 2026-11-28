@@ -116,7 +116,6 @@ public final class MainActivity extends Activity {
                 getPreferences(MODE_PRIVATE).edit().putInt("cleanup", 52).apply();
             }
             repository = Repository.get(this);
-            music = new QuietMusic(this, this::refreshMusicControl);
         } catch (RuntimeException e) {
             // Auditoría de producto: antes esta pantalla no tenía salida y Foco quedaba
             // inutilizable para siempre.
@@ -189,7 +188,6 @@ public final class MainActivity extends Activity {
             }
             render();
             if (dnsChoice) DnsSettings.askAutomatic(this);
-            if (music != null) music.enter();
             scheduleScene();
         }
     }
@@ -355,27 +353,11 @@ public final class MainActivity extends Activity {
             Design.note(
                     time,
                     "Weekend Lock activo hasta el domingo a las 23:59: en Normal y Enfoque el ocio se abre con tu hora libre de Foco Core o un cupón (en Cuidado queda abierto y se registra) y la configuración solo puede endurecerse.");
-        dailyReports(); // v28: informe diario único
         updateTime();
         // v27: lo demás de "Hoy" (próximo paso, escena, práctica, nota del día, lo observado) vive
         // en el inicio y en Foco Core. Aquí queda el estado, la música y los reportes.
-        LinearLayout hero = Design.card(body, "Música");
-        musicButton =
-                Design.button(
-                        this,
-                        "Música tranquila",
-                        false,
-                        () -> {
-                            if (music != null) {
-                                music.toggle();
-                                refreshMusicControl();
-                            }
-                        });
-        hero.addView(musicButton);
-        musicCaption = Design.text(this, "", 13, false);
-        hero.addView(musicCaption);
-        refreshMusicControl();
-        Design.note(hero, "Sin conexión. La música acompaña Foco y la pausa; puedes silenciarla.");
+        // v50: la tarjeta «Música tranquila» se quitó: tu música es Apple Music (Ajustes › Sonido y
+        // el menú del búho) y el lo-fi de Foco queda como último recurso sin app o sin internet.
         // Auditoría de producto: estadísticas, registro y exportación estaban en tres tarjetas y
         // dos pantallas; ahora en una.
         LinearLayout week = Design.card(body, "Tu actividad, sin juicios");
@@ -1018,22 +1000,6 @@ public final class MainActivity extends Activity {
                 });
     }
 
-    /**
-     * v28: el informe diario único. Foco lo guarda solo al cerrarse cada día (24:00), con todo lo
-     * de dentro y fuera del teléfono; aquí se ve el último y se exportan los de 30 días.
-     */
-    private void dailyReports() {
-        LinearLayout box = Design.card(body, "Informe diario");
-        String last = es.foco.next.runtime.Inspector.lastDay(this);
-        Design.note(
-                box,
-                "Cada día va de 5:00 a 24:00. Al cerrarse, Foco guarda un informe con tus tareas de Foco Core, el dinero, los tiempos, los bloqueos, los retos de Lab y el DNS. Se queda en el teléfono (90 días) y, con Drive conectado, cada noche va a tu Drive; el ánimo no se incluye salvo que lo actives.");
-        Design.note(
-                box,
-                last.isEmpty()
-                        ? "Todavía no hay informes: el primero llega mañana."
-                        : "Último informe: " + last + ".");
-    }
 
     private String versionName() {
         try {

@@ -15,7 +15,7 @@ public final class BackupLines {
         "Ey bro, ya hice la copia de hoy. Cuando quieras la analizamos.",
         "Listo, tu día ya está guardado. Mañana lo vemos si quieres.",
         "Copia hecha. Tu día está a salvo en tu Drive.",
-        "Ya guardé lo de hoy, bro. Descansa tranquilo.",
+        "Ya guardé lo de hoy, bro. A descansar.",
         "Tu día quedó guardado. Lo bueno también cuenta.",
         "Hecho: hoja y gráfico al día. Cuando quieras, los miramos.",
         "Todo guardado en tu Drive. Buen trabajo hoy.",

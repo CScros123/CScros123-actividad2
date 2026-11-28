@@ -152,7 +152,7 @@ final class SoundSettingsCard {
                 box,
                 control
                         ? (now.isEmpty() ? "Control activado." : "Suena: " + now)
-                        : "Para que Foco vea qué suena y la ponga a sonar seguro, permite «Foco · música» en Acceso a notificaciones. Foco no lee tus notificaciones.");
+                        : "Para que Foco vea qué suena y la ponga a sonar seguro, permite «Foco · música» en Acceso a notificaciones. Foco solo mira de qué app viene cada aviso, nunca lo que dice (de noche lo usa también para quitar los avisos de redes).");
         if (!control)
             box.addView(
                     Design.button(

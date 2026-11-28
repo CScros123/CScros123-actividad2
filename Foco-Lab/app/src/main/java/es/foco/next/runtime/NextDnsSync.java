@@ -182,6 +182,7 @@ public final class NextDnsSync {
                                                         NextDnsStats.domains(domains, 5)))
                                         .remove("error")
                                         .apply();
+                                week(p, id, key); // v50: la semana para Análisis
                             } catch (NextDnsApi.HttpError e) {
                                 p.edit()
                                         .putLong("at", System.currentTimeMillis())
@@ -208,6 +209,55 @@ public final class NextDnsSync {
                         },
                         "foco-nextdns")
                 .start();
+    }
+
+    /** v50: cada 6 h como mucho, lo bloqueado en 7 días y los intentos de cada red social. */
+    static final long WEEK_REFRESH_MS = 6 * 60 * 60_000L;
+
+    private static void week(SharedPreferences p, String id, String key) {
+        if (System.currentTimeMillis() - p.getLong("sem_at", 0) < WEEK_REFRESH_MS) return;
+        try {
+            String base = NextDnsApi.BASE + id + "/analytics/";
+            long[] st = NextDnsApi.status(get(base + "status?from=-7d", key));
+            java.util.Map<String, Long> social =
+                    es.foco.next.core.backup.NextDnsPlan.socialActivity(
+                            NextDnsApi.domains(
+                                    get(
+                                            base
+                                                    + "domains?status=blocked&root=true&limit=500&from=-7d",
+                                            key)));
+            StringBuilder b = new StringBuilder();
+            for (java.util.Map.Entry<String, Long> e : social.entrySet())
+                b.append(b.length() == 0 ? "" : ";").append(e.getKey()).append('|').append(e.getValue());
+            p.edit()
+                    .putLong("sem_at", System.currentTimeMillis())
+                    .putLong("sem_total", st[0])
+                    .putLong("sem_blocked", st[1])
+                    .putString("sem_social", b.toString())
+                    .apply();
+        } catch (Exception ignored) {
+            // Se reintenta en la próxima lectura.
+        }
+    }
+
+    /** {total, bloqueadas} de los últimos 7 días (0 si aún no se leyó). */
+    public static long[] week(Context c) {
+        SharedPreferences p = prefs(c);
+        return new long[] {p.getLong("sem_total", 0), p.getLong("sem_blocked", 0)};
+    }
+
+    /** Intentos bloqueados por red social en 7 días. */
+    public static java.util.Map<String, Long> weekSocial(Context c) {
+        java.util.Map<String, Long> out = new java.util.LinkedHashMap<>();
+        for (String part : prefs(c).getString("sem_social", "").split(";")) {
+            int i = part.lastIndexOf('|');
+            if (i <= 0) continue;
+            try {
+                out.put(part.substring(0, i), Long.parseLong(part.substring(i + 1)));
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return out;
     }
 
     private static String get(String url, String key) throws Exception {

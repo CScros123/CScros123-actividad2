@@ -89,6 +89,34 @@ public class NextDnsPlanTest {
     }
 
     @Test
+    public void deNocheLaCategoriaDeRedesConWhatsAppPermitido() {
+        java.util.Map<String, Boolean> cats = new HashMap<>();
+        List<NextDnsPlan.Op> night =
+                NextDnsPlan.diff(true, true, services(true), cats, telegram(), new HashMap<>());
+        // WhatsApp primero en permitidos y después la categoría.
+        int allow = -1, cat = -1;
+        for (int i = 0; i < night.size(); i++) {
+            NextDnsPlan.Op o = night.get(i);
+            if (o.list.equals(NextDnsPlan.ALLOWLIST_PATH) && allow < 0) allow = i;
+            if (o.list.equals(NextDnsPlan.CATEGORIES_PATH)) cat = i;
+        }
+        assertTrue(allow >= 0 && cat > allow);
+        assertEquals(NextDnsPlan.NIGHT_CATEGORY, night.get(cat).id);
+        // De día la categoría se quita; los permitidos se quedan.
+        cats.put(NextDnsPlan.NIGHT_CATEGORY, true);
+        List<NextDnsPlan.Op> day =
+                NextDnsPlan.diff(false, false, services(false), cats, telegram(), new HashMap<>());
+        assertEquals(1, day.size());
+        assertEquals(NextDnsPlan.Op.Kind.REMOVE, day.get(0).kind);
+        // Sin la lista de categorías (la API no la tiene): se intenta añadir y, si falla, se deja.
+        assertTrue(
+                NextDnsPlan.diff(true, true, services(true), null, telegram(), null).stream()
+                        .anyMatch(o -> o.list.equals(NextDnsPlan.CATEGORIES_PATH)));
+        assertFalse(
+                NextDnsPlan.signature(true, true).equals(NextDnsPlan.signature(true, false)));
+    }
+
+    @Test
     public void telegramSiempreEnLaListaDeBloqueo() {
         List<NextDnsPlan.Op> ops = NextDnsPlan.diff(false, new HashMap<>(), new HashMap<>());
         assertEquals(4, count(ops, NextDnsPlan.Op.Kind.ADD, NextDnsPlan.DENYLIST_PATH));

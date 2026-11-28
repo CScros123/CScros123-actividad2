@@ -68,7 +68,9 @@ public final class AppleMusic {
      */
     public static String play(Context c) {
         Context app = c.getApplicationContext();
-        if (!installed(app)) return "Apple Music no está instalada.";
+        // v50: el lo-fi de Foco queda como último recurso (sin Apple Music o sin internet).
+        if (!installed(app)) return lofi(app, "Sin Apple Music: suena el lo-fi de Foco.");
+        if (!online(app)) return lofi(app, "Sin internet: suena el lo-fi de Foco.");
         String link = link(app);
         try {
             Intent i =
@@ -85,6 +87,36 @@ public final class AppleMusic {
         return link.isEmpty()
                 ? "Abriendo Apple Music. Guarda el enlace de tu playlist en Ajustes › Sonido."
                 : "Poniendo tu playlist.";
+    }
+
+    private static final Object LOFI = new Object();
+
+    /** El lo-fi de Foco (sin conexión). Si ya suena, lo para (el botón hace de interruptor). */
+    static String lofi(Context app, String why) {
+        if (CalmAudio.active() || CalmAudio.pending()) {
+            CalmAudio.leave(LOFI);
+            return "Lo-fi de Foco en pausa.";
+        }
+        app.getSharedPreferences(SoundSettings.PREFS, 0)
+                .edit()
+                .putBoolean("enabled", true)
+                .putBoolean(SoundSettings.SILENT, false)
+                .apply();
+        CalmAudio.enter(app, LOFI, () -> {}, true);
+        return why;
+    }
+
+    static boolean online(Context c) {
+        try {
+            android.net.ConnectivityManager cm =
+                    c.getSystemService(android.net.ConnectivityManager.class);
+            android.net.NetworkCapabilities nc =
+                    cm == null ? null : cm.getNetworkCapabilities(cm.getActiveNetwork());
+            return nc != null
+                    && nc.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+        } catch (RuntimeException e) {
+            return true; // si no se sabe, se intenta con Apple Music
+        }
     }
 
     /** Tras abrir la app: reproducir (la playlist exacta si Apple Music lo admite). */

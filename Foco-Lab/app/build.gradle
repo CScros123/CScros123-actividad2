@@ -18,7 +18,7 @@ android {
  namespace 'es.foco.next'
  compileSdk 35
  buildToolsVersion '35.0.0'
- defaultConfig { applicationId 'es.foco.next'; minSdk 33; targetSdk 35; versionCode 74; versionName '1.14'; testInstrumentationRunner 'android.test.InstrumentationTestRunner' }
+ defaultConfig { applicationId 'es.foco.next'; minSdk 33; targetSdk 35; versionCode 75; versionName '1.15'; testInstrumentationRunner 'android.test.InstrumentationTestRunner' }
  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
  kotlinOptions { jvmTarget = '17' }
  buildFeatures { compose true }
